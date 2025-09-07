@@ -1,7 +1,4 @@
-Program {
-    integer inc(integer x) {
-        return x + 1;
-    }
+program {
     
     integer get_int() extern;
     

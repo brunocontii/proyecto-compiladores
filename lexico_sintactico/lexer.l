@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "calc-sintaxis.tab.h"
+#include "parser.tab.h"
 
 %}
 
@@ -31,8 +31,6 @@ alpha_num {alpha}|{digit}|"_"
 
 "void" 	    { printf("void : %s\n",yytext); return TOKEN_VOID; }
 
-"main"      { printf("main : %s\n",yytext); return TOKEN_MAIN; }
-
 "extern"    { printf("extern : %s\n",yytext); return TOKEN_EXTERN; }
 
 "return"	{ printf("return : %s\n",yytext); return TOKEN_RETURN; }
@@ -57,45 +55,45 @@ alpha_num {alpha}|{digit}|"_"
 
 {alpha}({alpha_num})*		{ 
 								printf("ID : %s\n",yytext);
-								yylval.sval = strdup(yytext); // para copiar el valor de yytext
+								// yylval.sval = strdup(yytext); // para copiar el valor de yytext
 								return TOKEN_ID;
 							}
 
 {digit}+ 	{ 
-			printf("DIGIT : %s\n",yytext);
-			yylval.ival = atoi(yytext); // para convertir yytext en un int
-			return TOKEN_DIGIT;
-		}
+				printf("DIGIT : %s\n",yytext);
+				// yylval.ival = atoi(yytext); // para convertir yytext en un int
+				return TOKEN_DIGIT;
+			}	
 
-"-"	    { printf("- : %c\n",yytext); return TOKEN_OP_MENOS; }
+"-"	    { printf("- : %s\n",yytext); return TOKEN_OP_MENOS; }
 
-"+"	    { printf("+ : %c\n",yytext); return TOKEN_OP_MAS; }
+"+"	    { printf("+ : %s\n",yytext); return TOKEN_OP_MAS; }
 
-"*"	    { printf("* : %c\n",yytext); return TOKEN_OP_MULT; }
+"*"	    { printf("* : %s\n",yytext); return TOKEN_OP_MULT; }
 
-"/"	    { printf("/ : %c\n",yytext); return TOKEN_OP_DIV; }
+"/"	    { printf("/ : %s\n",yytext); return TOKEN_OP_DIV; }
 
-"%"	    { printf("% : %c\n",yytext); return TOKEN_OP_RESTO; }
+"%"	    { printf("mod : %s\n",yytext); return TOKEN_OP_RESTO; }
 
-","	    { printf("; : %c\n",yytext); return TOKEN_COMA; }
+","	    { printf("; : %s\n",yytext); return TOKEN_COMA; }
 
-";"	    { printf("; : %c\n",yytext); return TOKEN_PYC; }
+";"	    { printf("; : %s\n",yytext); return TOKEN_PYC; }
 
-"("	    { printf("( : %c\n",yytext); return TOKEN_PAR_A; }
+"("	    { printf("( : %s\n",yytext); return TOKEN_PAR_A; }
 
-")"	    { printf(") : %c\n",yytext); return TOKEN_PAR_C; }
+")"	    { printf(") : %s\n",yytext); return TOKEN_PAR_C; }
 
-"{"	    { printf("{ : %c\n",yytext); return TOKEN_LLA_A; }
+"{"	    { printf("{ : %s\n",yytext); return TOKEN_LLA_A; }
 
-"}"	    { printf("} : %c\n",yytext); return TOKEN_LLA_C; }
+"}"	    { printf("} : %s\n",yytext); return TOKEN_LLA_C; }
 
-"="	    { printf("= : %c\n",yytext); return TOKEN_ASIGNACION; }
+"="	    { printf("= : %s\n",yytext); return TOKEN_ASIGNACION; }
 
 "=="	{ printf("== : %s\n",yytext); return TOKEN_IGUALDAD; }
 
-"<"	    { printf("< : %c\n",yytext); return TOKEN_MENOR; }
+"<"	    { printf("< : %s\n",yytext); return TOKEN_MENOR; }
 
-">"	    { printf("> : %c\n",yytext); return TOKEN_MAYOR; }
+">"	    { printf("> : %s\n",yytext); return TOKEN_MAYOR; }
 
 .   	{
 			printf("Error léxico: caracter no válido '%C'\n", yytext[0]);

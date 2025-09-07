@@ -2,5 +2,5 @@ lexico_sintactico/*.tab.c
 lexico_sintactico/*.tab.h
 lexico_sintactico/lex.yy.c
 lexico_sintactico/*.output
-lexico_sintactico/a.out
+lexico_sintactico/prog
 .vscode/
