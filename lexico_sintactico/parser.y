@@ -19,20 +19,23 @@
 %left TOKEN_MENOR TOKEN_MAYOR
 %left TOKEN_OP_MAS TOKEN_OP_MENOS
 %left TOKEN_OP_MULT TOKEN_OP_DIV TOKEN_OP_RESTO
-%right TOKEN_OP_NOT
+%right TOKEN_OP_NOT MENOS_UNARIO
 
 %%
 
-prog: TOKEN_PROGRAM TOKEN_LLA_A decls TOKEN_LLA_C
+prog: TOKEN_PROGRAM TOKEN_LLA_A TOKEN_LLA_C
+    | TOKEN_PROGRAM TOKEN_LLA_A var_decls TOKEN_LLA_C
+    | TOKEN_PROGRAM TOKEN_LLA_A method_decls TOKEN_LLA_C
+    | TOKEN_PROGRAM TOKEN_LLA_A var_decls method_decls TOKEN_LLA_C
     ;
 
-decls: decls decl
-     | /* empty */
-     ;
+var_decls: var_decls var_decl
+         | var_decl
+         ;
 
-decl: var_decl
-    | method_decl
-    ;
+method_decls: method_decls method_decl
+            | method_decl
+            ;
 
 var_decl: type TOKEN_ID TOKEN_ASIGNACION expr TOKEN_PYC
         ;
@@ -55,10 +58,8 @@ parametro: type TOKEN_ID
          ;
 
 block: TOKEN_LLA_A var_decls statements TOKEN_LLA_C
-
-var_decls: var_decls var_decl
-         | /* empty */
-         ;
+     | TOKEN_LLA_A statements TOKEN_LLA_C
+     ;
 
 type: TOKEN_INTEGER
       | TOKEN_BOOL
@@ -101,7 +102,7 @@ expr: TOKEN_ID
       | expr TOKEN_MENOR expr
       | expr TOKEN_MAYOR expr
       | expr TOKEN_IGUALDAD expr
-      | TOKEN_OP_MENOS expr
+      | TOKEN_OP_MENOS expr %prec MENOS_UNARIO
       | TOKEN_OP_NOT expr
       | TOKEN_PAR_A expr TOKEN_PAR_C
     ;
