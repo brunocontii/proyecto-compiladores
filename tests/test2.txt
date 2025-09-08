@@ -9,15 +9,15 @@ program {
         integer z = 1;
         integer w = y;
 
-        if (x == 0) {
+        if (x == 0) then {
             return 0;
         }
 
-        if (y == 0) {
+        if (y == 0) then {
             return 1;
         }
 
-        if (y == 1) {
+        if (y == 1) then {
             return x;
         }
 
@@ -38,7 +38,7 @@ program {
         if (!par) then {
             print_int(y);
         } else {
-            integer z = pow(2, 5)
+            integer z = pow(2, 5);
             return print_int(z);
         }
     }
