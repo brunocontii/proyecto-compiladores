@@ -2,6 +2,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
+extern int yylineno;
+void yyerror();
+
 %}
 
 %token TOKEN_PROGRAM TOKEN_EXTERN TOKEN_RETURN
@@ -122,3 +126,7 @@ bool_literal: TOKEN_VTRUE
             ;
 
 %%
+
+void yyerror() {
+    printf("-> ERROR Sintactico en la linea: %d \n", yylineno);
+}

@@ -102,10 +102,6 @@ alpha_num {alpha}|{digit}|"_"
 
 %%
 
-void yyerror(){
-	printf("%s%d\n","-> ERROR Sintactico en la linea: ",yylineno);
-}
-
 int main(int argc,char *argv[]){
 	++argv,--argc;
 	if (argc > 0)
