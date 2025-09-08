@@ -1,0 +1,45 @@
+program {
+
+    bool esPar(integer x) {
+        return x % 2 == 0;
+    }
+    
+    // función exponencial
+    integer pow(integer x, integer y) {
+        integer z = 1;
+        integer w = y;
+
+        if (x == 0) {
+            return 0;
+        }
+
+        if (y == 0) {
+            return 1;
+        }
+
+        if (y == 1) {
+            return x;
+        }
+
+        while (w > 0) {
+            z = z * x;
+            w = w - 1;
+        }
+
+        return z;
+    }
+
+    void print_int(integer i) extern ;
+    
+    void main() {
+        integer x = 2;
+        integer y = 5;
+        bool par = esPar(pow(x, y));
+        if (!par) then {
+            print_int(y);
+        } else {
+            integer z = pow(2, 5)
+            return print_int(z);
+        }
+    }
+}
