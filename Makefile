@@ -16,7 +16,7 @@ YACC_C = $(LEX_DIR)/parser.tab.c
 YACC_H = $(LEX_DIR)/parser.tab.h
 
 # Variable para testeo
-TEST ?= tests/test1.txt
+TEST ?= tests/test1.ctds
 
 # Regla principal
 all: $(TARGET)
