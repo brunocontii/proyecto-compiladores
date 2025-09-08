@@ -1,15 +1,20 @@
 program {
 
+    /*
+    función que retorna true
+    si el número es par
+    integer a = 10;
+    */
     bool esPar(integer x) {
         return x % 2 == 0;
     }
     
     // función exponencial
     integer pow(integer x, integer y) {
-        integer z = 1;
-        integer w = y;
+        integer  z   =   1;
+        integer   w      =     y;
 
-        if (x == 0) then {
+        if (!(!(x == 0))) then {
             return 0;
         }
 
@@ -33,13 +38,23 @@ program {
     
     void main() {
         integer x = 2;
-        integer y = 5;
+        integer y = 5 + - 3;
         bool par = esPar(pow(x, y));
         if (!par) then {
             print_int(y);
         } else {
             integer z = pow(2, 5);
             return print_int(z);
+        }
+
+        if (x == y) then {
+            print_int(0);
+        } else {
+            if (x > y) then {
+                print_int(x);
+            } else {
+                print_int(y);
+            }
         }
     }
 }

@@ -1,7 +1,7 @@
 # Compilador y flags
 CC = gcc
 CFLAGS = -Wall -Wextra -g
-TARGET = $(LEX_DIR)/prog
+TARGET = $(LEX_DIR)/c-tds
 
 # Directorios
 LEX_DIR = lexico_sintactico
