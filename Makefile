@@ -5,6 +5,7 @@ TARGET = $(LEX_DIR)/c-tds
 
 # Directorios
 LEX_DIR = lexico_sintactico
+TREE_DIR = arbol-sintactico
 
 # Archivos de entrada para Bison y Flex
 LEX_SRC = $(LEX_DIR)/lexer.l
@@ -15,6 +16,9 @@ LEX_OUT = $(LEX_DIR)/lex.yy.c
 YACC_C = $(LEX_DIR)/parser.tab.c
 YACC_H = $(LEX_DIR)/parser.tab.h
 
+# Archivos adicionales
+TREE_SRC = $(TREE_DIR)/arbol.c
+
 # Variable para testeo
 TEST ?= tests/test1.ctds
 
@@ -22,7 +26,7 @@ TEST ?= tests/test1.ctds
 all: $(TARGET)
 
 # Compilacion
-$(TARGET): $(YACC_C) $(LEX_OUT)
+$(TARGET): $(YACC_C) $(LEX_OUT) $(TREE_SRC)
 	$(CC) $(CFLAGS) -o $@ $^ -lfl
 
 $(YACC_C) $(YACC_H): $(YACC_SRC)

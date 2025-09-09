@@ -1,12 +1,24 @@
 %{
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "../arbol-sintactico/arbol.h"
 
 extern int yylineno;
 void yyerror();
 
 %}
+
+%code requires {
+    #include "../arbol-sintactico/arbol.h"
+}
+
+%union {
+    int ival;
+    char *sval;
+    nodo* nodo;
+}
 
 %token TOKEN_PROGRAM TOKEN_EXTERN TOKEN_RETURN
 %token TOKEN_IF TOKEN_ELSE TOKEN_THEN TOKEN_WHILE

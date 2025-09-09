@@ -55,13 +55,13 @@ alpha_num {alpha}|{digit}|"_"
 
 {alpha}({alpha_num})*		{ 
 								printf("ID : %s\n",yytext);
-								// yylval.sval = strdup(yytext); // para copiar el valor de yytext
+								yylval.sval = strdup(yytext); // para copiar el valor de yytext
 								return TOKEN_ID;
 							}
 
 {digit}+ 	{ 
 				printf("DIGIT : %s\n",yytext);
-				// yylval.ival = atoi(yytext); // para convertir yytext en un int
+				yylval.ival = atoi(yytext); // para convertir yytext en un int
 				return TOKEN_DIGIT;
 			}	
 

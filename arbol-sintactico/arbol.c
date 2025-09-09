@@ -23,7 +23,6 @@ nodo* crearArbol(info *valorNodo, nodo *hijoIzq, nodo *hijoDer) {
     return n;
 }
 
-
 void mostrarArbol(nodo *raiz, int nivel) {
     if (!raiz) return;
 
@@ -71,8 +70,6 @@ void mostrarArbol(nodo *raiz, int nivel) {
     mostrarArbol(raiz->der, nivel + 1);
 }
 
-
-
 void liberarArbol(nodo *raiz) {
     if (!raiz) return;
 
@@ -80,7 +77,7 @@ void liberarArbol(nodo *raiz) {
     liberarArbol(raiz->der);
 
     switch (raiz->valor->tipo_token) {
-        // Tokens que usan el campo id
+        // Tokens que usan el campo name
         case T_ID:
             if (raiz->valor->name) 
                 free(raiz->valor->name);
@@ -103,7 +100,7 @@ void liberarArbol(nodo *raiz) {
                 free(raiz->valor->op);
             break;
 
-        // Tokens que usan el campo pal_res_tipo
+        // Tokens que usan el campo op (palabras reservadas)
         case T_INTEGER:
         case T_BOOL:
         case T_VOID:
@@ -118,12 +115,9 @@ void liberarArbol(nodo *raiz) {
                 free(raiz->valor->op);
             break;
 
+        // Tokens que NO requieren liberar memoria adicional
         case T_VTRUE:
         case T_VFALSE:
-            if (raiz->valor->b)
-                free(raiz->valor->b);
-            break;
-        // Tokens que no requieren liberar memoria adicional
         case T_DIGIT:
         case T_PYC:
         case T_COMA:
@@ -131,6 +125,7 @@ void liberarArbol(nodo *raiz) {
         case T_PAR_C:
         case T_LLA_A:
         case T_LLA_C:
+            // No hacer nada - son valores primitivos
             break;
     }
 
