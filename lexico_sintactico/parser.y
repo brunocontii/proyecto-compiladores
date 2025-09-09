@@ -37,48 +37,181 @@ void yyerror();
 %left TOKEN_OP_MULT TOKEN_OP_DIV TOKEN_OP_RESTO
 %right TOKEN_OP_NOT MENOS_UNARIO
 
+%type <nodo> prog var_decls var_decl method_decls method_decl expr block_or_extern block parametros parametro type
+
 %%
 
 prog: TOKEN_PROGRAM TOKEN_LLA_A TOKEN_LLA_C
+      {
+        $$ = NULL;
+      }
     | TOKEN_PROGRAM TOKEN_LLA_A var_decls TOKEN_LLA_C
+      {
+        info *ninfo = malloc(sizeof(info));
+        ninfo->name = strdup("PROGRAM");
+        ninfo->tipo_token = T_PROGRAM;
+
+        $$ = crearArbol(ninfo, $3, NULL);
+      }
     | TOKEN_PROGRAM TOKEN_LLA_A method_decls TOKEN_LLA_C
+      {
+        info *ninfo = malloc(sizeof(info));
+        ninfo->name = strdup("PROGRAM");
+        ninfo->tipo_token = T_PROGRAM;
+
+        $$ = crearArbol(ninfo, NULL, $3);
+      }
     | TOKEN_PROGRAM TOKEN_LLA_A var_decls method_decls TOKEN_LLA_C
+      {
+        info *ninfo = malloc(sizeof(info));
+        ninfo->name = strdup("PROGRAM");
+        ninfo->tipo_token = T_PROGRAM;
+
+        $$ = crearArbol(ninfo, $3, $4);
+      }
     ;
 
 var_decls: var_decls var_decl
+          {
+            info *ninfo = malloc(sizeof(info));
+            ninfo->name = strdup("DECLARACIONES VARIBLES");
+            ninfo->tipo_token = T_VAR_DECLS;
+
+            $$ = crearArbol(ninfo, $1, $2);
+          }
          | var_decl
+          {
+            $$ = $1;
+          }
          ;
 
 method_decls: method_decls method_decl
+              {
+                info *ninfo = malloc(sizeof(info));
+                ninfo->name = strdup("DECLARACIONES METODOS");
+                ninfo->tipo_token = T_METHOD_DECLS;
+
+                $$ = crearArbol(ninfo, $1, $2);
+              }
             | method_decl
+              {
+                $$ = $1;
+              }
             ;
 
 var_decl: type TOKEN_ID TOKEN_ASIGNACION expr TOKEN_PYC
+          {
+            info *ninfo = malloc(sizeof(info));
+            ninfo->name = strdup("DECLARACION VARIABLE");
+            ninfo->op = strdup("=");
+            ninfo->tipo_token = T_VAR_DECL;
+            ninfo->tipo_info = $1;
+
+            $$ = crearArbol(ninfo, $2, $4);
+          }
         ;
 
 method_decl: type TOKEN_ID TOKEN_PAR_A parametros TOKEN_PAR_C block_or_extern
+            {
+              info *ninfo = malloc(sizeof(info));
+              ninfo->name = strdup($2);
+              ninfo->tipo_token = T_METHOD_DECL;
+              ninfo->tipo_info = $1;
+
+              $$ = crearArbol(ninfo, $4, $6);
+            }
            | TOKEN_VOID TOKEN_ID TOKEN_PAR_A parametros TOKEN_PAR_C block_or_extern
+            {
+              info *ninfo = malloc(sizeof(info));
+              ninfo->name = strdup($2);
+              ninfo->tipo_token = T_METHOD_DECL;
+              ninfo->tipo_info = $1;
+
+              $$ = crearArbol(ninfo, $4, $6);
+            }
            ;
 
 block_or_extern: block
+                {
+                  $$ = $1;
+                }
                 | TOKEN_EXTERN TOKEN_PYC
+                  {
+                    info *ninfo = malloc(sizeof(info));
+                    ninfo->name = strdup("EXTERN");
+                    ninfo->tipo_token = T_EXTERN;
+
+                    $$ = crearNodo(ninfo);
+                  }
                ;
 
+parametros: parametros parametro
+            {
+              info *ninfo = malloc(sizeof(info));
+              ninfo->name = strdup("LISTA PARAMETROS");
+              ninfo->tipo_token = T_PARAMETROS;
 
-parametros: parametros parametro 
-            | /* lambda */  
+              $$ = crearArbol(ninfo, $1, $2);
+            }
+            | /* lambda */
           ;
 
-parametro: type TOKEN_ID 
+parametro: type TOKEN_ID
+          {
+            info *ninfo = malloc(sizeof(info));
+            ninfo->name = strdup($2);
+            ninfo->tipo_info = $1;
+            ninfo->tipo_token = T_ID;
+
+            $$ = crearNodo(ninfo);
+          }
            | type TOKEN_ID TOKEN_COMA parametro
+            {
+              info *ninfo = malloc(sizeof(info));
+              ninfo->name = strdup($2);
+              ninfo->tipo_info = $1;
+              ninfo->tipo_token = T_ID;
+
+              $$ = crearArbol(ninfo, $4, NULL);
+            }
          ;
 
 block: TOKEN_LLA_A var_decls statements TOKEN_LLA_C
+      {
+        info *ninfo = malloc(sizeof(info));
+        ninfo->name = strdup("BLOQUE CON DECLS DE VARS Y METS");
+        ninfo->tipo_token = T_BLOQUE;
+
+        $$ = crearArbol(ninfo, $2, $3);
+      }
      | TOKEN_LLA_A statements TOKEN_LLA_C
+      {
+        info *ninfo = malloc(sizeof(info));
+        ninfo->name = strdup("BLOQUE CON DECLS DE METS");
+        ninfo->tipo_token = T_BLOQUE;
+
+        $$ = crearArbol(ninfo, $2, NULL);
+      }
      ;
 
 type: TOKEN_INTEGER
+      {
+        info *ninfo = malloc(sizeof(info));
+        ninfo->name = strdup("INTEGER");
+        ninfo->tipo_info = TIPO_INTEGER;
+        ninfo->tipo_token = T_INTEGER;
+
+        $$ = crearNodo(ninfo);
+      }
       | TOKEN_BOOL
+        {
+          info *ninfo = malloc(sizeof(info));
+          ninfo->name = strdup("BOOL");
+          ninfo->tipo_info = TIPO_BOOL;
+          ninfo->tipo_token = T_BOOL;
+          
+          $$ = crearNodo(ninfo);
+        }
     ;
 
 statements: statements statement
@@ -105,36 +238,161 @@ exprs: exprs TOKEN_COMA expr
      ;
 
 expr: TOKEN_ID
+        {
+          info *ninfo = malloc(sizeof(info));
+          ninfo->name = strdup($1);
+          ninfo->tipo_token = T_ID;
+          $$ = crearNodo(ninfo);
+        }
       | method_call
+        {$$ = $1}
       | literal
+        {$$ = $1}
       | expr TOKEN_OP_MAS expr
+        {
+          info *op_info = malloc(sizeof(info));
+          op_info->op = strdup("+");
+          op_info->tipo_token = T_OP_MAS;
+          op_info->tipo_info = TIPO_INTEGER;
+          $$ = crearArbol(op_info, $1, $3);
+        }
       | expr TOKEN_OP_MENOS expr
+        {
+          info *op_info = malloc(sizeof(info));
+          op_info->op = strdup("-");
+          op_info->tipo_token = T_OP_MENOS;
+          op_info->tipo_info = TIPO_INTEGER;
+          $$ = crearArbol(op_info, $1, $3);
+        }
       | expr TOKEN_OP_MULT expr
+        {
+          info *op_info = malloc(sizeof(info));
+          op_info->op = strdup("*");
+          op_info->tipo_token = T_OP_MULT;
+          op_info->tipo_info = TIPO_INTEGER;
+          $$ = crearArbol(op_info, $1, $3);
+        }
       | expr TOKEN_OP_DIV expr
+        {
+          info *op_info = malloc(sizeof(info));
+          op_info->op = strdup("/");
+          op_info->tipo_token = T_OP_DIV;
+          op_info->tipo_info = TIPO_INTEGER;
+          $$ = crearArbol(op_info, $1, $3);
+        }
       | expr TOKEN_OP_RESTO expr
+        {
+          info *op_info = malloc(sizeof(info));
+          op_info->op = strdup("%");
+          op_info->tipo_token = T_OP_RESTO;
+          op_info->tipo_info = TIPO_INTEGER;
+          $$ = crearArbol(op_info, $1, $3);
+        }
       | expr TOKEN_OP_AND expr
+        {
+          info *op_info = malloc(sizeof(info));
+          op_info->op = strdup("&&");
+          op_info->tipo_token = T_OP_AND;
+          op_info->tipo_info = TIPO_BOOL;
+          $$ = crearArbol(op_info, $1, $3);
+        }
       | expr TOKEN_OP_OR expr
-      | expr TOKEN_OP_NOT expr
+        {
+          info *op_info = malloc(sizeof(info));
+          op_info->op = strdup("||");
+          op_info->tipo_token = T_OP_OR;
+          op_info->tipo_info = TIPO_BOOL;
+          $$ = crearArbol(op_info, $1, $3);
+        }
       | expr TOKEN_MENOR expr
+        {
+          info *op_info = malloc(sizeof(info));
+          op_info->op = strdup("<");
+          op_info->tipo_token = T_MENOR;
+          op_info->tipo_info = TIPO_BOOL;
+          $$ = crearArbol(op_info, $1, $3);
+        }
       | expr TOKEN_MAYOR expr
+        {
+          info *op_info = malloc(sizeof(info));
+          op_info->op = strdup(">");
+          op_info->tipo_token = T_MAYOR;
+          op_info->tipo_info = TIPO_BOOL;
+          $$ = crearArbol(op_info, $1, $3);
+        }
       | expr TOKEN_IGUALDAD expr
+        {
+          info *op_info = malloc(sizeof(info));
+          op_info->op = strdup("==");
+          op_info->tipo_token = T_IGUALDAD;
+          op_info->tipo_info = TIPO_BOOL;
+          $$ = crearArbol(op_info, $1, $3);
+        }
       | TOKEN_OP_MENOS expr %prec MENOS_UNARIO
+        {
+          info *op_info = malloc(sizeof(info));
+          op_info->op = strdup("-");
+          op_info->tipo_token = T_OP_MENOS;
+          op_info->tipo_info = TIPO_INTEGER;
+          $$ = crearArbol(op_info, NULL, $2);
+        }
       | TOKEN_OP_NOT expr
+        {
+          info *op_info = malloc(sizeof(info));
+          op_info->op = strdup("!");
+          op_info->tipo_token = T_OP_NOT;
+          op_info->tipo_info = TIPO_BOOL;
+          $$ = crearArbol(op_info, NULL, $2);
+        }
       | TOKEN_PAR_A expr TOKEN_PAR_C
+        {
+          $$ = $2;
+        }
     ;
 
 literal: integer_literal
+          {$$ = $1}
         | bool_literal
+          {$$ = $1}
        ;
 
-integer_literal: TOKEN_DIGIT list_digit
-               ;
-
-list_digit: list_digit TOKEN_DIGIT 
-            | /* lambda */
+integer_literal: TOKEN_DIGIT
+                {
+                  info *digito = malloc(sizeof(info));
+                  digito->nro = $1;
+                  digito->name = strdup("digito");
+                  digito->tipo_info = TIPO_INTEGER;
+                  digito->tipo_token = T_DIGIT
+                  $$ = crearNodo(digito)
+                }
+              | integer_literal TOKEN_DIGIT
+                {
+                  info *literal = malloc(sizeof(info));
+                  literal->name = strdup("literal");
+                  literal->tipo_token = T_INTEGER;
+                  literal->tipo_info = TIPO_INTEGER
+                  $$ = crearArbol(literal, $1, $2);
+                }
+              ;
 
 bool_literal: TOKEN_VTRUE
+                {
+                  info *booleano = malloc(sizeof(info));
+                  booleano->bool_string = strdup("true");
+                  booleano->b = true;
+                  booleano->tipo_info = TIPO_BOOL;
+                  booleano->tipo_token = T_VTRUE;
+                  $$ = crearNodo(booleano);
+                }
               | TOKEN_VFALSE
+                {
+                  info *booleano = malloc(sizeof(info));
+                  booleano->bool_string = strdup("false");
+                  booleano->b = false;
+                  booleano->tipo_info = TIPO_BOOL;
+                  booleano->tipo_token = T_VFALSE;
+                  $$ = crearNodo(booleano);
+                }
             ;
 
 %%

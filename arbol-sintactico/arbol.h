@@ -46,9 +46,10 @@ typedef enum {
 
 typedef struct {
     int nro;
+    bool b;
     char *name;
     char *op;
-    bool b;
+    char *bool_string;
     tipo_info tipo_info;
     tipo_token tipo_token; 
 } info;
