@@ -35,7 +35,13 @@ typedef enum {
     T_PAR_A,
     T_PAR_C,
     T_LLA_A,
-    T_LLA_C
+    T_LLA_C,
+    T_VAR_DECLS,
+    T_VAR_DECL,
+    T_METHOD_DECLS,
+    T_METHOD_DECL,
+    T_PARAMETROS,
+    T_BLOQUE
 } tipo_token;
 
 typedef enum {
