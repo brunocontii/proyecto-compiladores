@@ -8,8 +8,8 @@ typedef enum {
     T_EXTERN,
     T_RETURN,
     T_IF,
-    T_ELSE,
-    T_THEN,
+    T_IF_ELSE,
+    T_THEN_ELSE,
     T_WHILE,
     T_VTRUE,
     T_VFALSE,
@@ -64,14 +64,17 @@ typedef struct {
     tipo_token tipo_token; 
 } info;
 
+
 typedef struct nodo {
     info *valor;
     struct nodo *izq;
+    struct nodo *med;
     struct nodo *der;
 } nodo;
 
 nodo* crearNodo(info *valorNodo);
 nodo* crearArbol(info *valorNodo, nodo* hijoIzq, nodo* hijoDer);
+nodo* crearArbolTer(info *valorNodo, nodo* hijoIzq, nodo* hijoMed, nodo* hijoDer);
 void mostrarArbol(nodo *raiz, int nivel);
 void liberarArbol(nodo *raiz);
 

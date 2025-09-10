@@ -8,6 +8,8 @@
 extern int yylineno;
 void yyerror();
 
+nodo* raiz = NULL;
+
 %}
 
 %code requires {
@@ -56,6 +58,8 @@ prog: TOKEN_PROGRAM TOKEN_LLA_A TOKEN_LLA_C
         ninfo->tipo_token = T_PROGRAM;
 
         $$ = crearArbol(ninfo, $3, NULL);
+        raiz = $$;
+        mostrarArbol(raiz, 0);
       }
     | TOKEN_PROGRAM TOKEN_LLA_A method_decls TOKEN_LLA_C
       {
@@ -64,6 +68,9 @@ prog: TOKEN_PROGRAM TOKEN_LLA_A TOKEN_LLA_C
         ninfo->tipo_token = T_PROGRAM;
 
         $$ = crearArbol(ninfo, NULL, $3);
+
+        raiz = $$;
+        mostrarArbol(raiz, 0);
       }
     | TOKEN_PROGRAM TOKEN_LLA_A var_decls method_decls TOKEN_LLA_C
       {
@@ -72,6 +79,9 @@ prog: TOKEN_PROGRAM TOKEN_LLA_A TOKEN_LLA_C
         ninfo->tipo_token = T_PROGRAM;
 
         $$ = crearArbol(ninfo, $3, $4);
+
+        raiz = $$;
+        mostrarArbol(raiz, 0);
       }
     ;
 
@@ -109,9 +119,14 @@ var_decl: type TOKEN_ID TOKEN_ASIGNACION expr TOKEN_PYC
             ninfo->name = strdup("DECLARACION VARIABLE");
             ninfo->op = strdup("=");
             ninfo->tipo_token = T_VAR_DECL;
-            ninfo->tipo_info = $1;
 
-            $$ = crearArbol(ninfo, $2, $4);
+            info *ninfovar = malloc(sizeof(info));
+            ninfovar->name = strdup($2);
+            ninfovar->tipo_token = T_ID;
+            ninfovar->tipo_info = $1->valor->tipo_info; //pasando el tipo a el nodo a crear
+            nodo *id_nodo = crearNodo(ninfovar);
+
+            $$ = crearArbol(ninfo, id_nodo, $4);
           }
         ;
 
@@ -119,8 +134,8 @@ method_decl: type TOKEN_ID TOKEN_PAR_A parametros TOKEN_PAR_C block_or_extern
             {
               info *ninfo = malloc(sizeof(info));
               ninfo->name = strdup($2);
-              ninfo->tipo_token = T_METHOD_DECL;
-              ninfo->tipo_info = $1;
+              ninfo->tipo_token = T_ID;
+              ninfo->tipo_info = $1->valor->tipo_info;
 
               $$ = crearArbol(ninfo, $4, $6);
             }
@@ -128,7 +143,7 @@ method_decl: type TOKEN_ID TOKEN_PAR_A parametros TOKEN_PAR_C block_or_extern
             {
               info *ninfo = malloc(sizeof(info));
               ninfo->name = strdup($2);
-              ninfo->tipo_token = T_METHOD_DECL;
+              ninfo->tipo_token = T_ID;
               ninfo->tipo_info = TIPO_VOID;
 
               $$ = crearArbol(ninfo, $4, $6);
@@ -167,7 +182,7 @@ parametro: type TOKEN_ID
           {
             info *ninfo = malloc(sizeof(info));
             ninfo->name = strdup($2);
-            ninfo->tipo_info = $1;
+            ninfo->tipo_info = $1->valor->tipo_info;
             ninfo->tipo_token = T_ID;
 
             $$ = crearNodo(ninfo);
@@ -176,7 +191,7 @@ parametro: type TOKEN_ID
             {
               info *ninfo = malloc(sizeof(info));
               ninfo->name = strdup($2);
-              ninfo->tipo_info = $1;
+              ninfo->tipo_info = $1->valor->tipo_info;
               ninfo->tipo_token = T_ID;
 
               $$ = crearArbol(ninfo, $4, NULL);
@@ -239,9 +254,15 @@ statement: TOKEN_ID TOKEN_ASIGNACION expr TOKEN_PYC
             {
               info *ninfo = malloc(sizeof(info));
               ninfo->name = strdup("ASIGNACION");
+              ninfo->op = strdup("=");
               ninfo->tipo_token = T_ASIGNACION;
 
-              $$ = crearArbol(ninfo, $1, $3);
+              info *ninfovar = malloc(sizeof(info));
+              ninfovar->name = strdup($1);
+              ninfovar->tipo_token = T_ID;
+              nodo *id_nodo = crearNodo(ninfovar);
+
+              $$ = crearArbol(ninfo, id_nodo, $3);
             }
            | method_call TOKEN_PYC
             {
@@ -258,10 +279,10 @@ statement: TOKEN_ID TOKEN_ASIGNACION expr TOKEN_PYC
            | TOKEN_IF TOKEN_PAR_A expr TOKEN_PAR_C TOKEN_THEN block TOKEN_ELSE block
             {
               info *ninfo = malloc(sizeof(info));
-              ninfo->name = $3;
-              ninfo->tipo_token = T_EXPR;
+              ninfo->name = strdup("IF_ELSE");
+              ninfo->tipo_token = T_IF_ELSE;
 
-              $$ = crearArbol(ninfo, $6, $8);
+              $$ = crearArbolTer(ninfo, $3, $6, $8);
             }
            | TOKEN_WHILE expr block
             {
@@ -303,7 +324,12 @@ method_call: TOKEN_ID TOKEN_PAR_A exprs TOKEN_PAR_C
               ninfo->name = strdup("LLAMADA A METODO");
               ninfo->tipo_token = T_METHOD_CALL;
 
-              $$ = crearArbol(ninfo, $1, $3);
+              info *ninfovar = malloc(sizeof(info));
+              ninfovar->name = strdup($1);
+              ninfovar->tipo_token = T_ID;
+              nodo *id_nodo = crearNodo(ninfovar);
+
+              $$ = crearArbol(ninfo, id_nodo, $3);
             }
            ;
 
@@ -481,8 +507,15 @@ integer_literal: TOKEN_DIGIT
                   literal->name = strdup("literal");
                   literal->tipo_token = T_INTEGER;
                   literal->tipo_info = TIPO_INTEGER;
+                  
+                  info *digito = malloc(sizeof(info));
+                  digito->nro = $2;
+                  digito->name = strdup("digito");
+                  digito->tipo_info = TIPO_INTEGER;
+                  digito->tipo_token = T_DIGIT;
+                  nodo *dig = crearNodo(digito);
 
-                  $$ = crearArbol(literal, $1, $2);
+                  $$ = crearArbol(literal, $1, dig);
                 }
               ;
 

@@ -23,6 +23,17 @@ nodo* crearArbol(info *valorNodo, nodo *hijoIzq, nodo *hijoDer) {
     return n;
 }
 
+nodo* crearArbolTer(info *valorNodo, nodo *hijoIzq,nodo *hijoMed, nodo *hijoDer) {
+    nodo* n = (nodo*)malloc(sizeof(nodo));
+
+    n->valor = valorNodo;
+    n->izq = hijoIzq;
+    n->med = hijoMed;
+    n->der = hijoDer;
+
+    return n;
+}
+
 void mostrarArbol(nodo *raiz, int nivel) {
     if (!raiz) return;
 
@@ -35,8 +46,8 @@ void mostrarArbol(nodo *raiz, int nivel) {
         case T_EXTERN: printf("EXTERN\n"); break;
         case T_RETURN: printf("RETURN\n"); break;
         case T_IF: printf("IF\n"); break;
-        case T_ELSE: printf("ELSE\n"); break;
-        case T_THEN: printf("THEN\n"); break;
+        case T_IF_ELSE: printf("IF 2\n"); break;
+        case T_THEN_ELSE: printf("THEN ELSE\n"); break;
         case T_WHILE: printf("WHILE\n"); break;
         case T_VTRUE: printf("TRUE\n"); break;
         case T_VFALSE: printf("FALSE\n"); break;
@@ -64,6 +75,7 @@ void mostrarArbol(nodo *raiz, int nivel) {
         case T_LLA_A: printf("LLAVE_A\n"); break;
         case T_LLA_C: printf("LLAVE_C\n"); break;
         case T_VAR_DECL: printf("VAR_DECL\n"); break;
+        case T_VAR_DECLS: printf("VAR_DECLS\n"); break;
         case T_METHOD_DECLS: printf("METHOD_DECLS\n"); break;
         case T_METHOD_DECL: printf("METHOD_DECL\n"); break;
         case T_PARAMETROS: printf("PARAMETROS\n"); break;
@@ -76,6 +88,11 @@ void mostrarArbol(nodo *raiz, int nivel) {
     }
 
     mostrarArbol(raiz->izq, nivel + 1);
+
+    if (raiz->med) {
+        mostrarArbol(raiz->med, nivel + 1);
+    }
+
     mostrarArbol(raiz->der, nivel + 1);
 }
 
@@ -83,6 +100,11 @@ void liberarArbol(nodo *raiz) {
     if (!raiz) return;
 
     liberarArbol(raiz->izq);
+
+    if (raiz->med) {
+        liberarArbol(raiz->med);
+    }
+    
     liberarArbol(raiz->der);
 
     switch (raiz->valor->tipo_token) {
@@ -117,8 +139,8 @@ void liberarArbol(nodo *raiz) {
         case T_EXTERN:
         case T_RETURN:
         case T_IF:
-        case T_ELSE:
-        case T_THEN:
+        case T_IF_ELSE:
+        case T_THEN_ELSE:
         case T_WHILE:
             if (raiz->valor->op)
                 free(raiz->valor->op);
@@ -135,6 +157,7 @@ void liberarArbol(nodo *raiz) {
         case T_LLA_A:
         case T_LLA_C:
         case T_VAR_DECL:
+        case T_VAR_DECLS:
         case T_METHOD_DECLS:
         case T_METHOD_DECL:
         case T_PARAMETROS:
