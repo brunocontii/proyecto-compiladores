@@ -10,8 +10,7 @@ const char* getTokenString(tipo_token token) {
         case T_EXTERN: return "EXTERN";
         case T_RETURN: return "RETURN";
         case T_IF: return "IF";
-        case T_IF_ELSE: return "ELSE";
-        case T_THEN_ELSE: return "THEN";
+        case T_IF_ELSE: return "IF ELSE";
         case T_WHILE: return "WHILE";
         case T_VTRUE: return "TRUE";
         case T_VFALSE: return "FALSE";
@@ -20,7 +19,6 @@ const char* getTokenString(tipo_token token) {
         case T_OP_NOT: return "!";
         case T_INTEGER: return "INTEGER";
         case T_BOOL: return "BOOL";
-        case T_VOID: return "VOID";
         case T_ID: return "ID";
         case T_DIGIT: return "DIGIT";
         case T_OP_MENOS: return "-";
@@ -32,12 +30,6 @@ const char* getTokenString(tipo_token token) {
         case T_IGUALDAD: return "==";
         case T_MENOR: return "<";
         case T_MAYOR: return ">";
-        case T_PYC: return ";";
-        case T_COMA: return ",";
-        case T_PAR_A: return "(";
-        case T_PAR_C: return ")";
-        case T_LLA_A: return "{";
-        case T_LLA_C: return "}";
         case T_VAR_DECLS: return "VAR DECLS";
         case T_VAR_DECL: return "VAR DECL";
         case T_METHOD_DECLS: return "METHOD DECLS";
@@ -46,7 +38,6 @@ const char* getTokenString(tipo_token token) {
         case T_BLOQUE: return "BLOQUE";
         case T_METHOD_CALL: return "METHOD CALL";
         case T_EXPRS: return "EXPRS";
-        case T_EXPR: return "EXPR";
         case T_STATEMENTS: return "STATEMENTS";
         default: return "UNKNOWN";
     }
@@ -87,7 +78,7 @@ void getNodeValueString(nodo* node, char* buffer, size_t bufsize) {
     if (node->valor->tipo_token == T_DIGIT) {
         if (!first) strcat(temp, " | ");
         char num_str[32];
-        sprintf(num_str, "i_value: %d", node->valor->nro);
+        sprintf(num_str, "nro: %d", node->valor->nro);
         strcat(temp, num_str);
         first = false;
     }
@@ -97,11 +88,11 @@ void getNodeValueString(nodo* node, char* buffer, size_t bufsize) {
         char bool_str[64];
         
         if (node->valor->bool_string) {
-            sprintf(bool_str, "bool_string: %s | b_value: %s", 
+            sprintf(bool_str, "bool_string: %s | b: %s", 
                     node->valor->bool_string, 
                     node->valor->b ? "true" : "false");
         } else {
-            sprintf(bool_str, "b_value: %s", node->valor->b ? "true" : "false");
+            sprintf(bool_str, "b: %s", node->valor->b ? "true" : "false");
         }
 
         strcat(temp, bool_str);
@@ -139,7 +130,7 @@ void generateDotNodes(nodo* node, FILE* file, int* nodeCount) {
     if (node->med != NULL) {
         int medId = *nodeCount;
         generateDotNodes(node->med, file, nodeCount);
-        fprintf(file, "  node%d -> node%d [label=\"L\"];\n", currentId, medId);
+        fprintf(file, "  node%d -> node%d [label=\"M\"];\n", currentId, medId);
     }
     if (node->der != NULL) {
         int rightId = *nodeCount;

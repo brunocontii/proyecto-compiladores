@@ -47,6 +47,6 @@ run: $(TARGET)
 
 # Limpiar archivos generados
 clean:
-	rm -f $(TARGET) $(LEX_OUT) $(YACC_C) $(YACC_H)
+	rm -f $(TARGET) $(LEX_OUT) $(YACC_C) $(YACC_H) ctds_arbol.dot ctds_arbol.png
 
 .PHONY: all run clean

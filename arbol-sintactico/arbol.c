@@ -46,8 +46,7 @@ void mostrarArbol(nodo *raiz, int nivel) {
         case T_EXTERN: printf("EXTERN\n"); break;
         case T_RETURN: printf("RETURN\n"); break;
         case T_IF: printf("IF\n"); break;
-        case T_IF_ELSE: printf("IF 2\n"); break;
-        case T_THEN_ELSE: printf("THEN ELSE\n"); break;
+        case T_IF_ELSE: printf("IF ELSE\n"); break;
         case T_WHILE: printf("WHILE\n"); break;
         case T_VTRUE: printf("TRUE\n"); break;
         case T_VFALSE: printf("FALSE\n"); break;
@@ -56,7 +55,6 @@ void mostrarArbol(nodo *raiz, int nivel) {
         case T_OP_NOT: printf("NOT: %s\n", raiz->valor->op); break;
         case T_INTEGER: printf("INTEGER\n"); break;
         case T_BOOL: printf("BOOL\n"); break;
-        case T_VOID: printf("VOID\n"); break;
         case T_ID: printf("ID: %s\n", raiz->valor->name); break;
         case T_DIGIT: printf("DIGIT: %d\n", raiz->valor->nro); break;
         case T_OP_MENOS: printf("MENOS: %s\n", raiz->valor->op); break;
@@ -68,12 +66,6 @@ void mostrarArbol(nodo *raiz, int nivel) {
         case T_IGUALDAD: printf("IGUAL: %s\n", raiz->valor->op); break;
         case T_MENOR: printf("MENOR: %s\n", raiz->valor->op); break;
         case T_MAYOR: printf("MAYOR: %s\n", raiz->valor->op); break;
-        case T_PYC: printf("PUNTO_Y_COMA\n"); break;
-        case T_COMA: printf("COMA\n"); break;
-        case T_PAR_A: printf("PAR_A\n"); break;
-        case T_PAR_C: printf("PAR_C\n"); break;
-        case T_LLA_A: printf("LLAVE_A\n"); break;
-        case T_LLA_C: printf("LLAVE_C\n"); break;
         case T_VAR_DECL: printf("VAR_DECL\n"); break;
         case T_VAR_DECLS: printf("VAR_DECLS\n"); break;
         case T_METHOD_DECLS: printf("METHOD_DECLS\n"); break;
@@ -82,7 +74,6 @@ void mostrarArbol(nodo *raiz, int nivel) {
         case T_BLOQUE: printf("BLOQUE\n"); break;
         case T_METHOD_CALL: printf("METHOD_CALL\n"); break;
         case T_EXPRS: printf("EXPRS\n"); break;
-        case T_EXPR: printf("EXPR\n"); break;
         case T_STATEMENTS: printf("STATEMENTS\n"); break;
         default: printf("Nodo desconocido\n"); break;
     }
@@ -134,13 +125,11 @@ void liberarArbol(nodo *raiz) {
         // Tokens que usan el campo op (palabras reservadas)
         case T_INTEGER:
         case T_BOOL:
-        case T_VOID:
         case T_PROGRAM:
         case T_EXTERN:
         case T_RETURN:
         case T_IF:
         case T_IF_ELSE:
-        case T_THEN_ELSE:
         case T_WHILE:
             if (raiz->valor->op)
                 free(raiz->valor->op);
@@ -150,12 +139,6 @@ void liberarArbol(nodo *raiz) {
         case T_VTRUE:
         case T_VFALSE:
         case T_DIGIT:
-        case T_PYC:
-        case T_COMA:
-        case T_PAR_A:
-        case T_PAR_C:
-        case T_LLA_A:
-        case T_LLA_C:
         case T_VAR_DECL:
         case T_VAR_DECLS:
         case T_METHOD_DECLS:
@@ -164,7 +147,6 @@ void liberarArbol(nodo *raiz) {
         case T_BLOQUE:
         case T_METHOD_CALL:
         case T_EXPRS:
-        case T_EXPR:
         case T_STATEMENTS:
             // No hacer nada - son valores primitivos o nodos estructurales
             break;

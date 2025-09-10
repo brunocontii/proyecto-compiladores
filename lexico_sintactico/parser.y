@@ -60,7 +60,7 @@ prog: TOKEN_PROGRAM TOKEN_LLA_A TOKEN_LLA_C
         $$ = crearArbol(ninfo, $3, NULL);
         raiz = $$;
         mostrarArbol(raiz, 0);
-        generateASTDotFile(raiz, "prog_ast");
+        generateASTDotFile(raiz, "ctds_arbol");
       }
     | TOKEN_PROGRAM TOKEN_LLA_A method_decls TOKEN_LLA_C
       {
@@ -72,7 +72,7 @@ prog: TOKEN_PROGRAM TOKEN_LLA_A TOKEN_LLA_C
 
         raiz = $$;
         mostrarArbol(raiz, 0);
-        generateASTDotFile(raiz, "prog_ast");
+        generateASTDotFile(raiz, "ctds_arbol");
       }
     | TOKEN_PROGRAM TOKEN_LLA_A var_decls method_decls TOKEN_LLA_C
       {
@@ -84,7 +84,7 @@ prog: TOKEN_PROGRAM TOKEN_LLA_A TOKEN_LLA_C
 
         raiz = $$;
         mostrarArbol(raiz, 0);
-        generateASTDotFile(raiz, "prog_ast");
+        generateASTDotFile(raiz, "ctds_arbol");
       }
     ;
 
@@ -137,7 +137,7 @@ method_decl: type TOKEN_ID TOKEN_PAR_A parametros TOKEN_PAR_C block_or_extern
             {
               info *ninfo = malloc(sizeof(info));
               ninfo->name = strdup($2);
-              ninfo->tipo_token = T_ID;
+              ninfo->tipo_token = T_ID; // ver si usar T_METHOD_DECL o dejar como esta
               ninfo->tipo_info = $1->valor->tipo_info;
 
               $$ = crearArbol(ninfo, $4, $6);
@@ -146,7 +146,7 @@ method_decl: type TOKEN_ID TOKEN_PAR_A parametros TOKEN_PAR_C block_or_extern
             {
               info *ninfo = malloc(sizeof(info));
               ninfo->name = strdup($2);
-              ninfo->tipo_token = T_ID;
+              ninfo->tipo_token = T_ID; // ver si usar T_METHOD_DECL o dejar como esta
               ninfo->tipo_info = TIPO_VOID;
 
               $$ = crearArbol(ninfo, $4, $6);

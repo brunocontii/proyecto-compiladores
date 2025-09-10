@@ -9,7 +9,6 @@ typedef enum {
     T_RETURN,
     T_IF,
     T_IF_ELSE,
-    T_THEN_ELSE,
     T_WHILE,
     T_VTRUE,
     T_VFALSE,
@@ -18,7 +17,6 @@ typedef enum {
     T_OP_NOT,
     T_INTEGER,
     T_BOOL,
-    T_VOID,
     T_ID,
     T_DIGIT,
     T_OP_MENOS,
@@ -30,12 +28,6 @@ typedef enum {
     T_IGUALDAD,
     T_MENOR,
     T_MAYOR,
-    T_PYC,
-    T_COMA,
-    T_PAR_A,
-    T_PAR_C,
-    T_LLA_A,
-    T_LLA_C,
     T_VAR_DECLS,
     T_VAR_DECL,
     T_METHOD_DECLS,
@@ -44,7 +36,6 @@ typedef enum {
     T_BLOQUE,
     T_METHOD_CALL,
     T_EXPRS,
-    T_EXPR,
     T_STATEMENTS
 } tipo_token;
 
