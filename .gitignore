@@ -4,4 +4,6 @@ lexico_sintactico/lex.yy.c
 lexico_sintactico/*.output
 lexico_sintactico/prog
 lexico_sintactico/c-tds
+prog_ast.dot
+prog_ast.png
 .vscode/
