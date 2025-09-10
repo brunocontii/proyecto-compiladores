@@ -17,7 +17,7 @@ YACC_C = $(LEX_DIR)/parser.tab.c
 YACC_H = $(LEX_DIR)/parser.tab.h
 
 # Archivos adicionales
-TREE_SRC = $(TREE_DIR)/arbol.c
+TREE_SRC = $(TREE_DIR)/arbol.c  $(TREE_DIR)/image_ast.c
 
 # Variable para testeo
 TEST ?= tests/test1.ctds

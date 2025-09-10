@@ -60,6 +60,7 @@ prog: TOKEN_PROGRAM TOKEN_LLA_A TOKEN_LLA_C
         $$ = crearArbol(ninfo, $3, NULL);
         raiz = $$;
         mostrarArbol(raiz, 0);
+        generateASTDotFile(raiz, "prog_ast");
       }
     | TOKEN_PROGRAM TOKEN_LLA_A method_decls TOKEN_LLA_C
       {
@@ -71,6 +72,7 @@ prog: TOKEN_PROGRAM TOKEN_LLA_A TOKEN_LLA_C
 
         raiz = $$;
         mostrarArbol(raiz, 0);
+        generateASTDotFile(raiz, "prog_ast");
       }
     | TOKEN_PROGRAM TOKEN_LLA_A var_decls method_decls TOKEN_LLA_C
       {
@@ -82,6 +84,7 @@ prog: TOKEN_PROGRAM TOKEN_LLA_A TOKEN_LLA_C
 
         raiz = $$;
         mostrarArbol(raiz, 0);
+        generateASTDotFile(raiz, "prog_ast");
       }
     ;
 
