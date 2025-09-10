@@ -41,7 +41,11 @@ typedef enum {
     T_METHOD_DECLS,
     T_METHOD_DECL,
     T_PARAMETROS,
-    T_BLOQUE
+    T_BLOQUE,
+    T_METHOD_CALL,
+    T_EXPRS,
+    T_EXPR,
+    T_STATEMENTS
 } tipo_token;
 
 typedef enum {

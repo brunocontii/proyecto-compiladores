@@ -63,6 +63,15 @@ void mostrarArbol(nodo *raiz, int nivel) {
         case T_PAR_C: printf("PAR_C\n"); break;
         case T_LLA_A: printf("LLAVE_A\n"); break;
         case T_LLA_C: printf("LLAVE_C\n"); break;
+        case T_VAR_DECL: printf("VAR_DECL\n"); break;
+        case T_METHOD_DECLS: printf("METHOD_DECLS\n"); break;
+        case T_METHOD_DECL: printf("METHOD_DECL\n"); break;
+        case T_PARAMETROS: printf("PARAMETROS\n"); break;
+        case T_BLOQUE: printf("BLOQUE\n"); break;
+        case T_METHOD_CALL: printf("METHOD_CALL\n"); break;
+        case T_EXPRS: printf("EXPRS\n"); break;
+        case T_EXPR: printf("EXPR\n"); break;
+        case T_STATEMENTS: printf("STATEMENTS\n"); break;
         default: printf("Nodo desconocido\n"); break;
     }
 
@@ -125,7 +134,16 @@ void liberarArbol(nodo *raiz) {
         case T_PAR_C:
         case T_LLA_A:
         case T_LLA_C:
-            // No hacer nada - son valores primitivos
+        case T_VAR_DECL:
+        case T_METHOD_DECLS:
+        case T_METHOD_DECL:
+        case T_PARAMETROS:
+        case T_BLOQUE:
+        case T_METHOD_CALL:
+        case T_EXPRS:
+        case T_EXPR:
+        case T_STATEMENTS:
+            // No hacer nada - son valores primitivos o nodos estructurales
             break;
     }
 
