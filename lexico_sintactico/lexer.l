@@ -6,6 +6,8 @@
 
 #include "parser.tab.h"
 
+void init();
+
 %}
 
 %option noyywrap
@@ -109,6 +111,7 @@ int main(int argc,char *argv[]){
 	else
 		yyin = stdin;
 
+	init();
 	yyparse();
 
 }

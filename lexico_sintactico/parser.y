@@ -4,11 +4,22 @@
 #include <stdio.h>
 #include <string.h>
 #include "../arbol-sintactico/arbol.h"
+#include "../tabla-simbolos/tabla_simbolos.h"
 
 extern int yylineno;
 void yyerror();
 
 nodo* raiz = NULL;
+tabla_simbolos *ts = NULL;
+
+void init() {
+    ts = malloc(sizeof(tabla_simbolos));
+    if (!ts) {
+        fprintf(stderr, "Error: no se pudo asignar memoria para la tabla\n");
+        exit(1);
+    }
+    inicializar(ts);
+}
 
 %}
 
@@ -129,6 +140,12 @@ var_decl: type TOKEN_ID TOKEN_ASIGNACION expr TOKEN_PYC
             ninfovar->tipo_info = $1->valor->tipo_info; //pasando el tipo a el nodo a crear
             nodo *id_nodo = crearNodo(ninfovar);
 
+            if (!insertar(ts, ninfovar)) {
+              // redeclaraciones
+              yyerror("Error sintactico: variable ya declarada");
+              exit(1);
+            }
+
             $$ = crearArbol(ninfo, id_nodo, $4);
           }
         ;
@@ -140,6 +157,12 @@ method_decl: type TOKEN_ID TOKEN_PAR_A parametros TOKEN_PAR_C block_or_extern
               ninfo->tipo_token = T_ID; // ver si usar T_METHOD_DECL o dejar como esta
               ninfo->tipo_info = $1->valor->tipo_info;
 
+              /*if (!insertar(ts, ninfo)) {
+                // redeclaraciones
+                yyerror("Error sintactico: metodo ya declarado");
+                exit(1);
+              }*/
+
               $$ = crearArbol(ninfo, $4, $6);
             }
            | TOKEN_VOID TOKEN_ID TOKEN_PAR_A parametros TOKEN_PAR_C block_or_extern
@@ -149,6 +172,12 @@ method_decl: type TOKEN_ID TOKEN_PAR_A parametros TOKEN_PAR_C block_or_extern
               ninfo->tipo_token = T_ID; // ver si usar T_METHOD_DECL o dejar como esta
               ninfo->tipo_info = TIPO_VOID;
 
+              /*if (!insertar(ts, ninfo)) {
+                // redeclaraciones
+                yyerror("Error sintactico: metodo ya declarado");
+                exit(1);
+              }*/
+              
               $$ = crearArbol(ninfo, $4, $6);
             }
            ;
