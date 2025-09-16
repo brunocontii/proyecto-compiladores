@@ -6,7 +6,7 @@
 
 // inicializando la tabla de simbolos con scope global
 void inicializar(tabla_simbolos *ts) {
-    if (!ts || !ts->scope_actual) return;
+    if (!ts) return;
 
     // creo el scope global, nivel 0
     scope *scope_global = (scope*)malloc(sizeof(scope));

@@ -70,6 +70,7 @@ prog: TOKEN_PROGRAM TOKEN_LLA_A TOKEN_LLA_C
 
         $$ = crearArbol(ninfo, $3, NULL);
         raiz = $$;
+
         mostrarArbol(raiz, 0);
         generateASTDotFile(raiz, "ctds_arbol");
       }
@@ -80,8 +81,8 @@ prog: TOKEN_PROGRAM TOKEN_LLA_A TOKEN_LLA_C
         ninfo->tipo_token = T_PROGRAM;
 
         $$ = crearArbol(ninfo, NULL, $3);
-
         raiz = $$;
+
         mostrarArbol(raiz, 0);
         generateASTDotFile(raiz, "ctds_arbol");
       }
@@ -92,8 +93,8 @@ prog: TOKEN_PROGRAM TOKEN_LLA_A TOKEN_LLA_C
         ninfo->tipo_token = T_PROGRAM;
 
         $$ = crearArbol(ninfo, $3, $4);
-
         raiz = $$;
+
         mostrarArbol(raiz, 0);
         generateASTDotFile(raiz, "ctds_arbol");
       }
@@ -150,42 +151,70 @@ var_decl: type TOKEN_ID TOKEN_ASIGNACION expr TOKEN_PYC
           }
         ;
 
-method_decl: type TOKEN_ID TOKEN_PAR_A parametros TOKEN_PAR_C block_or_extern
+method_decl: type TOKEN_ID TOKEN_PAR_A 
             {
+              // insertar metodo en scope global
               info *ninfo = malloc(sizeof(info));
               ninfo->name = strdup($2);
-              ninfo->tipo_token = T_ID; // ver si usar T_METHOD_DECL o dejar como esta
+              ninfo->tipo_token = T_ID;
               ninfo->tipo_info = $1->valor->tipo_info;
 
-              /*if (!insertar(ts, ninfo)) {
-                // redeclaraciones
+              if (!insertar(ts, ninfo)) {
                 yyerror("Error sintactico: metodo ya declarado");
                 exit(1);
-              }*/
+              }
 
-              $$ = crearArbol(ninfo, $4, $6);
+              // abrir scope antes de procesar parametros
+              abrir_scope(ts);
             }
-           | TOKEN_VOID TOKEN_ID TOKEN_PAR_A parametros TOKEN_PAR_C block_or_extern
+            parametros TOKEN_PAR_C block_or_extern
             {
+              // crear el ast del metodo
+              info *method_info = malloc(sizeof(info));
+              method_info->name = strdup($2);
+              method_info->tipo_token = T_METHOD_DECL;
+              method_info->tipo_info = $1->valor->tipo_info;
+
+              $$ = crearArbol(method_info, $5, $7);
+              
+              // cerrar scope del metodo
+              cerrar_scope(ts);
+            }
+           | TOKEN_VOID TOKEN_ID TOKEN_PAR_A 
+            {
+              // insertar metodo void en scope global
               info *ninfo = malloc(sizeof(info));
               ninfo->name = strdup($2);
-              ninfo->tipo_token = T_ID; // ver si usar T_METHOD_DECL o dejar como esta
+              ninfo->tipo_token = T_ID;
               ninfo->tipo_info = TIPO_VOID;
 
-              /*if (!insertar(ts, ninfo)) {
-                // redeclaraciones
+              if (!insertar(ts, ninfo)) {
                 yyerror("Error sintactico: metodo ya declarado");
                 exit(1);
-              }*/
+              }
               
-              $$ = crearArbol(ninfo, $4, $6);
+              // abrir scope antes de procesar parametros
+              abrir_scope(ts);
+            }
+            parametros TOKEN_PAR_C block_or_extern
+            {
+              // crear el asd del metodo
+              info *method_info = malloc(sizeof(info));
+              method_info->name = strdup($2);
+              method_info->tipo_token = T_METHOD_DECL;
+              method_info->tipo_info = TIPO_VOID;
+
+              $$ = crearArbol(method_info, $5, $7);
+              
+              // cerrar scope del metodo
+              cerrar_scope(ts);
             }
            ;
 
 block_or_extern: block
-                {
-                  $$ = $1;
-                }
+                  {
+                    $$ = $1;
+                  }
                 | TOKEN_EXTERN TOKEN_PYC
                   {
                     info *ninfo = malloc(sizeof(info));
@@ -196,18 +225,22 @@ block_or_extern: block
                   }
                ;
 
-parametros: parametros parametro
+parametros: parametros TOKEN_COMA parametro
             {
               info *ninfo = malloc(sizeof(info));
               ninfo->name = strdup("LISTA PARAMETROS");
               ninfo->tipo_token = T_PARAMETROS;
 
-              $$ = crearArbol(ninfo, $1, $2);
+              $$ = crearArbol(ninfo, $1, $3);
             }
-            |
-              {
-                $$ = NULL;
-              }
+          | parametro
+            {
+              $$ = $1;
+            }
+          |
+            {
+              $$ = NULL;
+            }
           ;
 
 parametro: type TOKEN_ID
@@ -217,34 +250,43 @@ parametro: type TOKEN_ID
             ninfo->tipo_info = $1->valor->tipo_info;
             ninfo->tipo_token = T_ID;
 
+            // insertar parametro en el scope actual
+            if (!insertar(ts, ninfo)) {
+              yyerror("Error sintactico: parametro ya declarado");
+              exit(1);
+            }
+
             $$ = crearNodo(ninfo);
           }
-           | type TOKEN_ID TOKEN_COMA parametro
-            {
-              info *ninfo = malloc(sizeof(info));
-              ninfo->name = strdup($2);
-              ninfo->tipo_info = $1->valor->tipo_info;
-              ninfo->tipo_token = T_ID;
-
-              $$ = crearArbol(ninfo, $4, NULL);
-            }
          ;
 
-block: TOKEN_LLA_A var_decls statements TOKEN_LLA_C
+block: TOKEN_LLA_A
+      {
+        abrir_scope(ts);
+      }
+      var_decls statements TOKEN_LLA_C
       {
         info *ninfo = malloc(sizeof(info));
         ninfo->name = strdup("BLOQUE CON DECLS DE VARS Y METS");
         ninfo->tipo_token = T_BLOQUE;
 
-        $$ = crearArbol(ninfo, $2, $3);
+        $$ = crearArbol(ninfo, $3, $4);
+
+        cerrar_scope(ts);
       }
-     | TOKEN_LLA_A statements TOKEN_LLA_C
+     | TOKEN_LLA_A
+      {
+        abrir_scope(ts);
+      }
+      statements TOKEN_LLA_C
       {
         info *ninfo = malloc(sizeof(info));
         ninfo->name = strdup("BLOQUE CON DECLS DE METS");
         ninfo->tipo_token = T_BLOQUE;
 
-        $$ = crearArbol(ninfo, $2, NULL);
+        $$ = crearArbol(ninfo, $3, NULL);
+
+        cerrar_scope(ts);
       }
      ;
 
