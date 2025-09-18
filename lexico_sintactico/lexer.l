@@ -6,8 +6,6 @@
 
 #include "parser.tab.h"
 
-void init();
-
 %}
 
 %option noyywrap
@@ -103,15 +101,3 @@ alpha_num {alpha}|{digit}|"_"
 		} /* Ignora todo el resto */
 
 %%
-
-int main(int argc,char *argv[]){
-	++argv,--argc;
-	if (argc > 0)
-		yyin = fopen(argv[0],"r");
-	else
-		yyin = stdin;
-
-	init();
-	yyparse();
-
-}

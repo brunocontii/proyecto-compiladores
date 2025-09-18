@@ -18,15 +18,7 @@ void yyerror();
 nodo* raiz = NULL;
 tabla_simbolos *ts = NULL;
 int errors = 0;
-
-void init() {
-    ts = malloc(sizeof(tabla_simbolos));
-    if (!ts) {
-        fprintf(stderr, "Error: no se pudo asignar memoria para la tabla\n");
-        exit(1);
-    }
-    inicializar(ts);
-}
+bool es_metodo = true;
 
 void reportar_error(const char* formato, ...) {
   errors++;
@@ -103,9 +95,6 @@ prog: TOKEN_PROGRAM TOKEN_LLA_A TOKEN_LLA_C
 
         $$ = crearArbol(ninfo, $3, NULL);
         raiz = $$;
-
-        mostrarArbol(raiz, 0);
-        generateASTDotFile(raiz, "ctds_arbol");
       }
     | TOKEN_PROGRAM TOKEN_LLA_A method_decls TOKEN_LLA_C
       {
@@ -116,9 +105,6 @@ prog: TOKEN_PROGRAM TOKEN_LLA_A TOKEN_LLA_C
 
         $$ = crearArbol(ninfo, NULL, $3);
         raiz = $$;
-
-        mostrarArbol(raiz, 0);
-        generateASTDotFile(raiz, "ctds_arbol");
       }
     | TOKEN_PROGRAM TOKEN_LLA_A var_decls method_decls TOKEN_LLA_C
       {
@@ -129,9 +115,6 @@ prog: TOKEN_PROGRAM TOKEN_LLA_A TOKEN_LLA_C
 
         $$ = crearArbol(ninfo, $3, $4);
         raiz = $$;
-
-        mostrarArbol(raiz, 0);
-        generateASTDotFile(raiz, "ctds_arbol");
       }
     ;
 
@@ -299,7 +282,11 @@ parametro: type TOKEN_ID
 
 block: TOKEN_LLA_A
       {
-        abrir_scope(ts);
+        if(!es_metodo){
+          abrir_scope(ts);
+        } else {
+          es_metodo = false;
+        }
       }
       var_decls statements TOKEN_LLA_C
       {
@@ -312,11 +299,19 @@ block: TOKEN_LLA_A
 
         $$ = crearArbol(ninfo, $3, $4);
 
-        cerrar_scope(ts);
+        if(!es_metodo) {
+          cerrar_scope(ts);
+        } else {
+          es_metodo = false;
+        }
       }
      | TOKEN_LLA_A
       {
-        abrir_scope(ts);
+        if(!es_metodo){
+          abrir_scope(ts);
+        } else {
+          es_metodo = false;
+        }
       }
       statements TOKEN_LLA_C
       {
@@ -329,7 +324,11 @@ block: TOKEN_LLA_A
 
         $$ = crearArbol(ninfo, $3, NULL);
 
-        cerrar_scope(ts);
+        if(!es_metodo) {
+          cerrar_scope(ts);
+        } else {
+          es_metodo = false;
+        }
       }
      ;
 
@@ -662,5 +661,5 @@ bool_literal: TOKEN_VTRUE
 
 void yyerror() {
   errors++;
-  printf("-> ERROR Sintactico en la linea: %d \n", yylineno);
+  printf(COLOR_RED "-> ERROR Sintactico en la linea: %d \n" COLOR_RESET, yylineno);
 }

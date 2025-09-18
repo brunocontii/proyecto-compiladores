@@ -2,8 +2,7 @@ lexico_sintactico/*.tab.c
 lexico_sintactico/*.tab.h
 lexico_sintactico/lex.yy.c
 lexico_sintactico/*.output
-lexico_sintactico/prog
-lexico_sintactico/c-tds
-ctds_arbol.dot
-ctds_arbol.png
+c-tds
+*.dot
+*.png
 .vscode/

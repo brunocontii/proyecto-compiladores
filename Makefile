@@ -1,7 +1,7 @@
 # Compilador y flags
 CC = gcc
 CFLAGS = -Wall -Wextra -g
-TARGET = $(LEX_DIR)/c-tds
+TARGET = c-tds
 
 # Directorios
 LEX_DIR = lexico_sintactico
@@ -21,6 +21,9 @@ YACC_H = $(LEX_DIR)/parser.tab.h
 TREE_SRC = $(TREE_DIR)/arbol.c  $(TREE_DIR)/image_ast.c
 SIMBOLOS_SRC = $(SIMBOLOS_DIR)/tabla_simbolos.c
 
+# Main
+MAIN_SRC = main.c
+
 # Variable para testeo
 TEST ?= tests/test1.ctds
 
@@ -28,7 +31,7 @@ TEST ?= tests/test1.ctds
 all: $(TARGET)
 
 # Compilacion
-$(TARGET): $(YACC_C) $(LEX_OUT) $(TREE_SRC) $(SIMBOLOS_SRC)
+$(TARGET): $(MAIN_SRC) $(YACC_C) $(LEX_OUT) $(TREE_SRC) $(SIMBOLOS_SRC)
 	$(CC) $(CFLAGS) -o $@ $^ -lfl
 
 $(YACC_C) $(YACC_H): $(YACC_SRC)
@@ -79,6 +82,6 @@ test-all: $(TARGET)
 
 # Limpiar archivos generados
 clean:
-	rm -f $(TARGET) $(LEX_OUT) $(YACC_C) $(YACC_H) ctds_arbol.dot ctds_arbol.png
+	rm -f $(TARGET) $(LEX_OUT) $(YACC_C) $(YACC_H) *.dot *.png
 
 .PHONY: all run clean test-all
