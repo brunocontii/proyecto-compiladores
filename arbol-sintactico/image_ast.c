@@ -171,12 +171,12 @@ void generateASTDotFile(nodo* root, const char* base_filename) {
     printf("Archivo DOT del AST generado: %s\n", dot_filename);
 
     char command[1024];
-    snprintf(command, sizeof(command), "dot -Tpng %s -o %s 2>/dev/null && open %s 2>/dev/null", 
-                dot_filename, png_filename, png_filename);
+    snprintf(command, sizeof(command), "dot -Tpng %s -o %s 2>/dev/null", 
+                dot_filename, png_filename);
     
     int result = system(command);
     if (result == 0) {
-        printf("Imagen AST generada y abierta: %s\n", png_filename);
+        printf("Imagen AST generada: %s\n", png_filename);
     } else {
         printf("Error al generar imagen. Instala: sudo apt install graphviz\n");
         printf("Ejecuta manualmente: dot -Tpng %s -o %s\n", dot_filename, png_filename);

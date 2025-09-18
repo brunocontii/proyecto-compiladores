@@ -3,14 +3,21 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdarg.h>
 #include "../arbol-sintactico/arbol.h"
 #include "../tabla-simbolos/tabla_simbolos.h"
+
+#define COLOR_RED     "\033[31m"
+#define COLOR_GREEN   "\033[32m"
+#define COLOR_YELLOW  "\033[33m"
+#define COLOR_RESET   "\033[0m"
 
 extern int yylineno;
 void yyerror();
 
 nodo* raiz = NULL;
 tabla_simbolos *ts = NULL;
+int errors = 0;
 
 void init() {
     ts = malloc(sizeof(tabla_simbolos));
@@ -19,6 +26,30 @@ void init() {
         exit(1);
     }
     inicializar(ts);
+}
+
+void reportar_error(const char* formato, ...) {
+  errors++;
+  printf(COLOR_RED "ERROR: %d (linea %d): ", errors, yylineno);
+
+  va_list args;
+  va_start(args, formato);
+  vprintf(formato, args);
+  va_end(args);
+  printf(COLOR_RESET);
+}
+
+void chequear_errores() {
+  if (errors >= 1) {
+    if (errors == 1) {
+      printf(COLOR_RED "Compilacion FALLO con %d error\n" COLOR_RESET, errors);
+    } else {
+      printf(COLOR_RED "Compilacion FALLO con %d errores\n" COLOR_RESET, errors);
+    }
+    exit(1);
+  } else {
+    printf(COLOR_GREEN "Compilacion EXITOSA con %d errores\n" COLOR_RESET, errors);
+  }
 }
 
 %}
@@ -60,10 +91,12 @@ void init() {
 
 prog: TOKEN_PROGRAM TOKEN_LLA_A TOKEN_LLA_C
       {
+        chequear_errores();
         $$ = NULL;
       }
     | TOKEN_PROGRAM TOKEN_LLA_A var_decls TOKEN_LLA_C
       {
+        chequear_errores();
         info *ninfo = malloc(sizeof(info));
         ninfo->name = strdup("PROGRAM");
         ninfo->tipo_token = T_PROGRAM;
@@ -76,6 +109,7 @@ prog: TOKEN_PROGRAM TOKEN_LLA_A TOKEN_LLA_C
       }
     | TOKEN_PROGRAM TOKEN_LLA_A method_decls TOKEN_LLA_C
       {
+        chequear_errores();
         info *ninfo = malloc(sizeof(info));
         ninfo->name = strdup("PROGRAM");
         ninfo->tipo_token = T_PROGRAM;
@@ -88,6 +122,7 @@ prog: TOKEN_PROGRAM TOKEN_LLA_A TOKEN_LLA_C
       }
     | TOKEN_PROGRAM TOKEN_LLA_A var_decls method_decls TOKEN_LLA_C
       {
+        chequear_errores();
         info *ninfo = malloc(sizeof(info));
         ninfo->name = strdup("PROGRAM");
         ninfo->tipo_token = T_PROGRAM;
@@ -143,8 +178,7 @@ var_decl: type TOKEN_ID TOKEN_ASIGNACION expr TOKEN_PYC
 
             if (!insertar(ts, ninfovar)) {
               // redeclaraciones
-              yyerror("Error sintactico: variable ya declarada");
-              exit(1);
+              reportar_error("Variable '%s' ya declarada\n", $2);
             }
 
             $$ = crearArbol(ninfo, id_nodo, $4);
@@ -160,8 +194,7 @@ method_decl: type TOKEN_ID TOKEN_PAR_A
               ninfo->tipo_info = $1->valor->tipo_info;
 
               if (!insertar(ts, ninfo)) {
-                yyerror("Error sintactico: metodo ya declarado");
-                exit(1);
+                reportar_error("Metodo '%s' ya declarado\n", $2);
               }
 
               // abrir scope antes de procesar parametros
@@ -169,6 +202,9 @@ method_decl: type TOKEN_ID TOKEN_PAR_A
             }
             parametros TOKEN_PAR_C block_or_extern
             {
+              printf("\n--- SCOPE DEL MÉTODO '%s' ANTES DE CERRAR ---", $2);
+              imprimir_scope_actual(ts);
+
               // crear el ast del metodo
               info *method_info = malloc(sizeof(info));
               method_info->name = strdup($2);
@@ -189,8 +225,7 @@ method_decl: type TOKEN_ID TOKEN_PAR_A
               ninfo->tipo_info = TIPO_VOID;
 
               if (!insertar(ts, ninfo)) {
-                yyerror("Error sintactico: metodo ya declarado");
-                exit(1);
+                reportar_error("Metodo '%s' ya declarado\n", $2);
               }
               
               // abrir scope antes de procesar parametros
@@ -198,6 +233,9 @@ method_decl: type TOKEN_ID TOKEN_PAR_A
             }
             parametros TOKEN_PAR_C block_or_extern
             {
+              printf("\n--- SCOPE DEL MÉTODO '%s' ANTES DE CERRAR ---", $2);
+              imprimir_scope_actual(ts);
+
               // crear el asd del metodo
               info *method_info = malloc(sizeof(info));
               method_info->name = strdup($2);
@@ -252,8 +290,7 @@ parametro: type TOKEN_ID
 
             // insertar parametro en el scope actual
             if (!insertar(ts, ninfo)) {
-              yyerror("Error sintactico: parametro ya declarado");
-              exit(1);
+              reportar_error("Parametro '%s' ya declarado\n", $2);
             }
 
             $$ = crearNodo(ninfo);
@@ -266,6 +303,9 @@ block: TOKEN_LLA_A
       }
       var_decls statements TOKEN_LLA_C
       {
+        printf("\n--- SCOPE DE BLOQUE ANTES DE CERRAR ---");
+        imprimir_scope_actual(ts);
+
         info *ninfo = malloc(sizeof(info));
         ninfo->name = strdup("BLOQUE CON DECLS DE VARS Y METS");
         ninfo->tipo_token = T_BLOQUE;
@@ -280,6 +320,9 @@ block: TOKEN_LLA_A
       }
       statements TOKEN_LLA_C
       {
+        printf("\n--- SCOPE DE BLOQUE ANTES DE CERRAR ---");
+        imprimir_scope_actual(ts);
+        
         info *ninfo = malloc(sizeof(info));
         ninfo->name = strdup("BLOQUE CON DECLS DE METS");
         ninfo->tipo_token = T_BLOQUE;
@@ -618,5 +661,6 @@ bool_literal: TOKEN_VTRUE
 %%
 
 void yyerror() {
-    printf("-> ERROR Sintactico en la linea: %d \n", yylineno);
+  errors++;
+  printf("-> ERROR Sintactico en la linea: %d \n", yylineno);
 }

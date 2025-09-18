@@ -22,8 +22,8 @@ typedef struct tabla_simbolos {
 void inicializar(tabla_simbolos *ts);
 int insertar(tabla_simbolos *ts, info *nuevo);
 info* buscar(tabla_simbolos *ts, char *nombre);
-
 void abrir_scope(tabla_simbolos *ts);
 void cerrar_scope(tabla_simbolos *ts);
+void imprimir_scope_actual(tabla_simbolos *ts);
 
 #endif
