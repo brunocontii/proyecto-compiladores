@@ -33,6 +33,7 @@ typedef enum {
     T_METHOD_DECLS,
     T_METHOD_DECL,
     T_PARAMETROS,
+    T_PARAMETRO,
     T_BLOQUE,
     T_METHOD_CALL,
     T_EXPRS,

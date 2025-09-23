@@ -173,7 +173,7 @@ method_decl: type TOKEN_ID TOKEN_PAR_A
               // insertar metodo en scope global
               info *ninfo = malloc(sizeof(info));
               ninfo->name = strdup($2);
-              ninfo->tipo_token = T_ID;
+              ninfo->tipo_token = T_METHOD_DECL;
               ninfo->tipo_info = $1->valor->tipo_info;
 
               if (!insertar(ts, ninfo)) {
@@ -204,7 +204,7 @@ method_decl: type TOKEN_ID TOKEN_PAR_A
               // insertar metodo void en scope global
               info *ninfo = malloc(sizeof(info));
               ninfo->name = strdup($2);
-              ninfo->tipo_token = T_ID;
+              ninfo->tipo_token = T_METHOD_DECL;
               ninfo->tipo_info = TIPO_VOID;
 
               if (!insertar(ts, ninfo)) {
@@ -269,7 +269,7 @@ parametro: type TOKEN_ID
             info *ninfo = malloc(sizeof(info));
             ninfo->name = strdup($2);
             ninfo->tipo_info = $1->valor->tipo_info;
-            ninfo->tipo_token = T_ID;
+            ninfo->tipo_token = T_PARAMETRO;
 
             // insertar parametro en el scope actual
             if (!insertar(ts, ninfo)) {
