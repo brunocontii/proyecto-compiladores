@@ -155,28 +155,89 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
     }
 }   
 
+// retorna el tipo de la expresion o TIPO_VOID si hay un error
 tipo_info calcular_tipo_expresion(nodo *expr) {
-    if (!expr) return;
+    if (!expr) return TIPO_VOID;
     
     switch(expr->valor->tipo_token) {
         case T_DIGIT:
             return TIPO_INTEGER;
-            
         case T_VTRUE:
         case T_VFALSE:
             return TIPO_BOOL;
-            
-        case T_OP_MAS:  // Aquí NECESITAS recursión
+        case T_OP_MAS:
+        case T_OP_MULT:
+        case T_OP_DIV:
+        case T_OP_RESTO: {
             tipo_info tipo_izq = calcular_tipo_expresion(expr->izq);
             tipo_info tipo_der = calcular_tipo_expresion(expr->der);
+
             if (tipo_izq == TIPO_INTEGER && tipo_der == TIPO_INTEGER) {
                 return TIPO_INTEGER;
             }
-            return;
+            return TIPO_VOID;
+        }
+        case T_OP_MENOS: {
+            if (expr->izq == NULL) {
+                // caso de menos unario
+                tipo_info tipo_der = calcular_tipo_expresion(expr->der);
+                return (tipo_der == TIPO_INTEGER) ? TIPO_INTEGER : TIPO_VOID;
+            } else {
+                // caso de menos binario
+                tipo_info tipo_izq = calcular_tipo_expresion(expr->izq);
+                tipo_info tipo_der = calcular_tipo_expresion(expr->der);
+
+                if (tipo_izq == TIPO_INTEGER && tipo_der == TIPO_INTEGER) {
+                    return TIPO_INTEGER;
+                }
+                return TIPO_VOID;
+            }
+        }
+        case T_OP_AND:
+        case T_OP_OR: {
+            tipo_info tipo_izq = calcular_tipo_expresion(expr->izq);
+            tipo_info tipo_der = calcular_tipo_expresion(expr->der);
+
+            if (tipo_izq == TIPO_BOOL && tipo_der == TIPO_BOOL) {
+                return TIPO_BOOL;
+            }
+            return TIPO_VOID;
+        }
+        case T_OP_NOT: {
+            // caso de operador not (siempre es unario)
+            tipo_info tipo_der = calcular_tipo_expresion(expr->der);
+            return (tipo_der == TIPO_BOOL) ? TIPO_BOOL : TIPO_VOID;
+        }
+        case T_MENOR:
+        case T_MAYOR: {
+            tipo_info tipo_izq = calcular_tipo_expresion(expr->izq);
+            tipo_info tipo_der = calcular_tipo_expresion(expr->der);
             
-        case T_ID:
+            if (tipo_izq == TIPO_INTEGER && tipo_der == TIPO_INTEGER) {
+                return TIPO_BOOL;
+            }
+            return TIPO_VOID;
+        }
+        case T_IGUALDAD: {
+            tipo_info tipo_izq = calcular_tipo_expresion(expr->izq);
+            tipo_info tipo_der = calcular_tipo_expresion(expr->der);
+
+            if (tipo_izq == tipo_der && tipo_izq != TIPO_VOID) {
+                return TIPO_BOOL;
+            }
+            return TIPO_VOID;
+        }
+        case T_ID: {
             info *var_info = buscar(ts, expr->valor->name);
             return var_info ? var_info->tipo_info : TIPO_VOID;
+        }
+        case T_METHOD_CALL: {
+            info *metodo_info = buscar(ts, expr->valor->name);
+            return metodo_info ? metodo_info->tipo_info : TIPO_VOID;
+        }
+        default:
+            // si se llama con algo que no es una expresion
+            return TIPO_VOID;
     }
 }
 
