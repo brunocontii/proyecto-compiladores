@@ -241,21 +241,31 @@ tipo_info calcular_tipo_expresion(nodo *expr) {
     }
 }
 
+// devuelve TIPO_VOID en caso de que:
+//  - el bloque sea NULL
+//  - no haya return en el bloque
+//  - existe un "return;" (sin expresion)
+// devuelve TIPO_INTEGER o TIPO_BOOL si encuentra un return con expresion
 tipo_info retorno_bloque(nodo *bloque){
-    if (!bloque) return;
+    if (!bloque) return TIPO_VOID;
 
-    switch(bloque->valor->tipo_token){
+    switch(bloque->valor->tipo_token) {
         case T_RETURN:
-            if (bloque->izq != NULL) { // si es tipo integer o bool
-                
+            if (bloque->izq != NULL) {
                 return calcular_tipo_expresion(bloque->izq);
             }
             return TIPO_VOID;
-
-        default:
-            retorno_bloque(bloque->izq);
-            retorno_bloque(bloque->der);
-            break;
+        case T_VAR_DECLS:
+            // saltear las declaraciones de variables
+            return TIPO_VOID;
+        default: {
+            tipo_info tipo_izq = retorno_bloque(bloque->izq);
+            tipo_info tipo_der = retorno_bloque(bloque->der);
+            
+            if (tipo_izq != TIPO_VOID) return tipo_izq;
+            if (tipo_der != TIPO_VOID) return tipo_der;
+            
+            return TIPO_VOID;
+        }
     }
-    return;
 }
