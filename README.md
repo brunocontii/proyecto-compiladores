@@ -65,6 +65,11 @@ make run TEST=tests/testneg5.ctds # nuevo
 ```bash
 make clean
 ```
+### Ejecutar todos los test
+```bash
+make test-all
+```
+📝 Esta regla es nueva y recorre todos los archivos dentro de la carpeta tests/, ejecuta el compilador sobre cada uno de ellos y muestra en pantalla un reporte de cuales pasaron y cuales no.
 
 ✅ **Nota**: Estos comandos (`make`, `make run`, `make clean`, `make run TEST=...`) siguen funcionando como en la entrega anterior.
 
