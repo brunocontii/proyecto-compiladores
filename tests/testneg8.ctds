@@ -1,0 +1,46 @@
+program {
+    
+    integer es_par(integer x, integer y) {
+        if (y == 0 && z == 0) then {                 // Primer error
+            return -1;
+        }
+
+        return x % y == 0;
+    }
+
+    integer suma(integer x, integer x) {        // Segundo error
+        integer y = x;
+        return x + y;
+    }
+
+    bool and(bool first, bool second) {
+        return first && second;
+    }
+
+    void resta(integer x, integer y) {
+        integer z = x + y;
+        return;
+    }
+
+    void esNegativo(integer x) {
+        return (x < 0);                         // Tercer error
+    }
+
+    integer pow(integer x, integer y) {
+        return true;                            // Cuarto error
+    }
+    
+    void print_int(integer i) extern ;
+    
+    void main() {
+        integer y = 0;
+        bool z = and(true, 5);                  // Quinto error
+        integer x = resta(10, 6);               // Sesto error
+        y = get_int();
+        if (y == 1) then {
+            print_int(y);
+        } else {
+            return print_int(inc(y));
+        }
+    }
+}
