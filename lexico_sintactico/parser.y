@@ -279,12 +279,9 @@ block: TOKEN_LLA_A
       }
      | TOKEN_LLA_A
       {
-        printf("solo statement: flag que es? %b\n\n\n", es_metodo);
         if(!es_metodo){
-          printf("ABRIENDO METODO solo statement\n\n\n");
           abrir_scope(ts);
         } else {
-          printf("entrando por else de solo statement\n\n\n");
           es_metodo = false;
         }
       }

@@ -51,14 +51,24 @@ make run
 make run TEST=tests/test1.ctds
 make run TEST=tests/test2.ctds
 make run TEST=tests/test3.ctds
-make run TEST=tests/test4.ctds # nuevo
+make run TEST=tests/test4.ctds
+make run TEST=tests/test5.ctds # nuevo
+make run TEST=tests/test6.ctds # nuevo
+make run TEST=tests/test7.ctds # nuevo
+make run TEST=tests/test8.ctds # nuevo
 
 # Casos negativos (deben fallar intencionalmente)
 make run TEST=tests/testneg1.ctds
 make run TEST=tests/testneg2.ctds
 make run TEST=tests/testneg3.ctds
 make run TEST=tests/testneg4.ctds
-make run TEST=tests/testneg5.ctds # nuevo
+make run TEST=tests/testneg5.ctds
+make run TEST=tests/testneg6.ctds  # nuevo
+make run TEST=tests/testneg7.ctds  # nuevo
+make run TEST=tests/testneg8.ctds  # nuevo
+make run TEST=tests/testneg9.ctds  # nuevo
+make run TEST=tests/testneg10.ctds # nuevo
+make run TEST=tests/testneg11.ctds # nuevo
 ```
 
 ### Limpiar archivos generados
