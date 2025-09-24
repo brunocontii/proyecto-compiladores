@@ -1,0 +1,22 @@
+program {
+    
+    integer get_int() extern;
+    
+    void print_int(integer i) extern ;
+
+    a = 10;                                 // Primer error
+    
+    void main() {
+        integer y = 0;
+        integer x = 5;
+        x = j + 3;                          // Segundo error      
+        j = x;                              // Tercer error
+        y = get_int();
+        if (y == 1) then {
+            b = y                           // Cuarto error
+            print_int(y);
+        } else {
+            return print_int(inc(b));       // Quinto error
+        }
+    }
+}

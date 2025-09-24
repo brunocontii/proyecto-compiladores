@@ -1,0 +1,18 @@
+program {
+
+    integer get_int() extern;
+    void print_int(integer i) extern;
+
+    void main() {
+        integer x = get_int();
+        if (x > 10) then {
+            if (x == 20) then {
+                print_int(100);
+            } else {
+                print_int(50);
+            }
+        } else {
+            print_int(0);
+        }
+    }
+}
