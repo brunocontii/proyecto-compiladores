@@ -144,6 +144,7 @@ void liberarArbol(nodo *raiz) {
         case T_METHOD_DECLS:
         case T_METHOD_DECL:
         case T_PARAMETROS:
+        case T_PARAMETRO:
         case T_BLOQUE:
         case T_METHOD_CALL:
         case T_EXPRS:

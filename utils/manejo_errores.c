@@ -1,0 +1,33 @@
+#include "manejo_errores.h"
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdarg.h>
+
+extern int yylineno;
+
+int errors = 0;
+
+void reportar_error(const char* formato, ...) {
+    errors++;
+    printf(COLOR_RED "ERROR: %d (linea %d): ", errors, yylineno);
+
+    va_list args;
+    va_start(args, formato);
+    vprintf(formato, args);
+    va_end(args);
+    printf("\n" COLOR_RESET);
+}
+
+void chequear_errores() {
+    if (errors >= 1) {
+        if (errors == 1) {
+            printf(COLOR_RED "Compilacion FALLO con %d error\n" COLOR_RESET, errors);
+        } else {
+            printf(COLOR_RED "Compilacion FALLO con %d errores\n" COLOR_RESET, errors);
+        }
+        exit(1);
+    } else {
+        printf(COLOR_GREEN "Compilacion EXITOSA con %d errores\n" COLOR_RESET, errors);
+    }
+}

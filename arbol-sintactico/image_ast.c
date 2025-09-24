@@ -35,6 +35,7 @@ const char* getTokenString(tipo_token token) {
         case T_METHOD_DECLS: return "METHOD DECLS";
         case T_METHOD_DECL: return "METHOD DECL";
         case T_PARAMETROS: return "PARAMETROS";
+        case T_PARAMETRO: return "PARAMETRO";
         case T_BLOQUE: return "BLOQUE";
         case T_METHOD_CALL: return "METHOD CALL";
         case T_EXPRS: return "EXPRS";
@@ -114,7 +115,7 @@ void generateDotNodes(nodo* node, FILE* file, int* nodeCount) {
     char valueStr[256];
     getNodeValueString(node, valueStr, sizeof(valueStr));
 
-    if (node->valor->tipo_token == T_ID || node->valor->tipo_token == T_DIGIT || node->valor->tipo_token == T_BOOL) {
+    if (node->valor->tipo_token == T_ID || node->valor->tipo_token == T_DIGIT || node->valor->tipo_token == T_BOOL || node->valor->tipo_token == T_PARAMETRO) {
         fprintf(file, "  node%d [label=\"%s\\n(%s)\\n[%s]\", shape=box];\n",
             currentId, valueStr, getTokenString(node->valor->tipo_token), getTypeString(node->valor->tipo_info));
     } else {

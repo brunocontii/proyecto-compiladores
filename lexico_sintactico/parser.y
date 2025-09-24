@@ -6,43 +6,14 @@
 #include <stdarg.h>
 #include "../arbol-sintactico/arbol.h"
 #include "../tabla-simbolos/tabla_simbolos.h"
-
-#define COLOR_RED     "\033[31m"
-#define COLOR_GREEN   "\033[32m"
-#define COLOR_YELLOW  "\033[33m"
-#define COLOR_RESET   "\033[0m"
+#include "../utils/manejo_errores.h"
 
 extern int yylineno;
 void yyerror();
 
 nodo* raiz = NULL;
 tabla_simbolos *ts = NULL;
-int errors = 0;
 bool es_metodo = true;
-
-void reportar_error(const char* formato, ...) {
-  errors++;
-  printf(COLOR_RED "ERROR: %d (linea %d): ", errors, yylineno);
-
-  va_list args;
-  va_start(args, formato);
-  vprintf(formato, args);
-  va_end(args);
-  printf(COLOR_RESET);
-}
-
-void chequear_errores() {
-  if (errors >= 1) {
-    if (errors == 1) {
-      printf(COLOR_RED "Compilacion FALLO con %d error\n" COLOR_RESET, errors);
-    } else {
-      printf(COLOR_RED "Compilacion FALLO con %d errores\n" COLOR_RESET, errors);
-    }
-    exit(1);
-  } else {
-    printf(COLOR_GREEN "Compilacion EXITOSA con %d errores\n" COLOR_RESET, errors);
-  }
-}
 
 %}
 

@@ -7,6 +7,7 @@ TARGET = c-tds
 LEX_DIR = lexico_sintactico
 TREE_DIR = arbol-sintactico
 SIMBOLOS_DIR = tabla-simbolos
+UTILS_DIR = utils
 
 # Archivos de entrada para Bison y Flex
 LEX_SRC = $(LEX_DIR)/lexer.l
@@ -20,6 +21,7 @@ YACC_H = $(LEX_DIR)/parser.tab.h
 # Archivos adicionales
 TREE_SRC = $(TREE_DIR)/arbol.c  $(TREE_DIR)/image_ast.c
 SIMBOLOS_SRC = $(SIMBOLOS_DIR)/tabla_simbolos.c
+UTILS_SRC = $(UTILS_DIR)/manejo_errores.c
 
 # Main
 MAIN_SRC = main.c
@@ -31,7 +33,7 @@ TEST ?= tests/test1.ctds
 all: $(TARGET)
 
 # Compilacion
-$(TARGET): $(MAIN_SRC) $(YACC_C) $(LEX_OUT) $(TREE_SRC) $(SIMBOLOS_SRC)
+$(TARGET): $(MAIN_SRC) $(YACC_C) $(LEX_OUT) $(TREE_SRC) $(SIMBOLOS_SRC) $(UTILS_SRC)
 	$(CC) $(CFLAGS) -o $@ $^ -lfl
 
 $(YACC_C) $(YACC_H): $(YACC_SRC)
