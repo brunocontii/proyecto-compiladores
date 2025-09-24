@@ -24,7 +24,7 @@ program {
     }
     
     integer suma(integer a, integer b) {
-        // Error 5: Parámetro redeclarado pero como estan a diferente nivel no da error
+        // Error 5: Parámetro redeclarado
         integer a = 5;
         return a + b;
     }

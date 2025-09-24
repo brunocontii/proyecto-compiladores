@@ -1,0 +1,15 @@
+program {
+
+    integer suma(integer a, integer b) {
+        if (b > 6) then {
+            integer a = 5;
+        }
+        return a + b;
+    }
+
+    integer main() {
+        suma(4,6);
+        return suma;
+    }
+
+}

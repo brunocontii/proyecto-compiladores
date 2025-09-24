@@ -200,6 +200,7 @@ method_decl: type TOKEN_ID TOKEN_PAR_A
               
               // cerrar scope del metodo
               cerrar_scope(ts);
+              es_metodo = true;
             }
            ;
 
@@ -252,7 +253,7 @@ parametro: type TOKEN_ID
          ;
 
 block: TOKEN_LLA_A
-      {
+      { 
         if(!es_metodo){
           abrir_scope(ts);
         } else {
@@ -278,9 +279,12 @@ block: TOKEN_LLA_A
       }
      | TOKEN_LLA_A
       {
+        printf("solo statement: flag que es? %b\n\n\n", es_metodo);
         if(!es_metodo){
+          printf("ABRIENDO METODO solo statement\n\n\n");
           abrir_scope(ts);
         } else {
+          printf("entrando por else de solo statement\n\n\n");
           es_metodo = false;
         }
       }
