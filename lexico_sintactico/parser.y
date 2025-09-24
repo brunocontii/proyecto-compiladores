@@ -13,7 +13,6 @@ void yyerror();
 
 nodo* raiz = NULL;
 tabla_simbolos *ts = NULL;
-bool es_metodo = true;
 
 %}
 
@@ -137,80 +136,32 @@ var_decl: type TOKEN_ID TOKEN_ASIGNACION expr TOKEN_PYC
             ninfovar->tipo_info = $1->valor->tipo_info; //pasando el tipo a el nodo a crear
             nodo *id_nodo = crearNodo(ninfovar);
 
-            if (!insertar(ts, ninfovar)) {
-              // redeclaraciones
-              reportar_error(yylineno, "Variable '%s' ya declarada\n", $2);
-            }
-
             $$ = crearArbol(ninfo, id_nodo, $4);
             $$->linea = yylineno;
           }
         ;
 
-method_decl: type TOKEN_ID TOKEN_PAR_A 
+method_decl: type TOKEN_ID TOKEN_PAR_A parametros TOKEN_PAR_C block_or_extern
             {
-              // insertar metodo en scope global
-              info *ninfo = malloc(sizeof(info));
-              ninfo->name = strdup($2);
-              ninfo->tipo_token = T_METHOD_DECL;
-              ninfo->tipo_info = $1->valor->tipo_info;
-
-              if (!insertar(ts, ninfo)) {
-                reportar_error(yylineno, "Metodo '%s' ya declarado\n", $2);
-              }
-
-              // abrir scope antes de procesar parametros
-              abrir_scope(ts);
-            }
-            parametros TOKEN_PAR_C block_or_extern
-            {
-              printf("\n--- SCOPE DEL MÉTODO '%s' ANTES DE CERRAR ---", $2);
-              imprimir_scope_actual(ts);
-
               // crear el ast del metodo
               info *method_info = malloc(sizeof(info));
               method_info->name = strdup($2);
               method_info->tipo_token = T_METHOD_DECL;
               method_info->tipo_info = $1->valor->tipo_info;
 
-              $$ = crearArbol(method_info, $5, $7);
+              $$ = crearArbol(method_info, $4, $6);
               $$->linea = yylineno;
-              
-              // cerrar scope del metodo
-              cerrar_scope(ts);
             }
-           | TOKEN_VOID TOKEN_ID TOKEN_PAR_A 
+           | TOKEN_VOID TOKEN_ID TOKEN_PAR_A parametros TOKEN_PAR_C block_or_extern
             {
-              // insertar metodo void en scope global
-              info *ninfo = malloc(sizeof(info));
-              ninfo->name = strdup($2);
-              ninfo->tipo_token = T_METHOD_DECL;
-              ninfo->tipo_info = TIPO_VOID;
-
-              if (!insertar(ts, ninfo)) {
-                reportar_error(yylineno, "Metodo '%s' ya declarado\n", $2);
-              }
-              
-              // abrir scope antes de procesar parametros
-              abrir_scope(ts);
-            }
-            parametros TOKEN_PAR_C block_or_extern
-            {
-              printf("\n--- SCOPE DEL MÉTODO '%s' ANTES DE CERRAR ---", $2);
-              imprimir_scope_actual(ts);
-
               // crear el asd del metodo
               info *method_info = malloc(sizeof(info));
               method_info->name = strdup($2);
               method_info->tipo_token = T_METHOD_DECL;
               method_info->tipo_info = TIPO_VOID;
 
-              $$ = crearArbol(method_info, $5, $7);
+              $$ = crearArbol(method_info, $4, $6);
               $$->linea = yylineno;
-              
-              // cerrar scope del metodo
-              cerrar_scope(ts);
-              es_metodo = true;
             }
            ;
 
@@ -257,67 +208,30 @@ parametro: type TOKEN_ID
             ninfo->tipo_info = $1->valor->tipo_info;
             ninfo->tipo_token = T_PARAMETRO;
 
-            // insertar parametro en el scope actual
-            if (!insertar(ts, ninfo)) {
-              reportar_error(yylineno, "Parametro '%s' ya declarado\n", $2);
-            }
-
             $$ = crearNodo(ninfo);
             $$->linea = yylineno;
           }
          ;
 
-block: TOKEN_LLA_A
-      { 
-        if(!es_metodo){
-          abrir_scope(ts);
-        } else {
-          es_metodo = false;
-        }
-      }
-      var_decls statements TOKEN_LLA_C
+block: TOKEN_LLA_A var_decls statements TOKEN_LLA_C
       {
-        printf("\n--- SCOPE DE BLOQUE ANTES DE CERRAR ---");
-        imprimir_scope_actual(ts);
-
         info *ninfo = malloc(sizeof(info));
         ninfo->name = strdup("BLOQUE CON DECLS DE VARS Y METS");
         ninfo->tipo_token = T_BLOQUE;
 
-        $$ = crearArbol(ninfo, $3, $4);
+        $$ = crearArbol(ninfo, $2, $3);
         $$->linea = yylineno;
 
-        if(!es_metodo) {
-          cerrar_scope(ts);
-        } else {
-          es_metodo = false;
-        }
       }
-     | TOKEN_LLA_A
+     | TOKEN_LLA_A statements TOKEN_LLA_C
       {
-        if(!es_metodo){
-          abrir_scope(ts);
-        } else {
-          es_metodo = false;
-        }
-      }
-      statements TOKEN_LLA_C
-      {
-        printf("\n--- SCOPE DE BLOQUE ANTES DE CERRAR ---");
-        imprimir_scope_actual(ts);
-        
         info *ninfo = malloc(sizeof(info));
         ninfo->name = strdup("BLOQUE CON DECLS DE METS");
         ninfo->tipo_token = T_BLOQUE;
 
-        $$ = crearArbol(ninfo, $3, NULL);
+        $$ = crearArbol(ninfo, NULL, $2);
         $$->linea = yylineno;
 
-        if(!es_metodo) {
-          cerrar_scope(ts);
-        } else {
-          es_metodo = false;
-        }
       }
      ;
 

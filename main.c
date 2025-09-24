@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
     inicializar(ts);
 
         // Target por defecto
-    if (!target) target = "parse";
+    if (!target) target = "sem";
 
     if (debug) {
         printf("Archivo entrada: %s\n", archivo_entrada);
@@ -166,7 +166,6 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    printf(COLOR_GREEN "Compilacion finalizada correctamente.\n" COLOR_RESET);
-
+    chequear_errores();
     return 0;
 }
