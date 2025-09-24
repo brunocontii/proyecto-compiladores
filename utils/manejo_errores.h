@@ -9,7 +9,7 @@
 extern int yylineno;
 extern int errors;
 
-void reportar_error(const char* formato, ...);
+void reportar_error(int linea, const char* formato, ...);
 void chequear_errores();
 
 #endif

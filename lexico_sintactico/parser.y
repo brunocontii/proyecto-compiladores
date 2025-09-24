@@ -65,6 +65,7 @@ prog: TOKEN_PROGRAM TOKEN_LLA_A TOKEN_LLA_C
         ninfo->tipo_token = T_PROGRAM;
 
         $$ = crearArbol(ninfo, $3, NULL);
+        $$->linea = yylineno;
         raiz = $$;
       }
     | TOKEN_PROGRAM TOKEN_LLA_A method_decls TOKEN_LLA_C
@@ -75,6 +76,7 @@ prog: TOKEN_PROGRAM TOKEN_LLA_A TOKEN_LLA_C
         ninfo->tipo_token = T_PROGRAM;
 
         $$ = crearArbol(ninfo, NULL, $3);
+        $$->linea = yylineno;
         raiz = $$;
       }
     | TOKEN_PROGRAM TOKEN_LLA_A var_decls method_decls TOKEN_LLA_C
@@ -85,6 +87,7 @@ prog: TOKEN_PROGRAM TOKEN_LLA_A TOKEN_LLA_C
         ninfo->tipo_token = T_PROGRAM;
 
         $$ = crearArbol(ninfo, $3, $4);
+        $$->linea = yylineno;
         raiz = $$;
       }
     ;
@@ -96,10 +99,12 @@ var_decls: var_decls var_decl
             ninfo->tipo_token = T_VAR_DECLS;
 
             $$ = crearArbol(ninfo, $1, $2);
+            $$->linea = yylineno;
           }
          | var_decl
           {
             $$ = $1;
+            $$->linea = yylineno;
           }
          ;
 
@@ -110,10 +115,12 @@ method_decls: method_decls method_decl
                 ninfo->tipo_token = T_METHOD_DECLS;
 
                 $$ = crearArbol(ninfo, $1, $2);
+                $$->linea = yylineno;
               }
             | method_decl
               {
                 $$ = $1;
+                $$->linea = yylineno;
               }
             ;
 
@@ -132,10 +139,11 @@ var_decl: type TOKEN_ID TOKEN_ASIGNACION expr TOKEN_PYC
 
             if (!insertar(ts, ninfovar)) {
               // redeclaraciones
-              reportar_error("Variable '%s' ya declarada\n", $2);
+              reportar_error(yylineno, "Variable '%s' ya declarada\n", $2);
             }
 
             $$ = crearArbol(ninfo, id_nodo, $4);
+            $$->linea = yylineno;
           }
         ;
 
@@ -148,7 +156,7 @@ method_decl: type TOKEN_ID TOKEN_PAR_A
               ninfo->tipo_info = $1->valor->tipo_info;
 
               if (!insertar(ts, ninfo)) {
-                reportar_error("Metodo '%s' ya declarado\n", $2);
+                reportar_error(yylineno, "Metodo '%s' ya declarado\n", $2);
               }
 
               // abrir scope antes de procesar parametros
@@ -166,6 +174,7 @@ method_decl: type TOKEN_ID TOKEN_PAR_A
               method_info->tipo_info = $1->valor->tipo_info;
 
               $$ = crearArbol(method_info, $5, $7);
+              $$->linea = yylineno;
               
               // cerrar scope del metodo
               cerrar_scope(ts);
@@ -179,7 +188,7 @@ method_decl: type TOKEN_ID TOKEN_PAR_A
               ninfo->tipo_info = TIPO_VOID;
 
               if (!insertar(ts, ninfo)) {
-                reportar_error("Metodo '%s' ya declarado\n", $2);
+                reportar_error(yylineno, "Metodo '%s' ya declarado\n", $2);
               }
               
               // abrir scope antes de procesar parametros
@@ -197,6 +206,7 @@ method_decl: type TOKEN_ID TOKEN_PAR_A
               method_info->tipo_info = TIPO_VOID;
 
               $$ = crearArbol(method_info, $5, $7);
+              $$->linea = yylineno;
               
               // cerrar scope del metodo
               cerrar_scope(ts);
@@ -207,6 +217,7 @@ method_decl: type TOKEN_ID TOKEN_PAR_A
 block_or_extern: block
                   {
                     $$ = $1;
+                    $$->linea = yylineno;
                   }
                 | TOKEN_EXTERN TOKEN_PYC
                   {
@@ -215,6 +226,7 @@ block_or_extern: block
                     ninfo->tipo_token = T_EXTERN;
 
                     $$ = crearNodo(ninfo);
+                    $$->linea = yylineno;
                   }
                ;
 
@@ -225,10 +237,12 @@ parametros: parametros TOKEN_COMA parametro
               ninfo->tipo_token = T_PARAMETROS;
 
               $$ = crearArbol(ninfo, $1, $3);
+              $$->linea = yylineno;
             }
           | parametro
             {
               $$ = $1;
+              $$->linea = yylineno;
             }
           |
             {
@@ -245,10 +259,11 @@ parametro: type TOKEN_ID
 
             // insertar parametro en el scope actual
             if (!insertar(ts, ninfo)) {
-              reportar_error("Parametro '%s' ya declarado\n", $2);
+              reportar_error(yylineno, "Parametro '%s' ya declarado\n", $2);
             }
 
             $$ = crearNodo(ninfo);
+            $$->linea = yylineno;
           }
          ;
 
@@ -270,6 +285,7 @@ block: TOKEN_LLA_A
         ninfo->tipo_token = T_BLOQUE;
 
         $$ = crearArbol(ninfo, $3, $4);
+        $$->linea = yylineno;
 
         if(!es_metodo) {
           cerrar_scope(ts);
@@ -295,6 +311,7 @@ block: TOKEN_LLA_A
         ninfo->tipo_token = T_BLOQUE;
 
         $$ = crearArbol(ninfo, $3, NULL);
+        $$->linea = yylineno;
 
         if(!es_metodo) {
           cerrar_scope(ts);
@@ -312,6 +329,7 @@ type: TOKEN_INTEGER
         ninfo->tipo_token = T_INTEGER;
 
         $$ = crearNodo(ninfo);
+        $$->linea = yylineno;
       }
       | TOKEN_BOOL
         {
@@ -321,6 +339,7 @@ type: TOKEN_INTEGER
           ninfo->tipo_token = T_BOOL;
           
           $$ = crearNodo(ninfo);
+          $$->linea = yylineno;
         }
     ;
 
@@ -331,6 +350,7 @@ statements: statements statement
               ninfo->tipo_token = T_STATEMENTS;
 
               $$ = crearArbol(ninfo, $1, $2);
+              $$->linea = yylineno;
             }
             |
               {
@@ -351,10 +371,12 @@ statement: TOKEN_ID TOKEN_ASIGNACION expr TOKEN_PYC
               nodo *id_nodo = crearNodo(ninfovar);
 
               $$ = crearArbol(ninfo, id_nodo, $3);
+              $$->linea = yylineno;
             }
            | method_call TOKEN_PYC
             {
               $$ = $1; 
+              $$->linea = yylineno;
             }
            | TOKEN_IF TOKEN_PAR_A expr TOKEN_PAR_C TOKEN_THEN block
             {
@@ -363,6 +385,7 @@ statement: TOKEN_ID TOKEN_ASIGNACION expr TOKEN_PYC
               ninfo->tipo_token = T_IF;
 
               $$ = crearArbol(ninfo, $3, $6);
+              $$->linea = yylineno;
             }
            | TOKEN_IF TOKEN_PAR_A expr TOKEN_PAR_C TOKEN_THEN block TOKEN_ELSE block
             {
@@ -371,6 +394,7 @@ statement: TOKEN_ID TOKEN_ASIGNACION expr TOKEN_PYC
               ninfo->tipo_token = T_IF_ELSE;
 
               $$ = crearArbolTer(ninfo, $3, $6, $8);
+              $$->linea = yylineno;
             }
            | TOKEN_WHILE expr block
             {
@@ -379,6 +403,7 @@ statement: TOKEN_ID TOKEN_ASIGNACION expr TOKEN_PYC
               ninfo->tipo_token = T_WHILE;
 
               $$ = crearArbol(ninfo, $2, $3);
+              $$->linea = yylineno;
             }
            | TOKEN_RETURN expr TOKEN_PYC
             {
@@ -387,6 +412,7 @@ statement: TOKEN_ID TOKEN_ASIGNACION expr TOKEN_PYC
               ninfo->tipo_token = T_RETURN;
 
               $$ = crearArbol(ninfo, $2, NULL);
+              $$->linea = yylineno;
             }
            | TOKEN_RETURN TOKEN_PYC
             {
@@ -395,6 +421,7 @@ statement: TOKEN_ID TOKEN_ASIGNACION expr TOKEN_PYC
               ninfo->tipo_token = T_RETURN;
 
               $$ = crearNodo(ninfo);
+              $$->linea = yylineno;
             }
            | TOKEN_PYC
             {
@@ -403,6 +430,7 @@ statement: TOKEN_ID TOKEN_ASIGNACION expr TOKEN_PYC
            | block
             {
               $$ = $1;
+              $$->linea = yylineno;
             }
          ;
 
@@ -418,6 +446,7 @@ method_call: TOKEN_ID TOKEN_PAR_A exprs TOKEN_PAR_C
               nodo *id_nodo = crearNodo(ninfovar);
 
               $$ = crearArbol(ninfo, id_nodo, $3);
+              $$->linea = yylineno;
             }
            ;
 
@@ -428,10 +457,12 @@ exprs: exprs TOKEN_COMA expr
         ninfo->tipo_token = T_EXPRS;
 
         $$ = crearArbol(ninfo, $1, $3);
+        $$->linea = yylineno;
       }
        | expr
         {
           $$ = $1;
+          $$->linea = yylineno;
         }
        |
         {
@@ -446,14 +477,17 @@ expr: TOKEN_ID
           ninfo->tipo_token = T_ID;
 
           $$ = crearNodo(ninfo);
+          $$->linea = yylineno;
         }
       | method_call
         {
           $$ = $1;
+          $$->linea = yylineno;
         }
       | literal
         {
           $$ = $1;
+          $$->linea = yylineno;
         }
       | expr TOKEN_OP_MAS expr
         {
@@ -463,6 +497,7 @@ expr: TOKEN_ID
           op_info->tipo_info = TIPO_INTEGER;
 
           $$ = crearArbol(op_info, $1, $3);
+          $$->linea = yylineno;
         }
       | expr TOKEN_OP_MENOS expr
         {
@@ -472,6 +507,7 @@ expr: TOKEN_ID
           op_info->tipo_info = TIPO_INTEGER;
 
           $$ = crearArbol(op_info, $1, $3);
+          $$->linea = yylineno;
         }
       | expr TOKEN_OP_MULT expr
         {
@@ -481,6 +517,7 @@ expr: TOKEN_ID
           op_info->tipo_info = TIPO_INTEGER;
 
           $$ = crearArbol(op_info, $1, $3);
+          $$->linea = yylineno;
         }
       | expr TOKEN_OP_DIV expr
         {
@@ -490,6 +527,7 @@ expr: TOKEN_ID
           op_info->tipo_info = TIPO_INTEGER;
 
           $$ = crearArbol(op_info, $1, $3);
+          $$->linea = yylineno;
         }
       | expr TOKEN_OP_RESTO expr
         {
@@ -499,6 +537,7 @@ expr: TOKEN_ID
           op_info->tipo_info = TIPO_INTEGER;
 
           $$ = crearArbol(op_info, $1, $3);
+          $$->linea = yylineno;
         }
       | expr TOKEN_OP_AND expr
         {
@@ -508,6 +547,7 @@ expr: TOKEN_ID
           op_info->tipo_info = TIPO_BOOL;
 
           $$ = crearArbol(op_info, $1, $3);
+          $$->linea = yylineno;
         }
       | expr TOKEN_OP_OR expr
         {
@@ -517,6 +557,7 @@ expr: TOKEN_ID
           op_info->tipo_info = TIPO_BOOL;
 
           $$ = crearArbol(op_info, $1, $3);
+          $$->linea = yylineno;
         }
       | expr TOKEN_MENOR expr
         {
@@ -526,6 +567,7 @@ expr: TOKEN_ID
           op_info->tipo_info = TIPO_BOOL;
 
           $$ = crearArbol(op_info, $1, $3);
+          $$->linea = yylineno;
         }
       | expr TOKEN_MAYOR expr
         {
@@ -535,6 +577,7 @@ expr: TOKEN_ID
           op_info->tipo_info = TIPO_BOOL;
 
           $$ = crearArbol(op_info, $1, $3);
+          $$->linea = yylineno;
         }
       | expr TOKEN_IGUALDAD expr
         {
@@ -544,6 +587,7 @@ expr: TOKEN_ID
           op_info->tipo_info = TIPO_BOOL;
 
           $$ = crearArbol(op_info, $1, $3);
+          $$->linea = yylineno;
         }
       | TOKEN_OP_MENOS expr %prec MENOS_UNARIO
         {
@@ -553,6 +597,7 @@ expr: TOKEN_ID
           op_info->tipo_info = TIPO_INTEGER;
 
           $$ = crearArbol(op_info, NULL, $2);
+          $$->linea = yylineno;
         }
       | TOKEN_OP_NOT expr
         {
@@ -562,20 +607,24 @@ expr: TOKEN_ID
           op_info->tipo_info = TIPO_BOOL;
 
           $$ = crearArbol(op_info, NULL, $2);
+          $$->linea = yylineno;
         }
       | TOKEN_PAR_A expr TOKEN_PAR_C
         {
           $$ = $2;
+          $$->linea = yylineno;
         }
     ;
 
 literal: integer_literal
           {
             $$ = $1;
+            $$->linea = yylineno;
           }
         | bool_literal
           {
             $$ = $1;
+            $$->linea = yylineno;
           }
        ;
 
@@ -588,6 +637,7 @@ integer_literal: TOKEN_DIGIT
                   digito->tipo_token = T_DIGIT;
 
                   $$ = crearNodo(digito);
+                  $$->linea = yylineno;
                 }
               | integer_literal TOKEN_DIGIT
                 {
@@ -604,6 +654,7 @@ integer_literal: TOKEN_DIGIT
                   nodo *dig = crearNodo(digito);
 
                   $$ = crearArbol(literal, $1, dig);
+                  $$->linea = yylineno;
                 }
               ;
 
@@ -616,6 +667,7 @@ bool_literal: TOKEN_VTRUE
                   booleano->tipo_token = T_VTRUE;
 
                   $$ = crearNodo(booleano);
+                  $$->linea = yylineno;
                 }
               | TOKEN_VFALSE
                 {
@@ -626,6 +678,7 @@ bool_literal: TOKEN_VTRUE
                   booleano->tipo_token = T_VFALSE;
 
                   $$ = crearNodo(booleano);
+                  $$->linea = yylineno;
                 }
             ;
 

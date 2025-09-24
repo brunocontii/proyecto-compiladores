@@ -59,6 +59,7 @@ typedef struct {
 
 typedef struct nodo {
     info *valor;
+    int linea;
     struct nodo *izq;
     struct nodo *med;
     struct nodo *der;

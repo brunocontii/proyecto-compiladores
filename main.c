@@ -5,6 +5,8 @@
 
 #include "arbol-sintactico/arbol.h"
 #include "tabla-simbolos/tabla_simbolos.h"
+#include "analisis-semantico/semantico.h"
+#include "utils/manejo_errores.h"
 
 #define COLOR_RED     "\033[31m"
 #define COLOR_GREEN   "\033[32m"

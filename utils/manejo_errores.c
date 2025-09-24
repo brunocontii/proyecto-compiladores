@@ -8,9 +8,9 @@ extern int yylineno;
 
 int errors = 0;
 
-void reportar_error(const char* formato, ...) {
+void reportar_error(int linea, const char* formato, ...) {
     errors++;
-    printf(COLOR_RED "ERROR: %d (linea %d): ", errors, yylineno);
+    printf(COLOR_RED "ERROR: %d (linea %d): ", errors, linea);
 
     va_list args;
     va_start(args, formato);
