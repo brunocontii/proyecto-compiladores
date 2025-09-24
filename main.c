@@ -148,7 +148,8 @@ int main(int argc, char *argv[]) {
             if (!archivo_salida) {
                 archivo_salida = "ctds_arbol";
             }
-            generateASTDotFile(raiz, archivo_salida);        
+            generateASTDotFile(raiz, archivo_salida);     
+            recorridoSemantico(raiz, ts);
         }
     }
     else if (strcmp(target, "codinter") == 0) {

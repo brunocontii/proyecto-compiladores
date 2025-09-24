@@ -1,5 +1,7 @@
 #include <stdio.h>
+#include <string.h>
 #include "semantico.h"
+#include "../utils/manejo_errores.h"
 
 extern tabla_simbolos *ts;
 
@@ -8,77 +10,67 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
     if (!raiz) return;
 
     switch (raiz->valor->tipo_token){
-
-    case T_VAR_DECL:
-        tipo_info tipo_expr = calcular_tipo_expresion(raiz->der);
-        if (raiz->izq->valor->tipo_info != tipo_expr) {
-            printf("Error semántico: Tipo de variable (%d) no coincide con expresión (%d)\n", raiz->izq->valor->tipo_info, tipo_expr);
-        }
-        break;
-
-    case T_METHOD_DECL:
-        if (strcmp(raiz->valor->name, "main") == 0) {      
-            if (raiz->valor->tipo_info != TIPO_VOID) {
-                printf("Error semantico: main tiene otro tipo que no es void\n");
-            }
-            if (raiz->izq != NULL) {
-                printf("Error semantico: main tiene parametros no deberia mal ahi\n");
-            }
-        }
-
-        // magico de saber que retorna
-        tipo_info magia = retorno_bloque(raiz->der);
-        if (raiz->valor->tipo_info != magia) {
-            printf("Error semantico: el tipo de retorno no coincide con la declaracion\n");
-        }
-        if (raiz->valor->tipo_info == TIPO_VOID && magia != TIPO_VOID) {
-            printf("Error semántico: Método void no puede retornar valor\n");
-        }
-        break;
-
-    case T_ASIGNACION:
-
-            if (!raiz->izq->valor->name) {
-                printf("Error semántico: Asignación inválida\n");
-                break;
-            }
-
+        case T_VAR_DECL: {
             tipo_info tipo_expr = calcular_tipo_expresion(raiz->der);
-            info *busqueda = buscar(ts, raiz->izq->valor->name);
-            
-            if (!busqueda) {
-                printf("Error semántico: Variable '%s' no declarada\n", 
-                    raiz->izq->valor->name);
-            } else if (busqueda->tipo_info != tipo_expr) {
-                printf("Error semántico: Asignación (%d) no coincide con expresión (%d)\n", 
-                    busqueda->tipo_info, tipo_expr);
+            if (raiz->izq->valor->tipo_info != tipo_expr) {
+                reportar_error("Error semántico: Incompatibilidad de tipos en la declaracion."
+                                "Se declaro a '%s' de tipo '%d', pero se le quiere asignar el tipo '%d'\n",
+                                raiz->izq->valor->name, raiz->izq->valor->tipo_info, tipo_expr);
             }
             break;
+        }
+        case T_METHOD_DECL: {
+            if (strcmp(raiz->valor->name, "main") == 0) {
+                if (raiz->valor->tipo_info != TIPO_VOID) {
+                    reportar_error("Error semantico: Main debe ser de tipo void\n");
+                }
+                if (raiz->izq != NULL) {
+                    reportar_error("Error semantico: Main no debe tener parametros\n");
+                }
+            }
 
-    //case T_METHOD_CALL: erich
+            tipo_info retorno = retorno_bloque(raiz->der);
+            if (raiz->valor->tipo_info != retorno) {
+                reportar_error("Error semantico: Tipo de retorno no coincide con la declaracion\n");
+            }
+            if (raiz->valor->tipo_info == TIPO_VOID && retorno != TIPO_VOID) {
+                reportar_error("Error semántico: Metodo void no puede retornar valor\n");
+            }
+            break;
+        }
+        case T_ASIGNACION: {
+            info *busqueda = buscar(ts, raiz->izq->valor->name);
+            tipo_info tipo_expr = calcular_tipo_expresion(raiz->der);
 
-    case T_OP_MAS:
-         T_OP_MULT:
-         T_OP_DIV:
-         T_OP_RESTO:
-
+            if (!busqueda) {
+                reportar_error("Error semántico: Variable '%s' no declarada\n", raiz->izq->valor->name);
+            } else if (busqueda->tipo_info != tipo_expr) {
+                reportar_error("Error semántico: Incompatibilidad de tipos en la asignacion."
+                                "La variable '%s' es de tipo '%d', pero la expresion es de tipo '%d'\n",
+                                raiz->izq->valor->name, busqueda->tipo_info, tipo_expr);
+            }
+            break;
+        }
+        case T_OP_MAS:
+        case T_OP_MULT:
+        case T_OP_DIV:
+        case T_OP_RESTO: {
             tipo_info tipo_expr1 = calcular_tipo_expresion(raiz->izq);
             tipo_info tipo_expr2 = calcular_tipo_expresion(raiz->der);
-            if (tipo_expr1 != TIPO_INTEGER || tipo_expr2 != TIPO_INTEGER) {
-                printf("Error semantico: el tipo de las expresiones no son ambas enteras\n");
-            }
-            /*if (raiz->valor->tipo_token == T_OP_DIV) { ver
-                }
-            */
-         break;
 
-    case T_OP_MENOS:
-        {
+            if (tipo_expr1 != TIPO_INTEGER || tipo_expr2 != TIPO_INTEGER) {
+                reportar_error("Error semantico: Operadores aritmeticos requieren operandos INTEGER"
+                                " pero se recibieron tipos '%d' y '%d'\n", tipo_expr1, tipo_expr2);
+            }
+            break;
+        }
+        case T_OP_MENOS: {
             if (raiz->izq == NULL) {
                 // Menos unario
                 tipo_info tipo_expr = calcular_tipo_expresion(raiz->der);
                 if (tipo_expr != TIPO_INTEGER) {
-                    printf("Error semántico: Operador unario '-' requiere INTEGER\n");
+                    reportar_error("Error semántico: Operador unario '-' requiere INTEGER"
+                                    " pero se recibio tipo '%d'\n", tipo_expr);
                 }
             } else {
                 // Menos binario
@@ -86,73 +78,91 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
                 tipo_info tipo_expr2 = calcular_tipo_expresion(raiz->der);
                 
                 if (tipo_expr1 != TIPO_INTEGER || tipo_expr2 != TIPO_INTEGER) {
-                    printf("Error semántico: Resta requiere operandos INTEGER\n");
+                    reportar_error("Error semántico: Resta requiere operandos INTEGER"
+                                    " pero se recibieron tipos '%d' y '%d'\n", tipo_expr1, tipo_expr2);
                 }
             }
+            break;
         }
-        break;
+        case T_OP_AND:
+        case T_OP_OR: {
+            tipo_info tipo_expr1 = calcular_tipo_expresion(raiz->izq);
+            tipo_info tipo_expr2 = calcular_tipo_expresion(raiz->der);
 
-    case T_OP_AND:
-         T_OP_OR:
-         T_OP_NOT:
-            if (raiz->izq == NULL) {
-                tipo_info tipo_operando = calcular_tipo_expresion(raiz->der);
-                
-                if (tipo_operando != TIPO_BOOL) {
-                    printf("Error semántico: Operador '!' requiere operando BOOL\n");
-                }
-            }else {
-                tipo_info tipo_expr1 = calcular_tipo_expresion(raiz->izq);
-                tipo_info tipo_expr2 = calcular_tipo_expresion(raiz->der);
-                if (tipo_expr1 != TIPO_BOOL || tipo_expr2 != TIPO_BOOL) {
-                    printf("Error semantico: el tipo de las expresiones no son ambas enteras\n");
-                }
+            if (tipo_expr1 != TIPO_BOOL || tipo_expr2 != TIPO_BOOL) {
+                reportar_error("Error semantico: Operacion booleana requiere operandos BOOL"
+                                " pero se recibieron tipos '%d' y '%d'\n", tipo_expr1, tipo_expr2);
             }
-        break;
-
-    case T_MENOR:
-    case T_MAYOR:
+            break;
+        }
+        case T_OP_NOT: {
+            tipo_info tipo_expr = calcular_tipo_expresion(raiz->der);
+            if (tipo_expr != TIPO_BOOL) {
+                reportar_error("Error semantico: Operador '!' requiere operando BOOL"
+                                " pero se recibio tipo '%d'\n", tipo_expr);
+            }
+            break;
+        }
+        case T_MENOR:
+        case T_MAYOR: {
             tipo_info tipo_izq = calcular_tipo_expresion(raiz->izq);
             tipo_info tipo_der = calcular_tipo_expresion(raiz->der);
             
             if (tipo_izq != TIPO_INTEGER || tipo_der != TIPO_INTEGER) {
-                printf("Error semántico: Operadores < y > requieren operandos INTEGER\n");
+                reportar_error("Error semántico: Operadores < y > requieren operandos INTEGER"
+                        " pero se recibieron tipos '%d' y '%d'\n", tipo_izq, tipo_der);
             }
-        break;
-    case T_OP_NOT:
-            tipo_info tipo_operando = calcular_tipo_expresion(raiz->der);
-            if (tipo_operando != TIPO_BOOL) {
-                printf("Error semántico: Operador '!' requiere operando BOOL\n");
-            }
-        break;
-    case T_IGUALDAD:
-        {
+            break;
+        }
+        case T_IGUALDAD: {
             tipo_info tipo_izq = calcular_tipo_expresion(raiz->izq);
             tipo_info tipo_der = calcular_tipo_expresion(raiz->der);
             
-            // Igualdad requiere que ambos operandos sean del mismo tipo
             if (tipo_izq != tipo_der) {
-                printf("Error semántico: Operador == requiere operandos del mismo tipo\n");
+                reportar_error("Error semántico: Operador == requiere operandos del mismo tipo"
+                        " pero se recibieron tipos '%d' y '%d'\n", tipo_izq, tipo_der);
             }
             
-            // No se puede comparar con VOID
             if (tipo_izq == TIPO_VOID || tipo_der == TIPO_VOID) {
-                printf("Error semántico: No se puede comparar con tipo VOID\n");
+                reportar_error("Error semántico: No se puede comparar con tipo VOID\n");
             }
+            break;
         }
-        break;
+        case T_ID: {
+            info *busqueda = buscar(ts, raiz->valor->name);
 
-    case T_ID:
-        info *busqueda = buscar(ts, raiz->valor->name);
-        if (busqueda == NULL) {
-            printf("Error semantico: variable %s no declarada\n", raiz->valor->name);
+            if (!busqueda) {
+                reportar_error("Error semantico: Variable '%s' no declarada\n", raiz->valor->name);
+            }
+            break;
         }
+        case T_IF:
+        case T_WHILE: {
+            tipo_info tipo_condicion = calcular_tipo_expresion(raiz->izq);
 
-        break;
-        
-    default:
-        break;
+            if (tipo_condicion != TIPO_BOOL) {
+                reportar_error("Error semántico: La condicion debe ser de tipo BOOL"
+                                " pero se recibio tipo '%d'\n", tipo_condicion);
+            }
+            break;
+        }
+        case T_IF_ELSE: {
+            tipo_info tipo_condicion = calcular_tipo_expresion(raiz->izq);
+
+            if (tipo_condicion != TIPO_BOOL) {
+                reportar_error("Error semántico: La condicion debe ser de tipo BOOL"
+                                " pero se recibio tipo '%d'\n", tipo_condicion);
+            }
+            break;
+        }
+        default:
+            // ver que se hace aca
+            break;
     }
+
+    if (raiz->izq) recorridoSemantico(raiz->izq, ts);
+    if (raiz->der) recorridoSemantico(raiz->der, ts);
+    if (raiz->med) recorridoSemantico(raiz->med, ts);
 }   
 
 // retorna el tipo de la expresion o TIPO_VOID si hay un error
