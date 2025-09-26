@@ -3,11 +3,11 @@
 #include "semantico.h"
 #include "../utils/manejo_errores.h"
 
-int dentroMetodo = 0; // variable global
+bool es_metodo = true;
 
 void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
 
-    if (!raiz) return;
+    if (!raiz || !raiz->valor) return;
     int linea = raiz->linea;
 
     switch (raiz->valor->tipo_token){
@@ -43,8 +43,8 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
 
         case T_PARAMETRO:
             // Insertar parametro en tabla de símbolos
-            if (!insertar(ts, raiz->izq->valor)) {
-                reportar_error(linea, "Parametro '%s' ya declarado\n", raiz->izq->valor->name);
+            if (!insertar(ts, raiz->valor)) {
+                reportar_error(linea, "Parametro '%s' ya declarado\n", raiz->valor->name);
             }
 
             break;
@@ -68,8 +68,14 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
                 reportar_error(linea, "Método '%s' ya declarado\n", raiz->valor->name);
             }
 
-            dentroMetodo = 1;   // estamos dentro de un método
-            abrir_scope(ts);
+            // Verificar si es extern
+            bool es_extern = raiz->der->valor->tipo_token == T_EXTERN;
+
+            // Abrir scope solo si NO es extern
+            if (!es_extern) {
+                abrir_scope(ts);
+                es_metodo = true;
+            }
 
 
             if (strcmp(raiz->valor->name, "main") == 0) {
@@ -82,9 +88,11 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
             }
             
             // si es extern no hacer todo esto xq ya lo hizo donde fue declarado
-            if (raiz->der->valor->tipo_token != T_EXTERN) {
+            if (!es_extern && raiz->der->valor->tipo_token != T_EXTERN) {                
                 tipo_info retorno = retorno_bloque(raiz->der, ts);
                 if (raiz->valor->tipo_info != retorno) {
+                    printf("lado izq %d\n",raiz->valor->tipo_info);
+                    printf("retorno %d\n",retorno);
                     reportar_error(linea, "Error semantico: Tipo de retorno no coincide con la declaracion\n");
                 }
                 if (raiz->valor->tipo_info == TIPO_VOID && retorno != TIPO_VOID) {
@@ -94,28 +102,29 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
 
             recorridoSemantico(raiz->izq, ts);
             recorridoSemantico(raiz->der, ts);
+
             printf("Nombre del metodo actual: %s\n",raiz->valor->name);
-            imprimir_scope_actual(ts);
-            // Cerrar scope del método
-            cerrar_scope(ts);
-            dentroMetodo = 0;   // salimos del método
+            //imprimir_scope_actual(ts);
+            if (!es_extern) {
+                cerrar_scope(ts); // cerramos solo los scopes internos
+            }
             break;
         }
 
         case T_BLOQUE: {
-            int abrir = 1;
 
-            // No abrir un nuevo scope si es el bloque principal del metodo
-            if (dentroMetodo && raiz->valor->tipo_token == T_METHOD_DECL) {
-                abrir = 0;
+            if (!es_metodo) {
+                abrir_scope(ts);
+            } else {
+                es_metodo = false;
             }
 
-            if (abrir) abrir_scope(ts);
+            recorridoSemantico(raiz->izq, ts); // var_decls
+            recorridoSemantico(raiz->der, ts); // statements
 
-            if (raiz->izq) recorridoSemantico(raiz->izq, ts); // var_decls
-            if (raiz->der) recorridoSemantico(raiz->der, ts); // statements
-
-            if (abrir) cerrar_scope(ts);
+            if (!es_metodo) {
+                cerrar_scope(ts); // solo cerramos los scopes internos
+            }       
             break;
         }
 
@@ -272,14 +281,18 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
 
 // retorna el tipo de la expresion o TIPO_VOID si hay un error
 tipo_info calcular_tipo_expresion(nodo *expr, tabla_simbolos *ts) {
-    if (!expr) return TIPO_VOID;
+    if (!expr) {
+        return TIPO_VOID;
+    }
     
     switch(expr->valor->tipo_token) {
         case T_DIGIT:
             return TIPO_INTEGER;
+
         case T_VTRUE:
         case T_VFALSE:
             return TIPO_BOOL;
+
         case T_OP_MAS:
         case T_OP_MULT:
         case T_OP_DIV:
@@ -292,13 +305,14 @@ tipo_info calcular_tipo_expresion(nodo *expr, tabla_simbolos *ts) {
             }
             return TIPO_VOID;
         }
+
         case T_OP_MENOS: {
             if (expr->izq == NULL) {
-                // caso de menos unario
+                // menos unario
                 tipo_info tipo_der = calcular_tipo_expresion(expr->der, ts);
                 return (tipo_der == TIPO_INTEGER) ? TIPO_INTEGER : TIPO_VOID;
             } else {
-                // caso de menos binario
+                // menos binario
                 tipo_info tipo_izq = calcular_tipo_expresion(expr->izq, ts);
                 tipo_info tipo_der = calcular_tipo_expresion(expr->der, ts);
 
@@ -308,6 +322,7 @@ tipo_info calcular_tipo_expresion(nodo *expr, tabla_simbolos *ts) {
                 return TIPO_VOID;
             }
         }
+
         case T_OP_AND:
         case T_OP_OR: {
             tipo_info tipo_izq = calcular_tipo_expresion(expr->izq, ts);
@@ -318,21 +333,23 @@ tipo_info calcular_tipo_expresion(nodo *expr, tabla_simbolos *ts) {
             }
             return TIPO_VOID;
         }
+
         case T_OP_NOT: {
-            // caso de operador not (siempre es unario)
             tipo_info tipo_der = calcular_tipo_expresion(expr->der, ts);
             return (tipo_der == TIPO_BOOL) ? TIPO_BOOL : TIPO_VOID;
         }
+
         case T_MENOR:
         case T_MAYOR: {
             tipo_info tipo_izq = calcular_tipo_expresion(expr->izq, ts);
             tipo_info tipo_der = calcular_tipo_expresion(expr->der, ts);
-            
+
             if (tipo_izq == TIPO_INTEGER && tipo_der == TIPO_INTEGER) {
                 return TIPO_BOOL;
             }
             return TIPO_VOID;
         }
+
         case T_IGUALDAD: {
             tipo_info tipo_izq = calcular_tipo_expresion(expr->izq, ts);
             tipo_info tipo_der = calcular_tipo_expresion(expr->der, ts);
@@ -342,19 +359,24 @@ tipo_info calcular_tipo_expresion(nodo *expr, tabla_simbolos *ts) {
             }
             return TIPO_VOID;
         }
+
         case T_ID: {
             info *var_info = buscar(ts, expr->valor->name);
+                   var_info ? var_info->tipo_info : TIPO_VOID;
             return var_info ? var_info->tipo_info : TIPO_VOID;
         }
+
         case T_METHOD_CALL: {
             info *metodo_info = buscar(ts, expr->valor->name);
+                   metodo_info ? metodo_info->tipo_info : TIPO_VOID;
             return metodo_info ? metodo_info->tipo_info : TIPO_VOID;
         }
+
         default:
-            // si se llama con algo que no es una expresion
             return TIPO_VOID;
     }
 }
+
 
 // devuelve TIPO_VOID en caso de que:
 //  - el bloque sea NULL
@@ -362,7 +384,7 @@ tipo_info calcular_tipo_expresion(nodo *expr, tabla_simbolos *ts) {
 //  - existe un "return;" (sin expresion)
 // devuelve TIPO_INTEGER o TIPO_BOOL si encuentra un return con expresion
 tipo_info retorno_bloque(nodo *bloque, tabla_simbolos *ts){
-    if (!bloque) return TIPO_VOID;
+    if (!bloque || !bloque->valor) return TIPO_VOID;
 
     switch(bloque->valor->tipo_token) {
         case T_RETURN:
@@ -371,16 +393,40 @@ tipo_info retorno_bloque(nodo *bloque, tabla_simbolos *ts){
             }
             return TIPO_VOID;
         case T_VAR_DECLS:
-            // saltear las declaraciones de variables
+            if (!bloque) return TIPO_VOID;      // NULL seguro
+            if (bloque->izq) {
+                tipo_info izq = retorno_bloque(bloque->izq, ts);
+                if (izq != TIPO_VOID) return izq;
+            }
+            if (bloque->der) {
+                tipo_info der = retorno_bloque(bloque->der, ts);
+                if (der != TIPO_VOID) return der;
+            }
             return TIPO_VOID;
-        default: {
-            tipo_info tipo_izq = retorno_bloque(bloque->izq, ts);
-            tipo_info tipo_der = retorno_bloque(bloque->der, ts);
-            
-            if (tipo_izq != TIPO_VOID) return tipo_izq;
-            if (tipo_der != TIPO_VOID) return tipo_der;
-            
+
+        case T_STATEMENTS: {
+            // recorrer cada statement en la lista
+            nodo *curr = bloque;
+            while (curr) {
+                if (curr->izq) {
+                    tipo_info t = retorno_bloque(curr->izq, ts);
+                    if (t != TIPO_VOID) return t;
+                }
+                curr = curr->der;
+            }
             return TIPO_VOID;
         }
+
+
+        default:
+            if (bloque->izq) {
+                tipo_info izq = retorno_bloque(bloque->izq, ts);
+                if (izq != TIPO_VOID) return izq;
+            }
+            if (bloque->der) {
+                tipo_info der = retorno_bloque(bloque->der, ts);
+                if (der != TIPO_VOID) return der;
+            }
+            return TIPO_VOID;
     }
 }
