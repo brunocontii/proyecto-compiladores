@@ -4,6 +4,7 @@
 #include "../utils/manejo_errores.h"
 
 bool es_metodo = true;
+bool es_extern = false;
 
 void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
 
@@ -15,41 +16,33 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
             if (raiz->izq) recorridoSemantico(raiz->izq, ts); // var_decls
             if (raiz->der) recorridoSemantico(raiz->der, ts); // method_decls
             break;
-
         case T_VAR_DECLS:
-            recorridoSemantico(raiz->izq, ts);
-            recorridoSemantico(raiz->der, ts);
+            recorridoSemantico(raiz->izq, ts); // var_decls
+            recorridoSemantico(raiz->der, ts); // var_decl
             break;
-
         case T_METHOD_DECLS:
-            recorridoSemantico(raiz->izq, ts);
-            recorridoSemantico(raiz->der, ts);
+            recorridoSemantico(raiz->izq, ts); // method_decls
+            recorridoSemantico(raiz->der, ts); // method_decl
             break;
-
         case T_PARAMETROS:
-            recorridoSemantico(raiz->izq, ts);
-            recorridoSemantico(raiz->der, ts);
+            recorridoSemantico(raiz->izq, ts); // parametros
+            recorridoSemantico(raiz->der, ts); // parametro
             break;
-        
         case T_STATEMENTS:
-            recorridoSemantico(raiz->izq, ts);
-            recorridoSemantico(raiz->der, ts);
+            recorridoSemantico(raiz->izq, ts); // statements
+            recorridoSemantico(raiz->der, ts); // statement
             break;
-
         case T_EXPRS:
-            recorridoSemantico(raiz->izq, ts);
-            recorridoSemantico(raiz->der, ts);
+            recorridoSemantico(raiz->izq, ts); // exprs
+            recorridoSemantico(raiz->der, ts); // expr
             break;
-
         case T_PARAMETRO:
             // Insertar parametro en tabla de símbolos
             if (!insertar(ts, raiz->valor)) {
                 reportar_error(linea, "Parametro '%s' ya declarado\n", raiz->valor->name);
             }
-
             break;
         case T_VAR_DECL: {
-
             // Insertar variable en tabla de símbolos
             if (!insertar(ts, raiz->izq->valor)) {
                 reportar_error(linea, "Variable '%s' ya declarada\n", raiz->izq->valor->name);
@@ -69,7 +62,7 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
             }
 
             // Verificar si es extern
-            bool es_extern = raiz->der->valor->tipo_token == T_EXTERN;
+            es_extern = raiz->der->valor->tipo_token == T_EXTERN;
 
             // Abrir scope solo si NO es extern
             if (!es_extern) {
@@ -86,9 +79,11 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
                     reportar_error(linea, "Error semantico: Main no debe tener parametros\n");
                 }
             }
-            
-            // si es extern no hacer todo esto xq ya lo hizo donde fue declarado
-            if (!es_extern && raiz->der->valor->tipo_token != T_EXTERN) {                
+            raiz->der->valor->tipo_info = raiz->valor->tipo_info; // pasar tipo de metodo a bloque o extern
+            recorridoSemantico(raiz->izq, ts); // var_decls
+            recorridoSemantico(raiz->der, ts); // bloque o extern
+
+            if (!es_extern && raiz->der->valor->tipo_token != T_EXTERN) {
                 tipo_info retorno = retorno_bloque(raiz->der, ts);
                 if (raiz->valor->tipo_info != retorno) {
                     printf("lado izq %d\n",raiz->valor->tipo_info);
@@ -100,26 +95,21 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
                 }
             }
 
-            recorridoSemantico(raiz->izq, ts);
-            recorridoSemantico(raiz->der, ts);
-
             printf("Nombre del metodo actual: %s\n",raiz->valor->name);
-            //imprimir_scope_actual(ts);
+            imprimir_scope_actual(ts);
             if (!es_extern) {
                 cerrar_scope(ts); // cerramos solo los scopes internos
             }
             break;
         }
-
         case T_BLOQUE: {
-
             if (!es_metodo) {
                 abrir_scope(ts);
             } else {
                 es_metodo = false;
             }
 
-            recorridoSemantico(raiz->izq, ts); // var_decls
+            recorridoSemantico(raiz->izq, ts); // var_decls            
             recorridoSemantico(raiz->der, ts); // statements
 
             if (!es_metodo) {
@@ -127,8 +117,6 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
             }       
             break;
         }
-
-
         case T_ASIGNACION: {
             info *busqueda = buscar(ts, raiz->izq->valor->name);
             tipo_info tipo_expr = calcular_tipo_expresion(raiz->der, ts);
@@ -362,13 +350,11 @@ tipo_info calcular_tipo_expresion(nodo *expr, tabla_simbolos *ts) {
 
         case T_ID: {
             info *var_info = buscar(ts, expr->valor->name);
-                   var_info ? var_info->tipo_info : TIPO_VOID;
             return var_info ? var_info->tipo_info : TIPO_VOID;
         }
 
         case T_METHOD_CALL: {
-            info *metodo_info = buscar(ts, expr->valor->name);
-                   metodo_info ? metodo_info->tipo_info : TIPO_VOID;
+            info *metodo_info = buscar(ts, expr->izq->valor->name);
             return metodo_info ? metodo_info->tipo_info : TIPO_VOID;
         }
 
@@ -392,32 +378,27 @@ tipo_info retorno_bloque(nodo *bloque, tabla_simbolos *ts){
                 return calcular_tipo_expresion(bloque->izq, ts);
             }
             return TIPO_VOID;
-        case T_VAR_DECLS:
-            if (!bloque) return TIPO_VOID;      // NULL seguro
-            if (bloque->izq) {
-                tipo_info izq = retorno_bloque(bloque->izq, ts);
-                if (izq != TIPO_VOID) return izq;
-            }
-            if (bloque->der) {
-                tipo_info der = retorno_bloque(bloque->der, ts);
-                if (der != TIPO_VOID) return der;
-            }
-            return TIPO_VOID;
-
+        case T_BLOQUE:
+            return retorno_bloque(bloque->der, ts); // statements
         case T_STATEMENTS: {
-            // recorrer cada statement en la lista
+            // Recorrer la lista de statements (estructura recursiva izq->der)
             nodo *curr = bloque;
-            while (curr) {
+            while (curr && curr->valor && curr->valor->tipo_token == T_STATEMENTS) {
+                // Verificar el statement actual (izq)
                 if (curr->izq) {
                     tipo_info t = retorno_bloque(curr->izq, ts);
                     if (t != TIPO_VOID) return t;
                 }
+                // Continuar con el siguiente statement (der)
                 curr = curr->der;
+            }
+            // Si curr no es NULL, verificar el último nodo
+            if (curr) {
+                tipo_info t = retorno_bloque(curr, ts);
+                if (t != TIPO_VOID) return t;
             }
             return TIPO_VOID;
         }
-
-
         default:
             if (bloque->izq) {
                 tipo_info izq = retorno_bloque(bloque->izq, ts);
@@ -426,6 +407,10 @@ tipo_info retorno_bloque(nodo *bloque, tabla_simbolos *ts){
             if (bloque->der) {
                 tipo_info der = retorno_bloque(bloque->der, ts);
                 if (der != TIPO_VOID) return der;
+            }
+            if (bloque->med) {
+                tipo_info med = retorno_bloque(bloque->med, ts);
+                if (med != TIPO_VOID) return med;
             }
             return TIPO_VOID;
     }
