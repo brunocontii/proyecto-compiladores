@@ -100,23 +100,15 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
             if (!es_extern) {
                 cerrar_scope(ts); // cerramos solo los scopes internos
             }
+            //es_metodo = false;
             break;
         }
-        case T_BLOQUE: {
-            if (!es_metodo) {
-                abrir_scope(ts);
-            } else {
-                es_metodo = false;
-            }
-
-            recorridoSemantico(raiz->izq, ts); // var_decls            
+        case T_BLOQUE:
+            // No abrimos scope aca
+            recorridoSemantico(raiz->izq, ts); // var_decls
             recorridoSemantico(raiz->der, ts); // statements
-
-            if (!es_metodo) {
-                cerrar_scope(ts); // solo cerramos los scopes internos
-            }       
             break;
-        }
+
         case T_ASIGNACION: {
             info *busqueda = buscar(ts, raiz->izq->valor->name);
             tipo_info tipo_expr = calcular_tipo_expresion(raiz->der, ts);
@@ -231,27 +223,33 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
         case T_IF:
         case T_WHILE: {
             tipo_info tipo_condicion = calcular_tipo_expresion(raiz->izq, ts);
+            if (tipo_condicion != TIPO_BOOL)
+                reportar_error(linea, "Condición debe ser BOOL\n");
 
-            if (tipo_condicion != TIPO_BOOL) {
-                reportar_error(linea, "Error semántico: La condicion debe ser de tipo BOOL"
-                                " pero se recibio tipo '%d'\n", tipo_condicion);
-            }
-            recorridoSemantico(raiz->izq, ts);
+            // Abrir scope para statements internos
+            abrir_scope(ts);
             recorridoSemantico(raiz->der, ts);
+            cerrar_scope(ts);
             break;
         }
+
         case T_IF_ELSE: {
             tipo_info tipo_condicion = calcular_tipo_expresion(raiz->izq, ts);
+            if (tipo_condicion != TIPO_BOOL)
+                reportar_error(linea, "Condición debe ser BOOL\n");
 
-            if (tipo_condicion != TIPO_BOOL) {
-                reportar_error(linea, "Error semántico: La condicion debe ser de tipo BOOL"
-                                " pero se recibio tipo '%d'\n", tipo_condicion);
-            }
-            recorridoSemantico(raiz->izq, ts);
+            // Abrir scope para THEN
+            abrir_scope(ts);
             recorridoSemantico(raiz->med, ts);
+            cerrar_scope(ts);
+
+            // Abrir scope para ELSE
+            abrir_scope(ts);
             recorridoSemantico(raiz->der, ts);
+            cerrar_scope(ts);
             break;
         }
+
         case T_METHOD_CALL: {
             info *metodo = buscar(ts, raiz->izq->valor->name);
             if (!metodo) {
