@@ -13,11 +13,12 @@
 #define COLOR_YELLOW  "\033[33m"
 #define COLOR_RESET   "\033[0m"
 
-extern FILE* yyin;           // puntero de entrada para el lexer
-extern int yylex();          // lexer
-extern int yyparse();         // parser
-extern nodo* raiz;           // raíz del AST
-extern tabla_simbolos *ts;   // tabla de símbolos
+extern FILE* yyin;              // puntero de entrada para el lexer
+extern int yylex();             // lexer
+extern int yyparse();           // parser
+extern nodo* raiz;              // raíz del AST
+extern tabla_simbolos *ts;      // tabla de símbolos
+extern bool hay_main;           // indica si se encontró la función main
 
 // Variables de configuración
 char* archivo_entrada = NULL;
@@ -152,6 +153,9 @@ int main(int argc, char *argv[]) {
             }
             generateASTDotFile(raiz, archivo_salida);     
             recorridoSemantico(raiz, ts);
+            if (!hay_main) {
+                reportar_error(yylineno, "Error semántico: Falta definir la función main\n");
+            }
         }
     }
     else if (strcmp(target, "codinter") == 0) {

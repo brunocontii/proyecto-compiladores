@@ -5,6 +5,7 @@
 
 bool es_metodo = true;
 bool es_extern = false;
+bool hay_main = false;
 
 void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
 
@@ -61,6 +62,9 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
                 reportar_error(linea, "Método '%s' ya declarado\n", raiz->valor->name);
             }
 
+            printf("Nombre del metodo actual: %s\n",raiz->valor->name);
+            imprimir_scope_actual(ts);
+
             // Verificar si es extern
             es_extern = raiz->der->valor->tipo_token == T_EXTERN;
 
@@ -72,6 +76,7 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
 
 
             if (strcmp(raiz->valor->name, "main") == 0) {
+                hay_main = true;
                 if (raiz->valor->tipo_info != TIPO_VOID) {
                     reportar_error(linea, "Error semantico: Main debe ser de tipo void\n");
                 }
@@ -95,8 +100,6 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
                 }
             }
 
-            printf("Nombre del metodo actual: %s\n",raiz->valor->name);
-            imprimir_scope_actual(ts);
             if (!es_extern) {
                 cerrar_scope(ts); // cerramos solo los scopes internos
             }
