@@ -5,7 +5,7 @@ program {
 
     void main() {
         integer n = get_int();
-        while n {
+        while (n > 0) {
             print_int(n);
             n = n - 1;
         }
