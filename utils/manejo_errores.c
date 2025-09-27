@@ -31,3 +31,12 @@ void chequear_errores() {
         printf(COLOR_GREEN "Compilacion EXITOSA con %d errores\n" COLOR_RESET, errors);
     }
 }
+
+const char* tipo_info_to_string(tipo_info t) {
+    switch (t) {
+        case TIPO_INTEGER: return "integer";
+        case TIPO_BOOL:    return "bool";
+        case TIPO_VOID:    return "void";
+        default:           return "desconocido";
+    }
+}

@@ -34,6 +34,23 @@ nodo* crearArbolTer(info *valorNodo, nodo *hijoIzq,nodo *hijoMed, nodo *hijoDer)
     return n;
 }
 
+nodo* buscarNodo(nodo* raiz, const char* nombre) {
+    if (!raiz || !nombre) return NULL;
+
+    if (strcmp(raiz->valor->name, nombre) == 0) {
+        return raiz;
+    }
+
+    nodo *resultado = buscarNodo(raiz->izq, nombre);
+    if (resultado) return resultado;
+
+    resultado = buscarNodo(raiz->med, nombre);
+    if (resultado) return resultado;
+
+    return buscarNodo(raiz->der, nombre);
+}
+
+
 void mostrarArbol(nodo *raiz, int nivel) {
     if (!raiz) return;
 

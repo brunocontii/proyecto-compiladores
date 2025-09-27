@@ -68,6 +68,7 @@ typedef struct nodo {
 nodo* crearNodo(info *valorNodo);
 nodo* crearArbol(info *valorNodo, nodo* hijoIzq, nodo* hijoDer);
 nodo* crearArbolTer(info *valorNodo, nodo* hijoIzq, nodo* hijoMed, nodo* hijoDer);
+nodo* buscarNodo(nodo* raiz, const char* nombre);
 void mostrarArbol(nodo *raiz, int nivel);
 void liberarArbol(nodo *raiz);
 
