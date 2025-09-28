@@ -4,6 +4,7 @@
 #include "../utils/manejo_errores.h"
 #include "../funciones-auxiliares/verificar_parametros.c"
 #include "../funciones-auxiliares/calcular_tipo_expresion.c"
+#include "../funciones-auxiliares/verificar_asignacion_metodo.c"
 
 bool es_metodo = true;
 bool es_extern = false;
@@ -31,7 +32,13 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
             recorridoSemantico(raiz->der, ts); // method_decl
             break;
         case T_PARAMETROS:
-            recorridoSemantico(raiz->izq, ts); // parametros
+            if (raiz->izq->valor->tipo_token == T_STATEMENTS) {
+                recorridoSemantico(raiz->izq, ts); // parametros
+            } else if (raiz->izq->valor->tipo_token == T_METHOD_CALL) {
+                verificar_asignacion_metodo(raiz->izq, raiz_arbol, ts); // method_call
+            } else {
+                recorridoSemantico(raiz->izq, ts); // parametro
+            }
             recorridoSemantico(raiz->der, ts); // parametro
             break;
         case T_STATEMENTS:

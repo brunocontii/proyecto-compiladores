@@ -4,40 +4,40 @@
 #include <stdbool.h>
 
 typedef enum {
-    T_PROGRAM,
-    T_EXTERN,
-    T_RETURN,
-    T_IF,
-    T_IF_ELSE,
-    T_WHILE,
-    T_VTRUE,
-    T_VFALSE,
-    T_OP_AND,
-    T_OP_OR,
-    T_OP_NOT,
-    T_INTEGER,
-    T_BOOL,
-    T_ID,
-    T_DIGIT,
-    T_OP_MENOS,
-    T_OP_MAS,
-    T_OP_MULT,
-    T_OP_DIV,
-    T_OP_RESTO,
-    T_ASIGNACION,
-    T_IGUALDAD,
-    T_MENOR,
-    T_MAYOR,
-    T_VAR_DECLS,
-    T_VAR_DECL,
-    T_METHOD_DECLS,
-    T_METHOD_DECL,
-    T_PARAMETROS,
-    T_PARAMETRO,
-    T_BLOQUE,
-    T_METHOD_CALL,
-    T_EXPRS,
-    T_STATEMENTS
+    T_PROGRAM,          // 0
+    T_EXTERN,           // 0
+    T_RETURN,           // 0
+    T_IF,               // 0
+    T_IF_ELSE,          // 0
+    T_WHILE,            // 0
+    T_VTRUE,            // 0
+    T_VFALSE,           // 0
+    T_OP_AND,           // 0
+    T_OP_OR,            // 0
+    T_OP_NOT,           // 0
+    T_INTEGER,          // 0
+    T_BOOL,             // 0
+    T_ID,               // 0
+    T_DIGIT,            // 0
+    T_OP_MENOS,         // 0
+    T_OP_MAS,           // 0
+    T_OP_MULT,          // 0
+    T_OP_DIV,           // 0
+    T_OP_RESTO,         // 0
+    T_ASIGNACION,       // 0
+    T_IGUALDAD,         // 0
+    T_MENOR,            // 0
+    T_MAYOR,            // 0
+    T_VAR_DECLS,        // 0
+    T_VAR_DECL,         // 0
+    T_METHOD_DECLS,     // 0
+    T_METHOD_DECL,      // 0
+    T_PARAMETROS,       // 0
+    T_PARAMETRO,        // 0
+    T_BLOQUE,           // 0
+    T_METHOD_CALL,      // 0
+    T_EXPRS,            // 0
+    T_STATEMENTS        // 0
 } tipo_token;
 
 typedef enum {
