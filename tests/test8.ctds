@@ -1,16 +1,23 @@
 program {
 
     integer suma(integer a, integer b) {
-        if (b > 5) then {
-            integer a = 5;
-        }
         return a + b;
     }
 
-    void main() {
-        integer x = 0;
-        x = suma(x, 6);
-        return;
+    bool esPar(integer x) {
+        return x % 2 == 0;
     }
 
+    void main() {
+        integer x = suma(2,3);
+        suma(2,3);
+
+        if (4 < suma(2,3)) then {
+            x = 0;
+        }
+
+        if (esPar(x)) then {
+            x = 0;
+        }
+    }
 }
