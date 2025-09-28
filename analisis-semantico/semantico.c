@@ -8,6 +8,13 @@ bool es_extern = false;
 bool hay_main = false;
 nodo *raiz_arbol = NULL;
 
+int contar_parametros(nodo *params, int tipo_lista) {
+    if (!params) return 0;
+    if (params->valor->tipo_token == tipo_lista)
+        return contar_parametros(params->izq, tipo_lista) + 1;
+    return 1;
+}
+
 void verificar_parametros(nodo *method_call, nodo* raiz, tabla_simbolos *ts) {
     if (!method_call || method_call->valor->tipo_token != T_METHOD_CALL) return;
 
@@ -27,6 +34,18 @@ void verificar_parametros(nodo *method_call, nodo* raiz, tabla_simbolos *ts) {
 
     nodo *parametros_formales = method_decl->izq;
 
+    int cant_par_formales = contar_parametros(parametros_formales, T_PARAMETROS);
+    int cant_par_actuales = contar_parametros(parametros_actuales, T_EXPRS);
+    printf("DEBUG: Metodo '%s' tiene %d parametros formales y %d parametros actuales\n", 
+            nombre_metodo_call, cant_par_formales, cant_par_actuales);
+    
+    if (cant_par_formales != cant_par_actuales) {
+        reportar_error(method_call->linea, "Error semantico: En la llamada al metodo '%s', "
+                                            "la cantidad de parametros no coincide con la declaracion. Se esperaban %d pero se recibieron %d\n",
+                                            nombre_metodo_call, cant_par_formales, cant_par_actuales);
+        return;
+    }
+
     while (parametros_actuales && parametros_formales) {
         bool formal_es_lista = (parametros_formales->valor->tipo_token == T_PARAMETROS);
         bool actual_es_lista = (parametros_actuales->valor->tipo_token == T_EXPRS);
@@ -39,12 +58,18 @@ void verificar_parametros(nodo *method_call, nodo* raiz, tabla_simbolos *ts) {
                 tipo_info tipo_par_actual = calcular_tipo_expresion(parametros_actuales->der, ts);
                 tipo_info tipo_par_formal = parametros_formales->der->valor->tipo_info;
 
-                printf("DEBUG: Comparando tipos: formal=%d, actual=%d\n", tipo_par_formal, tipo_par_actual);
-
+                printf("DEBUG: Se compara '%s' con '%s'\n", parametros_actuales->der->valor->name, parametros_formales->der->valor->name);
+                printf("DEBUG: Campos de parametros_actuales->der->valor: tipo_token=%d, tipo_info=%d, valor=%d\n",
+                        parametros_actuales->der->valor ? parametros_actuales->der->valor->tipo_token : -1,
+                        parametros_actuales->der->valor ? parametros_actuales->der->valor->tipo_info : -1,
+                        parametros_actuales->der->valor ? parametros_actuales->der->valor->nro : -1);
+                printf("DEBUG: Campos de parametros_formales->der->valor: tipo_token=%d, tipo_info=%d\n",
+                        parametros_formales->der->valor ? parametros_formales->der->valor->tipo_token : -1,
+                        parametros_formales->der->valor ? parametros_formales->der->valor->tipo_info : -1);
                 if (tipo_par_actual != tipo_par_formal) {
                     reportar_error(method_call->linea, "Error semantico: En la llamada al metodo '%s', "
-                                    "el tipo del parametro no coincide con la declaracion. Se esperaba '%d' pero se recibio '%d'\n",
-                                    nombre_metodo_call, tipo_par_formal, tipo_par_actual);
+                                    "el tipo del parametro no coincide con la declaracion. Se esperaba '%s' pero se recibio '%s'\n",
+                                    nombre_metodo_call, tipo_info_to_string(tipo_par_formal), tipo_info_to_string(tipo_par_actual));
                 }
             }
             
@@ -57,20 +82,24 @@ void verificar_parametros(nodo *method_call, nodo* raiz, tabla_simbolos *ts) {
         }
     }
 
-    // Verificar casos de cantidad incorrecta de parámetros
-    if (parametros_formales && !parametros_actuales) {
-        reportar_error(method_call->linea, "Error semantico: En la llamada al metodo '%s', "
-                        "faltan parametros. Se esperaba mas parametros.\n", nombre_metodo_call);
-        return;
-    } else if (parametros_actuales && !parametros_formales) {
-        reportar_error(method_call->linea, "Error semantico: En la llamada al metodo '%s', "
-                        "sobran parametros. Se esperaba menos parametros.\n", nombre_metodo_call);
-        return;
-    }
-
     // Verificar el último parámetro (las hojas)
     if (parametros_actuales && parametros_formales) {
-        tipo_info tipo_actual_hoja = calcular_tipo_expresion(parametros_actuales->der, ts);
+        printf("DEBUG: Se comparan hojas: '%s' con '%s'\n", 
+                parametros_actuales->valor ? parametros_actuales->valor->name : "NULL",
+                parametros_formales->valor ? parametros_formales->valor->name : "NULL");
+        printf("DEBUG: Campos de parametros_actuales->valor: name=%s, tipo_token=%d, tipo_info=%d, valor=%d\n",
+                parametros_actuales->valor ? parametros_actuales->valor->name : "NULL",
+                parametros_actuales->valor ? parametros_actuales->valor->tipo_token : -1,
+                parametros_actuales->valor ? parametros_actuales->valor->tipo_info : -1,
+                parametros_actuales->valor ? parametros_actuales->valor->nro : -1);
+        printf("DEBUG: Campos de parametros_formales->valor: name=%s, tipo_token=%d, tipo_info=%d\n",
+                parametros_formales->valor ? parametros_formales->valor->name : "NULL",
+                parametros_formales->valor ? parametros_formales->valor->tipo_token : -1,
+                parametros_formales->valor ? parametros_formales->valor->tipo_info : -1);
+        
+        tipo_info tipo_actual_hoja = calcular_tipo_expresion(parametros_actuales, ts);
+
+        printf("========== DEBUG ==============================================\n");
 
         if (parametros_formales->valor) {
             tipo_info tipo_formal_hoja = parametros_formales->valor->tipo_info;
@@ -124,16 +153,22 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
             }
             break;
         case T_VAR_DECL: {
-            // Insertar variable en tabla de símbolos
-            if (!insertar(ts, raiz->izq->valor)) {
-                reportar_error(linea, "Variable '%s' ya declarada\n", raiz->izq->valor->name);
+            // primero verificar la compatibilidad de tipos en la inicializacion
+            if (raiz->der) {
+                tipo_info tipo_expr = calcular_tipo_expresion(raiz->der, ts);
+
+                if (raiz->izq->valor->tipo_info != tipo_expr) {
+                    reportar_error(linea, "Error semantico: Incompatibilidad de tipos en la inicializacion."
+                                            "La variable '%s' es de tipo '%s', pero la expresion es de tipo '%s'\n",
+                                            raiz->valor->name, tipo_info_to_string(raiz->valor->tipo_info), tipo_info_to_string(tipo_expr));
+                    // si hay error de tipo, no se inserta en la tabla de simbolos
+                    break;
+                }
             }
 
-            tipo_info tipo_expr = calcular_tipo_expresion(raiz->der, ts);
-            if (raiz->izq->valor->tipo_info != tipo_expr) {
-                reportar_error(linea, "Error semántico: Incompatibilidad de tipos en la declaracion."
-                                "Se declaro a '%s' de tipo '%d', pero se le quiere asignar el tipo '%d'\n",
-                                raiz->izq->valor->name, raiz->izq->valor->tipo_info, tipo_expr);
+            // solo si no hay error de tipo, insertamos en la tabla de simbolos
+            if (!insertar(ts, raiz->izq->valor)) {
+                reportar_error(linea, "Variable '%s' ya declarada\n", raiz->izq->valor->name);
             }
             break;
         }
@@ -141,9 +176,6 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
             if (!insertar(ts, raiz->valor)) {
                 reportar_error(linea, "Método '%s' ya declarado\n", raiz->valor->name);
             }
-
-            printf("Nombre del metodo actual: %s\n",raiz->valor->name);
-            imprimir_scope_actual(ts);
 
             // Verificar si es extern
             es_extern = raiz->der->valor->tipo_token == T_EXTERN;
@@ -154,7 +186,6 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
                 es_metodo = true;
             }
 
-
             if (strcmp(raiz->valor->name, "main") == 0) {
                 hay_main = true;
                 if (raiz->valor->tipo_info != TIPO_VOID) {
@@ -164,6 +195,7 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
                     reportar_error(linea, "Error semantico: Main no debe tener parametros\n");
                 }
             }
+
             raiz->der->valor->tipo_info = raiz->valor->tipo_info; // pasar tipo de metodo a bloque o extern
             recorridoSemantico(raiz->izq, ts); // var_decls
             recorridoSemantico(raiz->der, ts); // bloque o extern
@@ -191,18 +223,18 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
             recorridoSemantico(raiz->izq, ts); // var_decls
             recorridoSemantico(raiz->der, ts); // statements
             break;
-
         case T_ASIGNACION: {
-            info *busqueda = buscar(ts, raiz->izq->valor->name);
+            info *variable = buscar(ts, raiz->izq->valor->name);
             tipo_info tipo_expr = calcular_tipo_expresion(raiz->der, ts);
 
-            if (!busqueda) {
+            if (!variable) {
                 reportar_error(linea, "Error semántico: Variable '%s' no declarada\n", raiz->izq->valor->name);
-            } else if (busqueda->tipo_info != tipo_expr) {
+            } else if (variable->tipo_info != tipo_expr) {
                 reportar_error(linea, "Error semántico: Incompatibilidad de tipos en la asignacion."
-                                "La variable '%s' es de tipo '%d', pero la expresion es de tipo '%d'\n",
-                                raiz->izq->valor->name, busqueda->tipo_info, tipo_expr);
+                                        " La variable '%s' es de tipo '%s', pero la expresion es de tipo '%s'\n",
+                                        raiz->izq->valor->name, tipo_info_to_string(variable->tipo_info), tipo_info_to_string(tipo_expr));
             }
+
             recorridoSemantico(raiz->der, ts);
             break;
         }
@@ -215,8 +247,9 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
 
             if (tipo_expr1 != TIPO_INTEGER || tipo_expr2 != TIPO_INTEGER) {
                 reportar_error(linea, "Error semantico: Operadores aritmeticos requieren operandos INTEGER"
-                                " pero se recibieron tipos '%d' y '%d'\n", tipo_expr1, tipo_expr2);
+                                        " pero se recibieron tipos '%s' y '%s'\n", tipo_info_to_string(tipo_expr1), tipo_info_to_string(tipo_expr2));
             }
+
             recorridoSemantico(raiz->izq, ts);
             recorridoSemantico(raiz->der, ts);
             break;
@@ -225,10 +258,12 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
             if (raiz->izq == NULL) {
                 // Menos unario
                 tipo_info tipo_expr = calcular_tipo_expresion(raiz->der, ts);
+
                 if (tipo_expr != TIPO_INTEGER) {
                     reportar_error(linea, "Error semántico: Operador unario '-' requiere INTEGER"
-                                    " pero se recibio tipo '%d'\n", tipo_expr);
+                                            " pero se recibio tipo '%s'\n", tipo_info_to_string(tipo_expr));
                 }
+
                 recorridoSemantico(raiz->der, ts);
             } else {
                 // Menos binario
@@ -237,7 +272,7 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
                 
                 if (tipo_expr1 != TIPO_INTEGER || tipo_expr2 != TIPO_INTEGER) {
                     reportar_error(linea, "Error semántico: Resta requiere operandos INTEGER"
-                                    " pero se recibieron tipos '%d' y '%d'\n", tipo_expr1, tipo_expr2);
+                                            " pero se recibieron tipos '%s' y '%s'\n", tipo_info_to_string(tipo_expr1), tipo_info_to_string(tipo_expr2));
                 }
                 recorridoSemantico(raiz->izq, ts);
                 recorridoSemantico(raiz->der, ts);
@@ -251,18 +286,21 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
 
             if (tipo_expr1 != TIPO_BOOL || tipo_expr2 != TIPO_BOOL) {
                 reportar_error(linea, "Error semantico: Operacion booleana requiere operandos BOOL"
-                                " pero se recibieron tipos '%d' y '%d'\n", tipo_expr1, tipo_expr2);
+                                        " pero se recibieron tipos '%s' y '%s'\n", tipo_info_to_string(tipo_expr1), tipo_info_to_string(tipo_expr2));
             }
+
             recorridoSemantico(raiz->izq, ts);
             recorridoSemantico(raiz->der, ts);
             break;
         }
         case T_OP_NOT: {
             tipo_info tipo_expr = calcular_tipo_expresion(raiz->der, ts);
+
             if (tipo_expr != TIPO_BOOL) {
                 reportar_error(linea, "Error semantico: Operador '!' requiere operando BOOL"
-                                " pero se recibio tipo '%d'\n", tipo_expr);
+                                        " pero se recibio tipo '%s'\n", tipo_info_to_string(tipo_expr));
             }
+
             recorridoSemantico(raiz->der, ts);
             break;
         }
@@ -273,8 +311,9 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
             
             if (tipo_izq != TIPO_INTEGER || tipo_der != TIPO_INTEGER) {
                 reportar_error(linea, "Error semántico: Operadores < y > requieren operandos INTEGER"
-                        " pero se recibieron tipos '%d' y '%d'\n", tipo_izq, tipo_der);
+                                        " pero se recibieron tipos '%s' y '%s'\n", tipo_info_to_string(tipo_izq), tipo_info_to_string(tipo_der));
             }
+
             recorridoSemantico(raiz->izq, ts);
             recorridoSemantico(raiz->der, ts);
             break;
@@ -285,12 +324,13 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
             
             if (tipo_izq != tipo_der) {
                 reportar_error(linea, "Error semántico: Operador == requiere operandos del mismo tipo"
-                        " pero se recibieron tipos '%d' y '%d'\n", tipo_izq, tipo_der);
+                                        " pero se recibieron tipos '%s' y '%s'\n", tipo_info_to_string(tipo_izq), tipo_info_to_string(tipo_der));
             }
             
             if (tipo_izq == TIPO_VOID || tipo_der == TIPO_VOID) {
                 reportar_error(linea, "Error semántico: No se puede comparar con tipo VOID\n");
             }
+
             recorridoSemantico(raiz->izq, ts);
             recorridoSemantico(raiz->der, ts);
             break;
@@ -306,8 +346,10 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
         case T_IF:
         case T_WHILE: {
             tipo_info tipo_condicion = calcular_tipo_expresion(raiz->izq, ts);
-            if (tipo_condicion != TIPO_BOOL)
-                reportar_error(linea, "Condición debe ser BOOL\n");
+
+            if (tipo_condicion != TIPO_BOOL) {
+                reportar_error(linea, "Condición debe ser 'bool' pero es de tipo '%s'\n", tipo_info_to_string(tipo_condicion));
+            }
 
             // Abrir scope para statements internos
             abrir_scope(ts);
@@ -318,8 +360,10 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
 
         case T_IF_ELSE: {
             tipo_info tipo_condicion = calcular_tipo_expresion(raiz->izq, ts);
-            if (tipo_condicion != TIPO_BOOL)
-                reportar_error(linea, "Condición debe ser BOOL\n");
+
+            if (tipo_condicion != TIPO_BOOL) {
+                reportar_error(linea, "Condición debe ser 'bool' pero es de tipo '%s'\n", tipo_info_to_string(tipo_condicion));
+            }
 
             // Abrir scope para THEN
             abrir_scope(ts);
@@ -335,6 +379,7 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
 
         case T_METHOD_CALL: {
             info *metodo = buscar(ts, raiz->izq->valor->name);
+
             if (!metodo) {
                 reportar_error(linea, "Error: semantico: Método '%s' no declarado", raiz->izq->valor->name);
             }
@@ -373,15 +418,25 @@ tipo_info calcular_tipo_expresion(nodo *expr, tabla_simbolos *ts) {
 
             if (tipo_izq == TIPO_INTEGER && tipo_der == TIPO_INTEGER) {
                 return TIPO_INTEGER;
+            } else {
+                reportar_error(expr->linea, "Error semantico: Operador '%s' requiere operandos INTEGER"
+                                            " pero se recibieron tipos '%s' y '%s'\n", expr->valor->op,tipo_info_to_string(tipo_izq), tipo_info_to_string(tipo_der));
+                return TIPO_VOID;
             }
-            return TIPO_VOID;
         }
 
         case T_OP_MENOS: {
             if (expr->izq == NULL) {
                 // menos unario
                 tipo_info tipo_der = calcular_tipo_expresion(expr->der, ts);
-                return (tipo_der == TIPO_INTEGER) ? TIPO_INTEGER : TIPO_VOID;
+
+                if (tipo_der == TIPO_INTEGER) {
+                    return TIPO_INTEGER;
+                } else {
+                    reportar_error(expr->linea, "Error semántico: Operador unario '-' requiere INTEGER"
+                                                " pero se recibio tipo '%s'\n", tipo_info_to_string(tipo_der));
+                    return TIPO_VOID;
+                }
             } else {
                 // menos binario
                 tipo_info tipo_izq = calcular_tipo_expresion(expr->izq, ts);
@@ -389,8 +444,11 @@ tipo_info calcular_tipo_expresion(nodo *expr, tabla_simbolos *ts) {
 
                 if (tipo_izq == TIPO_INTEGER && tipo_der == TIPO_INTEGER) {
                     return TIPO_INTEGER;
+                } else {
+                    reportar_error(expr->linea, "Error semántico: Operador binario '-' requiere operandos INTEGER"
+                                                " pero se recibieron tipos '%s' y '%s'\n", tipo_info_to_string(tipo_izq), tipo_info_to_string(tipo_der));
+                    return TIPO_VOID;
                 }
-                return TIPO_VOID;
             }
         }
 
@@ -401,13 +459,23 @@ tipo_info calcular_tipo_expresion(nodo *expr, tabla_simbolos *ts) {
 
             if (tipo_izq == TIPO_BOOL && tipo_der == TIPO_BOOL) {
                 return TIPO_BOOL;
+            } else {
+                reportar_error(expr->linea, "Error semantico: Operador booleano '%s' requiere operandos BOOL"
+                                            " pero se recibieron tipos '%s' y '%s'\n", expr->valor->op, tipo_info_to_string(tipo_izq), tipo_info_to_string(tipo_der));
+                return TIPO_VOID;
             }
-            return TIPO_VOID;
         }
 
         case T_OP_NOT: {
             tipo_info tipo_der = calcular_tipo_expresion(expr->der, ts);
-            return (tipo_der == TIPO_BOOL) ? TIPO_BOOL : TIPO_VOID;
+
+            if (tipo_der == TIPO_BOOL) {
+                return TIPO_BOOL;
+            } else {
+                reportar_error(expr->linea, "Error semántico: Operador unario '!' requiere BOOL"
+                                            " pero se recibio tipo '%s'\n", tipo_info_to_string(tipo_der));
+                return TIPO_VOID;
+            }
         }
 
         case T_MENOR:
@@ -417,8 +485,11 @@ tipo_info calcular_tipo_expresion(nodo *expr, tabla_simbolos *ts) {
 
             if (tipo_izq == TIPO_INTEGER && tipo_der == TIPO_INTEGER) {
                 return TIPO_BOOL;
+            } else {
+                reportar_error(expr->linea, "Error semantico: Operador de comparacion '%s' requiere operandos INTEGER"
+                                            " pero se recibieron tipos '%s' y '%s'\n", expr->valor->op, tipo_info_to_string(tipo_izq), tipo_info_to_string(tipo_der));
+                return TIPO_VOID;
             }
-            return TIPO_VOID;
         }
 
         case T_IGUALDAD: {
@@ -427,18 +498,39 @@ tipo_info calcular_tipo_expresion(nodo *expr, tabla_simbolos *ts) {
 
             if (tipo_izq == tipo_der && tipo_izq != TIPO_VOID) {
                 return TIPO_BOOL;
+            } else {
+                reportar_error(expr->linea, "Error semantico: Operador '==' requiere operandos del mismo tipo"
+                                            " pero se recibieron tipos '%s' y '%s'\n", tipo_info_to_string(tipo_izq), tipo_info_to_string(tipo_der));
+                return TIPO_VOID;
             }
-            return TIPO_VOID;
         }
 
         case T_ID: {
             info *var_info = buscar(ts, expr->valor->name);
-            return var_info ? var_info->tipo_info : TIPO_VOID;
+    
+            printf("DEBUG: Buscar variable '%s' en tabla de simbolos\n", expr->valor->name);
+            printf("DEBUG: Campos de var_info: tipo_token=%d, tipo_info=%d, valor=%d\n",
+                    var_info ? var_info->tipo_token : -1,
+                    var_info ? var_info->tipo_info : -1,
+                    var_info ? var_info->nro : -1);
+            
+            if (var_info) {
+                return var_info->tipo_info;
+            } else {
+                reportar_error(expr->linea, "Error semántico: Variable '%s' no declarada\n", expr->valor->name);
+                return TIPO_VOID;
+            }
         }
 
         case T_METHOD_CALL: {
             info *metodo_info = buscar(ts, expr->izq->valor->name);
-            return metodo_info ? metodo_info->tipo_info : TIPO_VOID;
+            
+            if (metodo_info) {
+                return metodo_info->tipo_info;
+            } else {
+                reportar_error(expr->linea, "Error semántico: Método '%s' no declarado\n", expr->izq->valor->name);
+                return TIPO_VOID;
+            }
         }
 
         default:
