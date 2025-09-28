@@ -1,0 +1,16 @@
+program {
+    void main() {
+        integer x = 5;
+        integer y = 10;
+
+        x = suma(x,y);
+        
+        return;
+    }
+    
+    integer suma(integer a, integer b) {
+        integer resultado = a + b;
+        return resultado;
+    }
+
+}
