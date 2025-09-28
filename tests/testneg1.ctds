@@ -1,4 +1,5 @@
 program {
+
     void print_bool(bool flag) extern;
 
     integer probando() extern;
@@ -6,4 +7,8 @@ program {
     integer j = 3;
 
     integer int_var = j + j;
+
+    void main() {
+        integer x = 10;
+    }
 }

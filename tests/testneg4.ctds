@@ -10,5 +10,9 @@ program {
         
         return y;
     }
+
+    void main() {
+        integer x = 10;
+    }
     
 }
