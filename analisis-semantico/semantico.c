@@ -38,11 +38,10 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
         case T_STATEMENTS:
             recorridoSemantico(raiz->izq, ts); // statements
             if (raiz->der->valor->tipo_token == T_METHOD_CALL) {
-                verificar_asignacion_metodo(raiz->der, raiz_arbol, ts);
+                verificar_asignacion_metodo(raiz->der, ts);
             }
             recorridoSemantico(raiz->der, ts); // statement
             break;
-            
         case T_EXPRS:
             recorridoSemantico(raiz->izq, ts); // exprs
             recorridoSemantico(raiz->der, ts); // expr
@@ -104,8 +103,6 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
             if (!es_extern && raiz->der->valor->tipo_token != T_EXTERN) {
                 tipo_info retorno = retorno_bloque(raiz->der, ts);
                 if (raiz->valor->tipo_info != retorno) {
-                    printf("lado izq %d\n",raiz->valor->tipo_info);
-                    printf("retorno %d\n",retorno);
                     reportar_error(linea, "Error semantico: Tipo de retorno no coincide con la declaracion\n");
                 }
                 if (raiz->valor->tipo_info == TIPO_VOID && retorno != TIPO_VOID) {
@@ -283,10 +280,9 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
 
             if (!metodo) {
                 reportar_error(linea, "Error: semantico: Método '%s' no declarado", raiz->izq->valor->name);
+            } else {
+                verificar_parametros(raiz, raiz_arbol, ts);
             }
-            printf("+++++++++++++DEBUG: Método '%s' es de tipo '%s'\n", raiz->izq->valor->name, tipo_info_to_string(raiz->izq ? raiz->izq->valor->tipo_info : TIPO_VOID));
-            raiz->valor->tipo_info = metodo ? metodo->tipo_info : TIPO_VOID; // pasar tipo de metodo a method_call
-            verificar_parametros(raiz, raiz_arbol, ts);
             break;
         }
         default:

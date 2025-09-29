@@ -37,17 +37,24 @@ nodo* crearArbolTer(info *valorNodo, nodo *hijoIzq,nodo *hijoMed, nodo *hijoDer)
 nodo* buscarNodo(nodo* raiz, const char* nombre) {
     if (!raiz || !nombre) return NULL;
 
-    if (strcmp(raiz->valor->name, nombre) == 0) {
+    if (raiz->valor && raiz->valor->name && strcmp(raiz->valor->name, nombre) == 0) {
         return raiz;
     }
 
-    nodo *resultado = buscarNodo(raiz->izq, nombre);
-    if (resultado) return resultado;
-
-    resultado = buscarNodo(raiz->med, nombre);
-    if (resultado) return resultado;
-
-    return buscarNodo(raiz->der, nombre);
+    nodo *resultado = NULL;
+    if (raiz->izq) {
+        resultado = buscarNodo(raiz->izq, nombre);
+        if (resultado) return resultado;
+    }
+    if (raiz->med) {
+        resultado = buscarNodo(raiz->med, nombre);
+        if (resultado) return resultado;
+    }
+    if (raiz->der) {
+        resultado = buscarNodo(raiz->der, nombre);
+        if (resultado) return resultado;
+    }
+    return NULL;
 }
 
 

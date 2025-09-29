@@ -71,5 +71,6 @@ nodo* crearArbolTer(info *valorNodo, nodo* hijoIzq, nodo* hijoMed, nodo* hijoDer
 nodo* buscarNodo(nodo* raiz, const char* nombre);
 void mostrarArbol(nodo *raiz, int nivel);
 void liberarArbol(nodo *raiz);
+void generateASTDotFile(nodo* root, const char* base_filename);
 
 #endif

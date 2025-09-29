@@ -1,32 +1,16 @@
 program {
-    integer suma(integer a, integer b) { // método con parámetros y bloque, nivel 0
-        integer c = 5;
-        if (a > b) then {
-            integer d = 2;
-            c = c + d;
-        } else {
-            integer e = 1;
-            c = c + e;
-        }
-        return c + a + b;
+    void main() {
+        integer x = 5;
+        integer y = 10;
+
+        x = suma(x,y);
+        
+        return;
     }
-    integer get_int() extern;        // método extern, nivel 0
-    integer suma2(integer asd, integer j) {
-        integer k = 3;
-        asd = 8;
-        return k + asd;
+    
+    integer suma(integer a, integer b) {
+        integer resultado = a + b;
+        return resultado;
     }
-    void main() {                    // método void sin parámetros, nivel 0
-        integer t = suma(2,3);
-        integer x = get_int();
-        integer y = 3;
-        integer z = 0;
-        if (x > y) then {
-            integer w = 1;
-            z = x + w;
-        } else {
-            integer v = 2;
-            z = y + v;
-        }
-    }
+
 }

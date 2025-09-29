@@ -115,12 +115,6 @@ tipo_info calcular_tipo_expresion(nodo *expr, tabla_simbolos *ts) {
 
         case T_ID: {
             info *var_info = buscar(ts, expr->valor->name);
-    
-            printf("DEBUG: Buscar variable '%s' en tabla de simbolos\n", expr->valor->name);
-            printf("DEBUG: Campos de var_info: tipo_token=%d, tipo_info=%d, valor=%d\n",
-                    var_info ? var_info->tipo_token : -1,
-                    var_info ? var_info->tipo_info : -1,
-                    var_info ? var_info->nro : -1);
             
             if (var_info) {
                 return var_info->tipo_info;
