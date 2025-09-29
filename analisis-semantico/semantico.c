@@ -59,8 +59,8 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
 
                 if (raiz->izq->valor->tipo_info != tipo_expr) {
                     reportar_error(linea, "Error semantico: Incompatibilidad de tipos en la inicializacion."
-                                            "La variable '%s' es de tipo '%s', pero la expresion es de tipo '%s'\n",
-                                            raiz->valor->name, tipo_info_to_string(raiz->valor->tipo_info), tipo_info_to_string(tipo_expr));
+                                            " La variable '%s' es de tipo '%s', pero la expresion es de tipo '%s'\n",
+                                            raiz->izq->valor->name, tipo_info_to_string(raiz->valor->tipo_info), tipo_info_to_string(tipo_expr));
                     // si hay error de tipo, no se inserta en la tabla de simbolos
                     break;
                 }
@@ -80,11 +80,8 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
             // Verificar si es extern
             es_extern = raiz->der->valor->tipo_token == T_EXTERN;
 
-            // Abrir scope solo si NO es extern
-            if (!es_extern) {
-                abrir_scope(ts);
-                es_metodo = true;
-            }
+            abrir_scope(ts);
+            es_metodo = true;
 
             if (strcmp(raiz->valor->name, "main") == 0) {
                 hay_main = true;
@@ -100,7 +97,7 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
             recorridoSemantico(raiz->izq, ts); // var_decls
             recorridoSemantico(raiz->der, ts); // bloque o extern
 
-            if (!es_extern && raiz->der->valor->tipo_token != T_EXTERN) {
+            if (!es_extern) {
                 tipo_info retorno = retorno_bloque(raiz->der, ts);
                 if (raiz->valor->tipo_info != retorno) {
                     reportar_error(linea, "Error semantico: Tipo de retorno no coincide con la declaracion\n");
@@ -110,10 +107,8 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
                 }
             }
 
-            if (!es_extern) {
-                cerrar_scope(ts); // cerramos solo los scopes internos
-            }
-            //es_metodo = false;
+            cerrar_scope(ts);
+
             break;
         }
         case T_BLOQUE:

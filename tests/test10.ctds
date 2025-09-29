@@ -1,0 +1,14 @@
+program {
+    integer a = 0;
+    integer suma(integer a, integer b) extern;
+
+    void main() {
+        integer x = 5;
+        integer y = a;
+        integer a = 90;
+
+        x = suma(a,y);
+        
+        return;
+    }
+}
