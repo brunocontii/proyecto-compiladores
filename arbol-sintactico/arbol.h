@@ -5,45 +5,45 @@
 
 typedef enum {
     T_PROGRAM,          // 0
-    T_EXTERN,           // 0
-    T_RETURN,           // 0
-    T_IF,               // 0
-    T_IF_ELSE,          // 0
-    T_WHILE,            // 0
-    T_VTRUE,            // 0
-    T_VFALSE,           // 0
-    T_OP_AND,           // 0
-    T_OP_OR,            // 0
-    T_OP_NOT,           // 0
-    T_INTEGER,          // 0
-    T_BOOL,             // 0
-    T_ID,               // 0
-    T_DIGIT,            // 0
-    T_OP_MENOS,         // 0
-    T_OP_MAS,           // 0
-    T_OP_MULT,          // 0
-    T_OP_DIV,           // 0
-    T_OP_RESTO,         // 0
-    T_ASIGNACION,       // 0
-    T_IGUALDAD,         // 0
-    T_MENOR,            // 0
-    T_MAYOR,            // 0
-    T_VAR_DECLS,        // 0
-    T_VAR_DECL,         // 0
-    T_METHOD_DECLS,     // 0
-    T_METHOD_DECL,      // 0
-    T_PARAMETROS,       // 0
-    T_PARAMETRO,        // 0
-    T_BLOQUE,           // 0
-    T_METHOD_CALL,      // 0
-    T_EXPRS,            // 0
-    T_STATEMENTS        // 0
+    T_EXTERN,           // 1
+    T_RETURN,           // 2
+    T_IF,               // 3
+    T_IF_ELSE,          // 4
+    T_WHILE,            // 5
+    T_VTRUE,            // 6
+    T_VFALSE,           // 7
+    T_OP_AND,           // 8
+    T_OP_OR,            // 9
+    T_OP_NOT,           // 10
+    T_INTEGER,          // 11
+    T_BOOL,             // 12
+    T_ID,               // 13
+    T_DIGIT,            // 14
+    T_OP_MENOS,         // 15
+    T_OP_MAS,           // 16
+    T_OP_MULT,          // 17
+    T_OP_DIV,           // 18
+    T_OP_RESTO,         // 19
+    T_ASIGNACION,       // 20
+    T_IGUALDAD,         // 21
+    T_MENOR,            // 22
+    T_MAYOR,            // 23
+    T_VAR_DECLS,        // 24
+    T_VAR_DECL,         // 25
+    T_METHOD_DECLS,     // 26
+    T_METHOD_DECL,      // 27
+    T_PARAMETROS,       // 28
+    T_PARAMETRO,        // 29
+    T_BLOQUE,           // 30
+    T_METHOD_CALL,      // 31
+    T_EXPRS,            // 32
+    T_STATEMENTS        // 33
 } tipo_token;
 
 typedef enum {
-    TIPO_INTEGER,
-    TIPO_BOOL, 
-    TIPO_VOID
+    TIPO_INTEGER,       // 0
+    TIPO_BOOL,          // 1
+    TIPO_VOID           // 2
 } tipo_info;
 
 typedef struct {

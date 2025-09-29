@@ -2,9 +2,9 @@
 #include <string.h>
 #include "semantico.h"
 #include "../utils/manejo_errores.h"
-#include "../funciones-auxiliares/verificar_parametros.c"
-#include "../funciones-auxiliares/calcular_tipo_expresion.c"
-#include "../funciones-auxiliares/verificar_asignacion_metodo.c"
+#include "../utils/verificar_parametros.c"
+#include "../utils/calcular_tipo_expresion.c"
+#include "../utils/verificar_asignacion_metodo.c"
 
 bool es_metodo = true;
 bool es_extern = false;
@@ -32,19 +32,17 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
             recorridoSemantico(raiz->der, ts); // method_decl
             break;
         case T_PARAMETROS:
-            if (raiz->izq->valor->tipo_token == T_STATEMENTS) {
-                recorridoSemantico(raiz->izq, ts); // parametros
-            } else if (raiz->izq->valor->tipo_token == T_METHOD_CALL) {
-                verificar_asignacion_metodo(raiz->izq, raiz_arbol, ts); // method_call
-            } else {
-                recorridoSemantico(raiz->izq, ts); // parametro
-            }
+            recorridoSemantico(raiz->izq, ts); // parametros
             recorridoSemantico(raiz->der, ts); // parametro
             break;
         case T_STATEMENTS:
             recorridoSemantico(raiz->izq, ts); // statements
+            if (raiz->der->valor->tipo_token == T_METHOD_CALL) {
+                verificar_asignacion_metodo(raiz->der, raiz_arbol, ts);
+            }
             recorridoSemantico(raiz->der, ts); // statement
             break;
+            
         case T_EXPRS:
             recorridoSemantico(raiz->izq, ts); // exprs
             recorridoSemantico(raiz->der, ts); // expr
@@ -286,7 +284,8 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
             if (!metodo) {
                 reportar_error(linea, "Error: semantico: Método '%s' no declarado", raiz->izq->valor->name);
             }
-            
+            printf("+++++++++++++DEBUG: Método '%s' es de tipo '%s'\n", raiz->izq->valor->name, tipo_info_to_string(raiz->izq ? raiz->izq->valor->tipo_info : TIPO_VOID));
+            raiz->valor->tipo_info = metodo ? metodo->tipo_info : TIPO_VOID; // pasar tipo de metodo a method_call
             verificar_parametros(raiz, raiz_arbol, ts);
             break;
         }

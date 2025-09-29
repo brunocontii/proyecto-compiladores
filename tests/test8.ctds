@@ -4,19 +4,21 @@ program {
         return a + b;
     }
 
-    bool esPar(integer x) {
-        return x % 2 == 0;
+    bool esPar(bool x) {
+        return x;
     }
 
     void main() {
-        integer x = suma(2,3);
-        suma(2,3);
+        bool a = true;
+        bool f = esPar(a);
+        integer x = 0;
+
 
         if (4 < suma(2,3)) then {
             x = 0;
         }
 
-        if (esPar(x)) then {
+        if (esPar(f)) then {
             x = 0;
         }
     }
