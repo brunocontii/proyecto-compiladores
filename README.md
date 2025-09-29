@@ -109,6 +109,7 @@ c-tds [opciones] archivo.ctds
 | `-debug` | Activa información de depuración | `-debug` |
 
 ⚠️ Nota: -opt no está implementado y se ignora. -debug todavia no funciona correctamente
+
 ⚠️ Nota: Si se quiere se puede ejecutar el debug de c, haciendo gdb ./c-tds 
 
 ## Etapas de Compilación (Target)
@@ -172,6 +173,6 @@ c-tds [opciones] archivo.ctds
 |-------|--------|---------------|----------------|
 | **Análisis Léxico** | ✅ **Completo** | Tokenización funcional | - |
 | **Análisis Sintáctico** | ✅ **Completo** | AST + visualización | - |
-| **Análisis Semántico** | ✅ **Completo** | Estructura básica | Verificación de tipos |
+| **Análisis Semántico** | ✅ **Completo** | Estructura básica | - |
 | **Código Intermedio** | ❌ **Pendiente** | No implementado |
 | **Assembly** | ❌ **Pendiente** | No implementado |
