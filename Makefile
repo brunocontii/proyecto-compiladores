@@ -29,7 +29,7 @@ UTILS_SRC = $(UTILS_DIR)/manejo_errores.c
 MAIN_SRC = main.c
 
 # Variable para testeo
-TEST ?= tests/tests-sintactico/test1.ctds
+TEST ?= tests/tests-semantico/test1.ctds
 
 # Regla principal
 all: $(TARGET)
