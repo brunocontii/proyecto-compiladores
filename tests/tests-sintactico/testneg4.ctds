@@ -1,0 +1,6 @@
+program {
+    integer x;
+    void main () {
+        
+    }
+}

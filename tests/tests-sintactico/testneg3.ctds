@@ -1,0 +1,6 @@
+program {
+    integer suma(integer a, integer b) {
+        return a + b;
+    }
+    integer x = 3;
+}
