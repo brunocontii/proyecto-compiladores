@@ -1,7 +1,8 @@
 # Proyecto Compiladores - TDS25 🔍
 ## Árbol y Tabla de Símbolos
 
-Esta rama contiene la segunda entrega del proyecto, implementando el árbol sintáctico y la tabla de símbolos para el lenguaje **TDS25**.
+Esta rama contiene la segunda entrega del proyecto, implementando el árbol sintáctico, tabla de símbolos
+y análisis semántico para el lenguaje **TDS25**.
 
 ---
 
@@ -18,17 +19,31 @@ Universidad Nacional de Río Cuarto - Taller de Diseño de Software
 
 ```bash
 proyecto-compiladores/
-├── docs/                   # Carpeta con las consignas y entregas
-├── lexico_sintactico/      # Carpeta con los archivos Flex y Bison
-├── arbol-sintactico/       # Estructura de árbol
-│   ├── arbol.h             # Definición de la estructura (nodos)
-│   ├── arbol.c             # Creación de árbol (binario y ternario) impresión en consola y liberación
-│   ├── image_ast.c         # Representación gráfica del árbol creado
-├── tabla-simbolos/         # Estructura de la tabla de símbolos
-│   ├── tabla_simbolos.h    # Definición de la estructura y alcance
-│   ├── tabla_simbolos.c    # Inicialización, apertura/cierre de alcance, inserción, búsqueda y visualización
-├── tests/                  # Casos de prueba nuevos
-└── Makefile
+├── analisis-semantico/                  # Análisis semántico del compilador
+│   ├── semantico.c                      # Implementación del recorrido del AST y validaciones semánticas
+│   └── semantico.h                      # Declaración de funciones de análisis semántico
+├── arbol-sintactico/                    # Estructura de árbol sintáctico abstracto (AST)
+│   ├── arbol.c                          # Implementación de nodos, creación de árbol (binario/ternario), impresión y liberación
+│   ├── arbol.h                          # Definición de estructuras (nodo, info, enums) y declaración de funciones
+│   └── image_ast.c                      # Generación de archivos DOT y PNG para visualización gráfica del AST
+├── docs/                                # Documentación del proyecto
+├── lexico_sintactico/                   # Análisis léxico y sintáctico
+│   ├── lexer.l                          # Especificación Flex: definición de tokens y patrones léxicos
+│   └── parser.y                         # Especificación Bison: gramática, reglas sintácticas y construcción del AST
+├── tabla-simbolos/                      # Gestión de tabla de símbolos con scopes anidados
+│   ├── tabla_simbolos.c                 # Implementación: inicialización, inserción, búsqueda, apertura/cierre de scopes
+│   └── tabla_simbolos.h                 # Definición de estructuras (scope, simbolo, tabla_simbolos) y declaración de funciones
+├── tests/                               # Casos de prueba positivos y negativos para el compilador
+│   ├── tests-semantico                 # Carpeta con tests semanticos positivos y negativos
+│   └── tests-sintactico                # Carpeta con tests sintacticos positivos y negativos
+├── utils/                               # Funciones auxiliares
+│   ├── calcular_tipo_expresion.c        # Cálculo de tipo de retorno de expresiones
+│   ├── manejo_errores.c                 # Sistema de registro y reporte de errores semánticos
+│   ├── manejo_errores.h                 # Declaración de funciones de manejo de errores
+│   ├── verificar_asignacion_metodo.c    # Validación de tipos en asignaciones y métodos
+│   └── verificar_parametros.c           # Verificación de cantidad y tipo de parámetros en llamadas
+├── main.c                               # Punto de entrada: parseo de argumentos, invocación de fases del compilador
+└── Makefile                             # Automatización de compilación, ejecución de tests y limpieza
 ```
 
 <br><br>
@@ -49,22 +64,9 @@ make run
 ```bash
 # Casos positivos (deben pasar)
 make run TEST=tests/test1.ctds
-make run TEST=tests/test2.ctds
-make run TEST=tests/test3.ctds
-make run TEST=tests/test4.ctds # nuevo
-make run TEST=tests/test5.ctds # nuevo
-make run TEST=tests/test6.ctds # nuevo
-make run TEST=tests/test7.ctds # nuevo
 
 # Casos negativos (deben fallar intencionalmente)
 make run TEST=tests/testneg1.ctds
-make run TEST=tests/testneg2.ctds
-make run TEST=tests/testneg3.ctds
-make run TEST=tests/testneg4.ctds
-make run TEST=tests/testneg5.ctds # nuevo
-make run TEST=tests/testneg6.ctds # nuevo
-make run TEST=tests/testneg7.ctds # nuevo
-
 ```
 
 ### Limpiar archivos generados
@@ -75,7 +77,7 @@ make clean
 ```bash
 make test-all
 ```
-📝 Esta regla es nueva y recorre todos los archivos dentro de la carpeta tests/, ejecuta el compilador sobre cada uno de ellos y muestra en pantalla un reporte de cuales pasaron y cuales no.
+:nota: Esta regla es nueva y recorre todos los archivos dentro de la carpeta tests/, ejecuta el compilador sobre cada uno de ellos y muestra en pantalla un reporte de cuales pasaron y cuales no.
 
 ✅ **Nota**: Estos comandos (`make`, `make run`, `make clean`, `make run TEST=...`) siguen funcionando como en la entrega anterior.
 
@@ -110,6 +112,8 @@ c-tds [opciones] archivo.ctds
 
 ⚠️ Nota: -opt no está implementado y se ignora. -debug todavia no funciona correctamente
 
+⚠️ Nota: Si se quiere se puede ejecutar el debug de c, haciendo gdb ./c-tds 
+
 ## Etapas de Compilación (Target)
 
 ### 1. **lex** - Análisis Léxico
@@ -117,7 +121,7 @@ c-tds [opciones] archivo.ctds
 - **Salida**: Secuencia de tokens
 - **Implementación**: Ejecuta solo el lexer (`yylex()`) en bucle
 
-### 2. **parse** - Análisis Sintáctico *(Etapa por defecto si solo se pone -target)*
+### 2. **parse** - Análisis Sintáctico
 - **Propósito**: 
     - Construcción del Árbol Sintáctico Abstracto (AST).
     - Insercion de simbolos en la Tabla de simbolos
@@ -127,9 +131,8 @@ c-tds [opciones] archivo.ctds
   - Archivo de imagen para visualización gráfica
 - **Implementación**: Ejecuta parser (`yyparse()`) y genera visualización
 
-### 3. **sem** - Análisis Semántico
+### 3. **sem** - Análisis Semántico *(Etapa por defecto si solo se pone -target)*
 - **Propósito**: Verificación de tipos y reglas semánticas
-- **Estado**: En desarrollo
 - **Salida**: AST + TS + verificaciones semánticas
 
 ### 4. **codinter** - Generación Código Intermedio
@@ -172,6 +175,6 @@ c-tds [opciones] archivo.ctds
 |-------|--------|---------------|----------------|
 | **Análisis Léxico** | ✅ **Completo** | Tokenización funcional | - |
 | **Análisis Sintáctico** | ✅ **Completo** | AST + visualización | - |
-| **Análisis Semántico** | 🟡 **En desarrollo** | Estructura básica | Verificación de tipos |
+| **Análisis Semántico** | ✅ **Completo** | Estructura básica | - |
 | **Código Intermedio** | ❌ **Pendiente** | No implementado |
 | **Assembly** | ❌ **Pendiente** | No implementado |

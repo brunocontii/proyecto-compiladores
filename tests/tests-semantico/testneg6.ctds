@@ -1,0 +1,51 @@
+program {
+
+    integer suma(integer a, integer b) {
+        return a + b;
+    }
+
+    integer suma2(integer a, integer b) {
+        return true;
+    }
+
+    integer suma3(integer a, integer b) {
+        return ;
+    }
+
+    bool esPar(bool x) {
+        return x;
+    }
+
+    bool esPar2(bool x) {
+        return 10;
+    }
+
+    bool esPar3(bool x) {
+        return ;
+    }
+
+    void print_int(integer x) {
+
+    }
+
+    void print_int2(integer x) {
+        return;
+    }
+
+    void print_int3(integer x) {
+        return x;
+    }
+
+    void print_int4(integer x) {
+        return false;
+    }
+
+    void main() {
+
+        integer x = 1;
+        integer y = 2;
+        bool a = true;
+
+        return 10;
+    }
+}

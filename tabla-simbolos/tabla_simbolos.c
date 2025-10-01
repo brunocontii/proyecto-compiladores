@@ -183,6 +183,7 @@ void imprimir_scope_actual(tabla_simbolos *ts) {
             case T_METHOD_CALL: printf("METHOD_CALL"); break;
             case T_EXPRS: printf("EXPRS"); break;
             case T_STATEMENTS: printf("STATEMENTS"); break;
+            case T_PARAMETRO: printf("PARAMETRO"); break;
             default: printf("DESCONOCIDO (%d)", actual->valor->tipo_token);
         }
         printf("\n");

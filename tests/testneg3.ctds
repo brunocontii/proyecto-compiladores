@@ -1,3 +1,0 @@
-program {
-    void print_bool(bool flag);
-}

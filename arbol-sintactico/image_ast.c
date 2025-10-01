@@ -35,6 +35,7 @@ const char* getTokenString(tipo_token token) {
         case T_METHOD_DECLS: return "METHOD DECLS";
         case T_METHOD_DECL: return "METHOD DECL";
         case T_PARAMETROS: return "PARAMETROS";
+        case T_PARAMETRO: return "PARAMETRO";
         case T_BLOQUE: return "BLOQUE";
         case T_METHOD_CALL: return "METHOD CALL";
         case T_EXPRS: return "EXPRS";
@@ -51,6 +52,7 @@ const char* getTypeString(tipo_info type) {
         default: return "UNKNOWN";
     }
 }
+
 
 void getNodeValueString(nodo* node, char* buffer, size_t bufsize) {
     if (!node || !node->valor) {
@@ -107,14 +109,77 @@ void getNodeValueString(nodo* node, char* buffer, size_t bufsize) {
     snprintf(buffer, bufsize, "%s", temp);
 }
 
-void generateDotNodes(nodo* node, FILE* file, int* nodeCount) {
+void generateDotNodes(nodo* node, nodo* root, FILE* file, int* nodeCount) {
     if (node == NULL) return;
 
     int currentId = (*nodeCount)++;
     char valueStr[256];
     getNodeValueString(node, valueStr, sizeof(valueStr));
 
-    if (node->valor->tipo_token == T_ID || node->valor->tipo_token == T_DIGIT || node->valor->tipo_token == T_BOOL) {
+
+    if (node->valor->tipo_token == T_METHOD_CALL) {
+
+        if (node->izq && node->izq->valor && node->izq->valor->name) {
+            nodo *decl = buscarNodo(root, node->izq->valor->name);
+            if (decl && decl->valor) {
+                node->izq->valor->tipo_info = decl->valor->tipo_info;
+            }
+        }
+
+        if (node->der && node->der->valor) {
+            nodo *decl = NULL;
+            if (node->izq && node->izq->valor && node->izq->valor->name) {
+                decl = buscarNodo(root, node->izq->valor->name);
+            }
+
+            nodo *param_actual = node->der;
+            nodo *param_formal = NULL;
+            if (decl && decl->izq) param_formal = decl->izq; // puede ser T_PARAMETROS (lista) o parametro (hoja)
+
+            // recorrer ambos: soporta lista (T_EXPRS / T_PARAMETROS) o hoja
+            while ((param_actual && param_actual->valor) || (param_formal && param_formal->valor)) {
+                nodo *actual_elem = NULL;
+                nodo *formal_elem = NULL;
+
+                if (param_actual && param_actual->valor && param_actual->valor->tipo_token == T_EXPRS) {
+                    actual_elem = param_actual->der; // elemento actual en lista left-recursive
+                } else {
+                    actual_elem = param_actual;      // hoja o expresión simple
+                }
+
+                if (param_formal && param_formal->valor && param_formal->valor->tipo_token == T_PARAMETROS) {
+                    formal_elem = param_formal->der; // elemento formal en lista
+                } else {
+                    formal_elem = param_formal;      // hoja (un parametro)
+                }
+
+                // copiar tipo si tenemos ambos elementos y el formal define tipo_info
+                if (formal_elem && formal_elem->valor) {
+                    tipo_info tf = formal_elem->valor->tipo_info;
+                    if (actual_elem && actual_elem->valor) {
+                        // asignar tipo al nodo actual para que se vea en la visualización
+                        actual_elem->valor->tipo_info = tf;
+                    }
+                }
+
+                // avanzar en listas: left-recursive lista almacena siguiente en izq
+                if (param_actual && param_actual->valor && param_actual->valor->tipo_token == T_EXPRS) {
+                    param_actual = param_actual->izq;
+                } else {
+                    param_actual = NULL;
+                }
+
+                if (param_formal && param_formal->valor && param_formal->valor->tipo_token == T_PARAMETROS) {
+                    param_formal = param_formal->izq;
+                } else {
+                    param_formal = NULL;
+                }
+            }
+        }
+    }
+
+
+    if (node->valor->tipo_token == T_ID || node->valor->tipo_token == T_DIGIT || node->valor->tipo_token == T_BOOL || node->valor->tipo_token == T_PARAMETRO) {
         fprintf(file, "  node%d [label=\"%s\\n(%s)\\n[%s]\", shape=box];\n",
             currentId, valueStr, getTokenString(node->valor->tipo_token), getTypeString(node->valor->tipo_info));
     } else {
@@ -124,17 +189,17 @@ void generateDotNodes(nodo* node, FILE* file, int* nodeCount) {
 
     if (node->izq != NULL) {
         int leftId = *nodeCount;
-        generateDotNodes(node->izq, file, nodeCount);
+        generateDotNodes(node->izq, root, file, nodeCount);
         fprintf(file, "  node%d -> node%d [label=\"L\"];\n", currentId, leftId);
     }
     if (node->med != NULL) {
         int medId = *nodeCount;
-        generateDotNodes(node->med, file, nodeCount);
+        generateDotNodes(node->med, root, file, nodeCount);
         fprintf(file, "  node%d -> node%d [label=\"M\"];\n", currentId, medId);
     }
     if (node->der != NULL) {
         int rightId = *nodeCount;
-        generateDotNodes(node->der, file, nodeCount);
+        generateDotNodes(node->der, root, file, nodeCount);
         fprintf(file, "  node%d -> node%d [label=\"R\"];\n", currentId, rightId);
     }
 }
@@ -162,7 +227,7 @@ void generateASTDotFile(nodo* root, const char* base_filename) {
         fprintf(file, "  empty [label=\"Árbol vacío\", shape=plaintext];\n");
     } else {
         int nodeCount = 0;
-        generateDotNodes(root, file, &nodeCount);
+        generateDotNodes(root, root, file, &nodeCount);
     }
 
     fprintf(file, "}\n");
@@ -182,3 +247,4 @@ void generateASTDotFile(nodo* root, const char* base_filename) {
         printf("Ejecuta manualmente: dot -Tpng %s -o %s\n", dot_filename, png_filename);
     }
 }
+

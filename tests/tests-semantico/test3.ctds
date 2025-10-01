@@ -1,0 +1,31 @@
+program {
+        
+    void print_int1(integer fa) {
+        return;
+    }
+
+    void print_int2(integer fa, bool fb) {
+        return;
+    }
+
+    void print_int3(integer fa, bool fb, integer fc) {
+        return;
+    }
+
+    void print_int4(integer fa, bool fb, integer fc, bool fd) {
+        return;
+    }
+    
+    void main() {
+
+        integer aa = 2;
+        bool ab = true;
+        integer ac = 2;
+        bool ad = false;
+
+        print_int1(aa);
+        print_int2(aa, ab);
+        print_int3(aa, ab, ac);
+        print_int4(aa, ab, ac, ad);
+    }
+}

@@ -1,0 +1,11 @@
+program {
+    integer x = 3;
+    integer suma (bool j, bool q) {
+        bool t = j && q;
+        return 10;
+    }
+
+    void main() {
+        
+    }
+}

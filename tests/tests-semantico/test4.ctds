@@ -21,14 +21,4 @@ program {
         
         return;
     }
-    
-    integer suma(integer a, integer b) {
-        integer resultado = a + b;
-        return resultado;
-    }
-    
-    bool es_par(integer num) {
-        integer resto = num % 2;
-        return resto == 0;
-    }
 }

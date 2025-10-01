@@ -34,6 +34,30 @@ nodo* crearArbolTer(info *valorNodo, nodo *hijoIzq,nodo *hijoMed, nodo *hijoDer)
     return n;
 }
 
+nodo* buscarNodo(nodo* raiz, const char* nombre) {
+    if (!raiz || !nombre) return NULL;
+
+    if (raiz->valor && raiz->valor->name && strcmp(raiz->valor->name, nombre) == 0) {
+        return raiz;
+    }
+
+    nodo *resultado = NULL;
+    if (raiz->izq) {
+        resultado = buscarNodo(raiz->izq, nombre);
+        if (resultado) return resultado;
+    }
+    if (raiz->med) {
+        resultado = buscarNodo(raiz->med, nombre);
+        if (resultado) return resultado;
+    }
+    if (raiz->der) {
+        resultado = buscarNodo(raiz->der, nombre);
+        if (resultado) return resultado;
+    }
+    return NULL;
+}
+
+
 void mostrarArbol(nodo *raiz, int nivel) {
     if (!raiz) return;
 
@@ -144,6 +168,7 @@ void liberarArbol(nodo *raiz) {
         case T_METHOD_DECLS:
         case T_METHOD_DECL:
         case T_PARAMETROS:
+        case T_PARAMETRO:
         case T_BLOQUE:
         case T_METHOD_CALL:
         case T_EXPRS:

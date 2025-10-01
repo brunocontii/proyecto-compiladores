@@ -1,0 +1,25 @@
+program {
+
+    integer suma(integer a, integer b) {
+        return a + b;
+    }
+
+    bool esPar(bool x) {
+        return x;
+    }
+
+    void main() {
+        bool a = true;
+        bool f = esPar(a);
+        integer x = 0;
+
+
+        if (4 < suma(2,3)) then {
+            x = 0;
+        }
+
+        if (esPar(f)) then {
+            x = 0;
+        }
+    }
+}

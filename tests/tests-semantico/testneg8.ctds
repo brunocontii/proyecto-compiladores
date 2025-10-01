@@ -1,0 +1,19 @@
+program {
+
+    void main() {
+        integer y = 2;
+        integer x = true + true;
+        bool a = 4 && 4;
+        bool b = (4 == 4) || (true == false);
+        bool c = !b && false;
+
+        if (y + y) then {
+            y = 1;
+        }
+
+        while (y) {
+            y = y + 1;
+        }
+
+    }
+}

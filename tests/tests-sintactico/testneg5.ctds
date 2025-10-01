@@ -1,0 +1,7 @@
+program {
+    void main () {
+        
+    }
+
+    integer x = 3;
+}

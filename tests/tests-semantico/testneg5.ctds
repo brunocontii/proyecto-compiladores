@@ -1,0 +1,47 @@
+program {
+
+    integer suma(integer a, integer b) {
+        return a + b;
+    }
+
+    bool esPar(bool x) {
+        return x;
+    }
+
+    void print_int(integer x) extern;
+
+    void main() {
+
+        integer x = 1;
+        integer y = 2;
+        bool a = true;
+
+        integer z = suma(x, y);
+        bool c = esPar(a);
+        integer w = print_int(z);
+
+        suma(x, y);
+        esPar(a);
+        print_int(z);
+
+        if (esPar(a)) then {
+            print_int(z);
+        }
+
+        if (3 < suma(x,y)) then {
+            print_int(z);
+        }
+
+        if (suma(x,y)) then {
+            print_int(z);
+        }
+
+        if (1 < print_int(z)) then {
+            print_int(z);
+        }
+
+        if (print_int(z)) then {
+            print_int(z);
+        }
+    }
+}

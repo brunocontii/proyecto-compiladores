@@ -1,9 +1,0 @@
-program {
-    void print_bool(bool flag) extern;
-
-    integer probando() extern;
-
-    integer j = 3;
-
-    integer int_var = j + j;
-}
