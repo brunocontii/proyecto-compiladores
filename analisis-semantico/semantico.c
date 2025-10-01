@@ -55,6 +55,9 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
         case T_VAR_DECL: {
             // primero verificar la compatibilidad de tipos en la inicializacion
             if (raiz->der) {
+                if (raiz->der->valor->tipo_token == T_METHOD_CALL) {
+                    verificar_parametros(raiz->der, raiz_arbol, ts);
+                }
                 tipo_info tipo_expr = calcular_tipo_expresion(raiz->der, ts);
 
                 if (raiz->izq->valor->tipo_info != tipo_expr) {
