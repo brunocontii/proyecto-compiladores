@@ -55,7 +55,7 @@ proyecto-compiladores/
 make
 ```
 
-### Ejecutar con test por defecto
+### Ejecutar con test por defecto (test1 semantico)
 ```bash
 make run
 ```
@@ -63,23 +63,34 @@ make run
 ### Ejecutar un test específico
 ```bash
 # Casos positivos (deben pasar)
-make run TEST=tests/test1.ctds
+make run TEST=tests/tests-sintactico/test1.ctds
 
 # Casos negativos (deben fallar intencionalmente)
-make run TEST=tests/testneg1.ctds
+make run TEST=tests/tests-semantico/testneg1.ctds
 ```
 
 ### Limpiar archivos generados
 ```bash
 make clean
 ```
+
+### Ejecutar bloques de test especifico
+```bash
+make test-sintactico
+```
+> Esta regla es nueva y recorre todos los tests sintacticos donde los positivos funcionan y negativos no funcionan (anda correctamente), donde si hago make test-all algunos no funcionan de los positivos ya que ve sintacticamente y semanticamente
+
+```bash
+make test-semantico
+```
+> Esta regla es nueva y recorre todos los tests semanticos.
+
 ### Ejecutar todos los test
 ```bash
 make test-all
 ```
-:nota: Esta regla es nueva y recorre todos los archivos dentro de la carpeta tests/, ejecuta el compilador sobre cada uno de ellos y muestra en pantalla un reporte de cuales pasaron y cuales no.
-
-✅ **Nota**: Estos comandos (`make`, `make run`, `make clean`, `make run TEST=...`) siguen funcionando como en la entrega anterior.
+> Esta regla es nueva y recorre todos los archivos dentro de la carpeta tests/, es decir ambas carpetas tests-semantico y tests-sintactico, ejecuta el compilador sobre cada uno de ellos y muestra en pantalla un reporte de cuales pasaron y cuales no.
+> Estos comandos (`make`, `make run`, `make clean`) siguen funcionando como en la entrega anterior.
 
 ---
 
@@ -106,7 +117,7 @@ c-tds [opciones] archivo.ctds
 | Opción | Descripción | Ejemplo |
 |--------|-------------|---------|
 | `-o <salida>` | Especifica el archivo de salida | `-o mi_programa` |
-| `-target <etapa>` | Define hasta qué etapa compilar | `-target parse` |
+| `-target <etapa>` | Define hasta qué etapa compilar | `-target sem` |
 | `-opt [optimizacion]` | Lista de optimizaciones (futuro) | `-opt O2` |
 | `-debug` | Activa información de depuración | `-debug` |
 
@@ -166,8 +177,6 @@ c-tds [opciones] archivo.ctds
 ./c-tds programa.ctds
 
 ```
-
-
 
 ## Estado de Implementación
 
