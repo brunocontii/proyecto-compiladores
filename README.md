@@ -34,6 +34,8 @@ proyecto-compiladores/
 │   ├── tabla_simbolos.c                 # Implementación: inicialización, inserción, búsqueda, apertura/cierre de scopes
 │   └── tabla_simbolos.h                 # Definición de estructuras (scope, simbolo, tabla_simbolos) y declaración de funciones
 ├── tests/                               # Casos de prueba positivos y negativos para el compilador
+│   ├── tests-semantico                 # Carpeta con tests semanticos positivos y negativos
+│   └── tests-sintactico                # Carpeta con tests sintacticos positivos y negativos
 ├── utils/                               # Funciones auxiliares
 │   ├── calcular_tipo_expresion.c        # Cálculo de tipo de retorno de expresiones
 │   ├── manejo_errores.c                 # Sistema de registro y reporte de errores semánticos

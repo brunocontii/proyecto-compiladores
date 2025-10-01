@@ -1,0 +1,13 @@
+program {
+
+    
+    integer y = 3;
+
+    integer suma(integer a, integer b) {
+        return a + b;
+    }
+
+    void main() {
+        integer x = suma(x,y);
+    }
+}

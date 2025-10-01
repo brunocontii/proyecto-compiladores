@@ -1,0 +1,11 @@
+program {
+
+    void print_int(integer a) extern;
+    void print_bool(bool b) extern;
+
+    void main() {
+
+        print_int(x);
+        print_bool(y);
+    }
+}

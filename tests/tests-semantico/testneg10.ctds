@@ -1,0 +1,26 @@
+program {
+
+    void main() {
+
+        integer x = 4;
+        integer y = 5;
+
+        bool a = esPar(x);
+        integer z = suma(x,y);
+        print_int(z);
+        return;
+    }
+
+    bool esPar(integer x) {
+        return x % 2 == 0;
+    }
+
+    integer suma(integer x, integer y) {
+        
+        integer z = x + y;
+        return z;
+    }
+
+    void print_int(integer i) extern ;
+    
+}

@@ -1,14 +1,15 @@
 program {
 
     integer suma(integer a, integer b) {
-        // Error 5: Parámetro redeclarado
+        
         integer a = 5;
         return a + b;
     }
 
-    integer main() {
-        suma(4,6);
-        return suma;
+    void main() {
+
+        integer suma = suma(4,6);
+        return;
     }
 
 }
