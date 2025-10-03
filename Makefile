@@ -9,6 +9,7 @@ TREE_DIR = arbol-sintactico
 SIMBOLOS_DIR = tabla-simbolos
 SEMANTICO_DIR = analisis-semantico
 UTILS_DIR = utils
+CI_DIR = codigo-intermedio
 
 # Archivos de entrada para Bison y Flex
 LEX_SRC = $(LEX_DIR)/lexer.l
@@ -23,7 +24,8 @@ YACC_H = $(LEX_DIR)/parser.tab.h
 TREE_SRC = $(TREE_DIR)/arbol.c  $(TREE_DIR)/image_ast.c
 SIMBOLOS_SRC = $(SIMBOLOS_DIR)/tabla_simbolos.c
 SEMANTICO_SRC = $(SEMANTICO_DIR)/semantico.c
-UTILS_SRC = $(UTILS_DIR)/manejo_errores.c
+UTILS_SRC = $(UTILS_DIR)/manejo_errores.c $(UTILS_DIR)/generar_parametros.c
+CI_SRC = $(CI_DIR)/generador.c
 
 # Main
 MAIN_SRC = main.c
@@ -35,7 +37,7 @@ TEST ?= tests/tests-semantico/test1.ctds
 all: $(TARGET)
 
 # Compilacion
-$(TARGET): $(MAIN_SRC) $(YACC_C) $(LEX_OUT) $(TREE_SRC) $(SIMBOLOS_SRC) $(SEMANTICO_SRC) $(UTILS_SRC)
+$(TARGET): $(MAIN_SRC) $(YACC_C) $(LEX_OUT) $(TREE_SRC) $(SIMBOLOS_SRC) $(SEMANTICO_SRC) $(UTILS_SRC) $(CI_SRC)
 	$(CC) $(CFLAGS) -o $@ $^ -lfl
 
 $(YACC_C) $(YACC_H): $(YACC_SRC)
@@ -134,6 +136,6 @@ test-semantico: $(TARGET)
 
 # Limpiar archivos generados
 clean:
-	rm -f $(TARGET) $(LEX_OUT) $(YACC_C) $(YACC_H) *.dot *.png
+	rm -f $(TARGET) $(LEX_OUT) $(YACC_C) $(YACC_H) *.dot *.png *.txt
 
 .PHONY: all run clean test-all test-sintactico test-semantico
