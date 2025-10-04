@@ -21,6 +21,16 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
         case T_DIGIT: {
             int temp = cont_temp++; 
             fprintf(file, "LOAD T%d %d\n", temp, raiz->valor->nro);
+            
+            codigo3dir inst;
+            strcpy(inst.instruccion, "LOAD");
+            sprintf(inst.resultado, "T%d", temp);
+            sprintf(inst.argumento1, "%d", raiz->valor->nro);
+            inst.argumento2[0] = '\0';
+
+            programa[cont_instrucciones] = inst;
+            cont_instrucciones++;
+
             ultimo_temp = temp;
             break;
         }
@@ -228,7 +238,7 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
 
             int label_end = cont_label++;
 
-            fprintf(file, "IF_FALSE T%d L%d\n", temp_izq, label_end);
+            fprintf(file, "Salto cond: if T%d L%d\n", temp_izq, label_end);
 
             codigo_intermedio(raiz->der, file);
 
@@ -243,11 +253,11 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
             int label_else = cont_label++;
             int label_end = cont_label++;
 
-            fprintf(file, "IF_FALSE T%d L%d\n", temp_izq, label_else);
+            fprintf(file, "Salto cond: if else T%d L%d\n", temp_izq, label_else);
 
             codigo_intermedio(raiz->med, file);
 
-            fprintf(file, "GOTO L%d\n", label_end);
+            fprintf(file, "Salto incond: if else L%d\n", label_end);
             fprintf(file, "L%d:\n", label_else);
 
             codigo_intermedio(raiz->der, file);
@@ -265,11 +275,11 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
             codigo_intermedio(raiz->izq, file);
             temp_izq = ultimo_temp;
 
-            fprintf(file, "IF_FALSE T%d L%d\n", temp_izq, label_fin);
+            fprintf(file, "Salto cond: while T%d L%d\n", temp_izq, label_fin);
 
             codigo_intermedio(raiz->der, file);
 
-            fprintf(file, "GOTO L%d\n", label_cond);
+            fprintf(file, "Salto incond: while L%d\n", label_cond);
             fprintf(file, "L%d:\n", label_fin);
             ultimo_temp = -1;
             break;
