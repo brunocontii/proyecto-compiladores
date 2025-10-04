@@ -7,6 +7,7 @@ int cont_label = 0;
 
 void codigo_intermedio(nodo *raiz, FILE *file) {
     if (raiz == NULL) return;
+
     int temp_izq;
     int temp_der;
     int temp_med;
@@ -192,8 +193,13 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
             break;
         }
         case T_METHOD_DECL: {
+            if (raiz->izq && raiz->izq->valor->tipo_token == T_EXTERN) {
+                fprintf(file, "EXTERN %s\n", raiz->valor->name);
+                break;
+            }
+
             fprintf(file, "%s:\n", raiz->valor->name);
-            if (raiz->izq) codigo_intermedio(raiz->izq, file);
+            //if (raiz->izq) codigo_intermedio(raiz->izq, file);  ver bien aca esta linea
             codigo_intermedio(raiz->der, file);
             break;
         }
@@ -210,11 +216,62 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
                 fprintf(file, "CALL T%d %s\n", temp_result, raiz->izq->valor->name);
                 ultimo_temp = temp_result;
             }
-            if (raiz->der) codigo_intermedio(raiz->der, file);
             break;
         }
         case T_EXTERN: {
             fprintf(file, "EXTERN\n");
+            break;
+        }
+        case T_IF: {
+            codigo_intermedio(raiz->izq, file);
+            temp_izq = ultimo_temp;
+
+            int label_end = cont_label++;
+
+            fprintf(file, "IF_FALSE T%d L%d\n", temp_izq, label_end);
+
+            codigo_intermedio(raiz->der, file);
+
+            fprintf(file, "L%d:\n", label_end);
+            ultimo_temp = -1;
+            break;
+        }
+        case T_IF_ELSE: {
+            codigo_intermedio(raiz->izq, file);
+            temp_izq = ultimo_temp;
+
+            int label_else = cont_label++;
+            int label_end = cont_label++;
+
+            fprintf(file, "IF_FALSE T%d L%d\n", temp_izq, label_else);
+
+            codigo_intermedio(raiz->med, file);
+
+            fprintf(file, "GOTO L%d\n", label_end);
+            fprintf(file, "L%d:\n", label_else);
+
+            codigo_intermedio(raiz->der, file);
+
+            fprintf(file, "L%d:\n", label_end);
+            ultimo_temp = -1;
+            break;
+        }
+        case T_WHILE: {
+            int label_cond = cont_label++;
+            int label_fin = cont_label++;
+
+            fprintf(file, "L%d:\n", label_cond);
+
+            codigo_intermedio(raiz->izq, file);
+            temp_izq = ultimo_temp;
+
+            fprintf(file, "IF_FALSE T%d L%d\n", temp_izq, label_fin);
+
+            codigo_intermedio(raiz->der, file);
+
+            fprintf(file, "GOTO L%d\n", label_cond);
+            fprintf(file, "L%d:\n", label_fin);
+            ultimo_temp = -1;
             break;
         }
         default:

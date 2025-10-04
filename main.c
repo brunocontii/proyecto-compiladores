@@ -181,6 +181,7 @@ int main(int argc, char *argv[]) {
                 exit(1);
             }
             codigo_intermedio(raiz, out);
+            fclose(out);
         }
     }
     else if (strcmp(target, "assembly") == 0) {

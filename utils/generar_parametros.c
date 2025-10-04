@@ -8,7 +8,8 @@ void procesar_argumentos(nodo *raiz, FILE *file) {
     
     if (raiz->valor->tipo_token == T_EXPRS) {
         procesar_argumentos(raiz->izq, file);
-        procesar_argumentos(raiz->der, file);
+        codigo_intermedio(raiz->der, file);
+        fprintf(file, "PARAM T%d\n", ultimo_temp);
     } else {
         codigo_intermedio(raiz, file);
         fprintf(file, "PARAM T%d\n", ultimo_temp);
