@@ -343,7 +343,7 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
             fprintf(file, "ASSIGN %s T%d\n", raiz->izq->valor->name, temp_der);
 
             codigo3dir inst;
-            strcpy(inst.instruccion, "ASSING");
+            strcpy(inst.instruccion, "ASSIGN");
             sprintf(inst.resultado, "%s", raiz->izq->valor->name);
             sprintf(inst.argumento1, "T%d", temp_der);
             inst.argumento2[0] = '\0';
@@ -361,7 +361,7 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
                 fprintf(file, "ASSIGN %s T%d\n", raiz->izq->valor->name, temp_der);
 
                 codigo3dir inst;
-                strcpy(inst.instruccion, "ASSING");
+                strcpy(inst.instruccion, "ASSIGN");
                 sprintf(inst.resultado, "%s", raiz->izq->valor->name);
                 sprintf(inst.argumento1, "T%d", temp_der);
                 inst.argumento2[0] = '\0';
@@ -415,10 +415,19 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
                 cont_instrucciones++;
 
                 break;
-            }   
-            
-            fprintf(file, "%s:\n", raiz->valor->name);
-            codigo_intermedio(raiz->der, file);
+            } else {
+                codigo3dir metodo;
+                snprintf(metodo.instruccion, sizeof(metodo.instruccion), "%s:", raiz->valor->name);
+                metodo.resultado[0] = '\0';
+                metodo.argumento1[0] = '\0';
+                metodo.argumento2[0] = '\0';
+
+                programa[cont_instrucciones] = metodo;
+                cont_instrucciones++;
+                
+                fprintf(file, "%s:\n", raiz->valor->name);
+                codigo_intermedio(raiz->der, file);
+            }
             break;
         }
         case T_METHOD_CALL: {
@@ -484,9 +493,22 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
             sprintf(inst.argumento1, "L%d", label_end);
             inst.argumento2[0] = '\0';
 
+            programa[cont_instrucciones] = inst;
+            cont_instrucciones++;
+
             codigo_intermedio(raiz->der, file);
 
             fprintf(file, "L%d:\n", label_end);
+
+            codigo3dir lab;
+            snprintf(lab.instruccion, sizeof(lab.instruccion), "L%d:", label_end);
+            lab.resultado[0] = '\0';
+            lab.argumento1[0] = '\0';
+            lab.argumento2[0] = '\0';
+
+            programa[cont_instrucciones] = lab;
+            cont_instrucciones++;
+
             ultimo_temp = -1;
             break;
         }
@@ -523,9 +545,28 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
 
             fprintf(file, "L%d:\n", label_else);
 
+            codigo3dir lab_else;
+            snprintf(lab_else.instruccion, sizeof(lab_else.instruccion), "L%d:", label_else);
+            lab_else.resultado[0] = '\0';
+            lab_else.argumento1[0] = '\0';
+            lab_else.argumento2[0] = '\0';
+
+            programa[cont_instrucciones] = lab_else;
+            cont_instrucciones++;
+
             codigo_intermedio(raiz->der, file);
 
             fprintf(file, "L%d:\n", label_end);
+
+            codigo3dir lab_end;
+            snprintf(lab_end.instruccion, sizeof(lab_end.instruccion), "L%d:", label_end);
+            lab_end.resultado[0] = '\0';
+            lab_end.argumento1[0] = '\0';
+            lab_end.argumento2[0] = '\0';
+
+            programa[cont_instrucciones] = lab_end;
+            cont_instrucciones++;
+
             ultimo_temp = -1;
             break;
         }
@@ -534,6 +575,15 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
             int label_fin = cont_label++;
 
             fprintf(file, "L%d:\n", label_cond);
+
+            codigo3dir lab_cond;
+            snprintf(lab_cond.instruccion, sizeof(lab_cond.instruccion), "L%d:", label_cond);
+            lab_cond.resultado[0] = '\0';
+            lab_cond.argumento1[0] = '\0';
+            lab_cond.argumento2[0] = '\0';
+
+            programa[cont_instrucciones] = lab_cond;
+            cont_instrucciones++;
 
             codigo_intermedio(raiz->izq, file);
             temp_izq = ultimo_temp;
@@ -563,6 +613,16 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
             cont_instrucciones++;
 
             fprintf(file, "L%d:\n", label_fin);
+
+            codigo3dir lab_fin;
+            snprintf(lab_fin.instruccion, sizeof(lab_fin.instruccion), "L%d:", label_fin);
+            lab_fin.resultado[0] = '\0';
+            lab_fin.argumento1[0] = '\0';
+            lab_fin.argumento2[0] = '\0';
+
+            programa[cont_instrucciones] = lab_fin;
+            cont_instrucciones++;
+
             ultimo_temp = -1;
             break;
         }
