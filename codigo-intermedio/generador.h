@@ -6,13 +6,13 @@
 
 typedef struct codigo3dir {
     char instruccion[25];
-    char resultado[5];
-    char argumento1[5];
+    char resultado[10];
+    char argumento1[10];
     char argumento2[20];
 }codigo3dir;
 
-codigo3dir programa[2000]; // 2000 instrucciones maximo
-int cont_instrucciones = 0;
+extern codigo3dir programa[2000];
+extern int cont_instrucciones;
 
 void codigo_intermedio(nodo *raiz, FILE *out);
 void procesar_argumentos(nodo *args, FILE *file);

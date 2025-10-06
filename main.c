@@ -181,6 +181,7 @@ int main(int argc, char *argv[]) {
                 exit(1);
             }
             codigo_intermedio(raiz, out);
+            imprimir_programa();
             fclose(out);
         }
     }
