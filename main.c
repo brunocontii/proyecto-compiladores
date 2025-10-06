@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
     }
     inicializar(ts);
 
-        // Target por defecto
+    // Target por defecto
     if (!target) target = "codinter";
 
     if (debug) {

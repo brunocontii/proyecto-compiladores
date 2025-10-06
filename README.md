@@ -1,8 +1,7 @@
 # Proyecto Compiladores - TDS25 🔍
-## Árbol y Tabla de Símbolos
+## Codigo intermedio
 
-Esta rama contiene la segunda entrega del proyecto, implementando el árbol sintáctico, tabla de símbolos
-y análisis semántico para el lenguaje **TDS25**.
+Esta rama contiene la tercera entrega del proyecto, implementando codigo intermedio
 
 ---
 
@@ -26,6 +25,10 @@ proyecto-compiladores/
 │   ├── arbol.c                          # Implementación de nodos, creación de árbol (binario/ternario), impresión y liberación
 │   ├── arbol.h                          # Definición de estructuras (nodo, info, enums) y declaración de funciones
 │   └── image_ast.c                      # Generación de archivos DOT y PNG para visualización gráfica del AST
+
+├── codigo-intermedio/                    # Estructura del codigo intermedio (CI)
+│   ├── generador.c                          # Implementación de la generacion de instrucciones para hacer codigo intermedio
+│   ├── generador.h                          # Definición de la estructura en memoria de las intrucciones y declaración de funciones correspondientes
 ├── docs/                                # Documentación del proyecto
 ├── lexico_sintactico/                   # Análisis léxico y sintáctico
 │   ├── lexer.l                          # Especificación Flex: definición de tokens y patrones léxicos
@@ -42,6 +45,7 @@ proyecto-compiladores/
 │   ├── manejo_errores.h                 # Declaración de funciones de manejo de errores
 │   ├── verificar_asignacion_metodo.c    # Validación de tipos en asignaciones y métodos
 │   └── verificar_parametros.c           # Verificación de cantidad y tipo de parámetros en llamadas
+│   └── generar_parametros.c             # Procesamiento de los parametros de metodos
 ├── main.c                               # Punto de entrada: parseo de argumentos, invocación de fases del compilador
 └── Makefile                             # Automatización de compilación, ejecución de tests y limpieza
 ```
@@ -142,12 +146,14 @@ c-tds [opciones] archivo.ctds
   - Archivo de imagen para visualización gráfica
 - **Implementación**: Ejecuta parser (`yyparse()`) y genera visualización
 
-### 3. **sem** - Análisis Semántico *(Etapa por defecto si solo se pone -target)*
+### 3. **sem** - Análisis Semántico 
 - **Propósito**: Verificación de tipos y reglas semánticas
 - **Salida**: AST + TS + verificaciones semánticas
 
-### 4. **codinter** - Generación Código Intermedio
-- **Estado**: Pendiente implementación
+### 4. **codinter** - Generación Código Intermedio *(Etapa por defecto si solo se pone -target)*
+
+- **Propósito**: Traducción del AST a código intermedio de tres direcciones.
+- **Salida**: Archivo .txt con la generación de código intermedio.
 
 ### 5. **assembly** - Generación Código Assembly
 - **Estado**: Pendiente implementación
@@ -159,6 +165,7 @@ c-tds [opciones] archivo.ctds
 - **Tabla de simbolos textual**: Salida por consola
 - **Archivo de imagen**: Para visualización gráfica del árbol
 - **Nombre por defecto**: `ctds_arbol` si no se especifica `-o`
+- **Código intermedio**: Archivo .txt con la generación del código intermedio.
 
 ## Manejo de Errores
 
@@ -173,8 +180,14 @@ c-tds [opciones] archivo.ctds
 # Análisis léxico únicamente
 ./c-tds -target lex programa.ctds
 
-# Análisis sintáctico (por defecto)
+# Análisis sintáctico
 ./c-tds programa.ctds
+
+# Análisis semántico
+./c-tds -target sem programa.ctds
+
+# Generación de código intermedio (por defecto)
+./c-tds -target codinter programa.ctds
 
 ```
 
@@ -185,5 +198,5 @@ c-tds [opciones] archivo.ctds
 | **Análisis Léxico** | ✅ **Completo** | Tokenización funcional | - |
 | **Análisis Sintáctico** | ✅ **Completo** | AST + visualización | - |
 | **Análisis Semántico** | ✅ **Completo** | Estructura básica | - |
-| **Código Intermedio** | ❌ **Pendiente** | No implementado |
+| **Código Intermedio** | ✅ **Completo** | Traducción del AST a instrucciones intermedias | -
 | **Assembly** | ❌ **Pendiente** | No implementado |
