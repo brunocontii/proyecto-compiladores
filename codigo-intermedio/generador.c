@@ -633,7 +633,7 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
     }
 }
 
-// DESPUES ELIMINAR
+// Impresión por consola de código de 3 direcciones
 void imprimir_programa() {
     printf("\n--- TABLA DE INSTRUCCIONES ---\n");
     printf("%-5s  %-25s  %-10s  %-10s  %-10s\n",
