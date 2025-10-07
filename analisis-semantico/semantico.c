@@ -280,6 +280,7 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
                 reportar_error(linea, "Error: semantico: Método '%s' no declarado", raiz->izq->valor->name);
             } else {
                 verificar_parametros(raiz, raiz_arbol, ts);
+                raiz->valor->tipo_info = metodo->tipo_info;
             }
             break;
         }

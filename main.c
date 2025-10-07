@@ -7,6 +7,7 @@
 #include "tabla-simbolos/tabla_simbolos.h"
 #include "analisis-semantico/semantico.h"
 #include "utils/manejo_errores.h"
+#include "codigo-intermedio/generador.h"
 
 #define COLOR_RED     "\033[31m"
 #define COLOR_GREEN   "\033[32m"
@@ -99,8 +100,8 @@ int main(int argc, char *argv[]) {
     }
     inicializar(ts);
 
-        // Target por defecto
-    if (!target) target = "sem";
+    // Target por defecto
+    if (!target) target = "codinter";
 
     if (debug) {
         printf("Archivo entrada: %s\n", archivo_entrada);
@@ -137,7 +138,6 @@ int main(int argc, char *argv[]) {
         }
     }
     else if (strcmp(target, "sem") == 0) {
-        // Por ahora solo parseo
         int res = yyparse();
         fclose(yyin);
         if (res != 0) {
@@ -145,7 +145,6 @@ int main(int argc, char *argv[]) {
             exit(1);
         }
 
-        // Aquí se llamaría recorrerArbol(raiz, ts) o como se llame cuando se implemente
         if (raiz) {
             mostrarArbol(raiz, 0);
             if (!archivo_salida) {
@@ -159,7 +158,32 @@ int main(int argc, char *argv[]) {
         }
     }
     else if (strcmp(target, "codinter") == 0) {
-        printf("Target codinter: pendiente implementar\n");
+        int res = yyparse();
+        fclose(yyin);
+        if (res != 0) {
+            printf(COLOR_RED "Errores de parseo, no se puede continuar.\n" COLOR_RESET);
+            exit(1);
+        }
+
+        if (raiz) {
+            mostrarArbol(raiz, 0);
+            if (!archivo_salida) {
+                archivo_salida = "ctds_arbol";
+            }
+            generateASTDotFile(raiz, archivo_salida);     
+            recorridoSemantico(raiz, ts);
+            if (!hay_main) {
+                reportar_error(yylineno, "Error semántico: Falta definir la función main\n");
+            }
+            FILE *out = fopen("codigo-intermedio.txt", "w");
+            if (!out) {
+                perror("No se pudo abrir el archivo de salida");
+                exit(1);
+            }
+            codigo_intermedio(raiz, out);
+            imprimir_programa();
+            fclose(out);
+        }
     }
     else if (strcmp(target, "assembly") == 0) {
         printf("Target assembly: pendiente implementar\n");
