@@ -26,6 +26,7 @@ SIMBOLOS_SRC = $(SIMBOLOS_DIR)/tabla_simbolos.c
 SEMANTICO_SRC = $(SEMANTICO_DIR)/semantico.c
 UTILS_SRC = $(UTILS_DIR)/manejo_errores.c $(UTILS_DIR)/generar_parametros.c
 CI_SRC = $(CI_DIR)/generador.c
+ASSEMBLER_SRC = assembler/assembler.c
 
 # Main
 MAIN_SRC = main.c
@@ -37,7 +38,7 @@ TEST ?= tests/tests-semantico/test1.ctds
 all: $(TARGET)
 
 # Compilacion
-$(TARGET): $(MAIN_SRC) $(YACC_C) $(LEX_OUT) $(TREE_SRC) $(SIMBOLOS_SRC) $(SEMANTICO_SRC) $(UTILS_SRC) $(CI_SRC)
+$(TARGET): $(MAIN_SRC) $(YACC_C) $(LEX_OUT) $(TREE_SRC) $(SIMBOLOS_SRC) $(SEMANTICO_SRC) $(UTILS_SRC) $(CI_SRC) $(ASSEMBLER_SRC)
 	$(CC) $(CFLAGS) -o $@ $^ -lfl
 
 $(YACC_C) $(YACC_H): $(YACC_SRC)

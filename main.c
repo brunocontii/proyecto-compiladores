@@ -8,7 +8,7 @@
 #include "analisis-semantico/semantico.h"
 #include "utils/manejo_errores.h"
 #include "codigo-intermedio/generador.h"
-#include "assembler/ver.h"
+#include "assembler/assembler.h"
 
 #define COLOR_RED     "\033[31m"
 #define COLOR_GREEN   "\033[32m"

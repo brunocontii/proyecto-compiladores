@@ -1,9 +1,13 @@
-#include "ver.h"
+#include <stdio.h>
+#include <string.h>
+#include "assembler.h"
+
+extern int cont_instrucciones;
 
 void generar_codigo_assembler(codigo3dir programa[], FILE *out) {
     if (!out) return;
     
-    for (int i = 0; i < length(programa); i++) {
+    for (int i = 0; i < cont_instrucciones; i++) {
         codigo3dir inst = programa[i];
         
         if (strcmp(inst.instruccion, "LOAD") == 0) {
