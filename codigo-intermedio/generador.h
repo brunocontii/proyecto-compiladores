@@ -2,19 +2,24 @@
 #define GENERADOR_H
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
 #include "../arbol-sintactico/arbol.h"
+#include "codigo3dir.h"
 
-typedef struct codigo3dir {
-    char instruccion[25];
-    char resultado[10];
-    char argumento1[10];
-    char argumento2[20];
-}codigo3dir;
+// contadores para temporales y labels
+extern int cont_temp;
+extern int cont_label;
+extern int ultimo_temp;
 
-extern codigo3dir programa[2000];
-extern int cont_instrucciones;
-
-void codigo_intermedio(nodo *raiz, FILE *out);
+// funciones auxiliares para crear *info y procesar parametros en la llamada a un metodo
+info* obtener_temp(int n);
+info* crear_constante(int nro);
+info* crear_constante_bool(bool b);
+info* obtener_label(const char *label);
 void procesar_argumentos(nodo *args, FILE *file);
+
+// funcion principal de generacion de codigo intermedio
+void codigo_intermedio(nodo *raiz, FILE *file);
 
 #endif

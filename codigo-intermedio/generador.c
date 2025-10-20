@@ -3,17 +3,98 @@
 #include "generador.h"
 
 int cont_temp = 0;
-int ultimo_temp = -1;
 int cont_label = 0;
-codigo3dir programa[2000]; // 2000 instrucciones maximo
-int cont_instrucciones = 0;
+int ultimo_temp = -1;
 
+// las funciones de obtener_temp, crear_constante, crear_constante_bool y obtener_label creo que
+// se pueden borrar pero para eso hay que manejar bien los temps dentro de cada nodo
+// del arbol, ademas de eso habria que cambiar tambien el print de codigo3dir para que
+// imprima los campos correctos del info, porque ahora siempre quiere imprimir el name (si no hay name imprime null)
+
+// crea un nuevo temporal como info
+info* obtener_temp(int n) {
+    if (n < 0) return NULL;
+
+    info *t = (info*)malloc(sizeof(info));
+    char buf[16];
+    snprintf(buf, sizeof(buf), "T%d", n);
+    t->name = strdup(buf);
+    t->esTemporal = 1;
+    t->tipo_info = TIPO_INTEGER;            // ver de darle el tipo correcto despues
+    t->tipo_token = T_ID;                   // ver de darle el token correcto despues
+    return t;
+}
+
+// crea una nueva constante entera (literal) cono info
+info* crear_constante(int nro) {
+    info *c = (info*)malloc(sizeof(info));
+    char buf[16];
+    snprintf(buf, sizeof(buf), "%d", nro);
+    c->name = strdup(buf);
+    c->nro = nro;
+    c->esTemporal = 0;
+    c->tipo_info = TIPO_INTEGER;            // aca creo q esta bien poner integer porque es un numero
+    c->tipo_token = T_DIGIT;                // aca creo q esta bien poner digit porque es un numero literal
+    return c;
+}
+
+// crea una nueva constante booleana como info
+info* crear_constante_bool(bool b) {
+    info *bool_info = (info*)malloc(sizeof(info));
+    char buf[6];
+    snprintf(buf, sizeof(buf), "%s", b ? "true" : "false");
+    bool_info->name = strdup(buf);
+    bool_info->b = b;
+    bool_info->bool_string = b ? "true" : "false";
+    bool_info->esTemporal = 0;
+    bool_info->tipo_info = TIPO_BOOL;                   // tipo bool
+    bool_info->tipo_token = b ? T_VTRUE : T_VFALSE;     // token booleano segun como sea
+    return bool_info;
+}
+
+// crea un nuevo label como info
+// ver si necesitamos agregarle mas informacion en algun campo del info
+info* obtener_label(const char *label) {
+    info *lbl = (info*)malloc(sizeof(info));
+    lbl->name = strdup(label);
+    lbl->esTemporal = 0;
+    return lbl;
+}
+
+// esto se usa unicamente en la llamada a un metodo (T_METHOD_CALL)
+// ver si es necesario usarla en otro lado (por ej T_METHOD_DECL)
+void procesar_argumentos(nodo *raiz, FILE *file) {
+    if (!raiz) return;
+    
+    if (raiz->valor && raiz->valor->tipo_token == T_EXPRS) {
+        // primero procesamos el hijo izq (otra lista de parametros)
+        if (raiz->izq) procesar_argumentos(raiz->izq, file);
+
+        // generamos codigo para la expresion del parametro actual
+        if (raiz->der) {
+            codigo_intermedio(raiz->der, file);
+            
+            info *param = obtener_temp(ultimo_temp);
+            
+            agregar_instruccion("PARAM", param, NULL, NULL);
+            fprintf(file, "PARAM T%d\n", ultimo_temp);
+        }
+    } else {
+        // caso base de la recursion: un solo parametro
+        codigo_intermedio(raiz, file);
+
+        info *param = obtener_temp(ultimo_temp);
+
+        agregar_instruccion("PARAM", param, NULL, NULL);
+        fprintf(file, "PARAM T%d\n", ultimo_temp);
+    }
+}
+
+// funcion principal de generacion de codigo intermedio
 void codigo_intermedio(nodo *raiz, FILE *file) {
     if (raiz == NULL) return;
 
-    int temp_izq;
-    int temp_der;
-    int temp_result;
+    int temp_izq, temp_der, temp_result;
 
     switch (raiz->valor->tipo_token) {
         case T_PROGRAM:
@@ -21,412 +102,216 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
             if (raiz->der) codigo_intermedio(raiz->der, file);
             break;
         case T_DIGIT: {
-            int temp = cont_temp++; 
-            fprintf(file, "LOAD T%d %d\n", temp, raiz->valor->nro);
-            
-            codigo3dir inst;
-            strcpy(inst.instruccion, "LOAD");
-            sprintf(inst.resultado, "T%d", temp);
-            sprintf(inst.argumento1, "%d", raiz->valor->nro);
-            inst.argumento2[0] = '\0';
+            // literal entero
+            temp_result = cont_temp++;
+            fprintf(file, "LOAD T%d %d\n", temp_result, raiz->valor->nro);
 
-            programa[cont_instrucciones] = inst;
-            cont_instrucciones++;
+            info *res = obtener_temp(temp_result);
+            info *arg1 = crear_constante(raiz->valor->nro);
 
-            ultimo_temp = temp;
+            agregar_instruccion("LOAD", res, arg1, NULL);
+            ultimo_temp = temp_result;
             break;
         }
         case T_ID: {
-            int temp = cont_temp++; 
-            fprintf(file, "LOAD T%d %s\n", temp, raiz->valor->name);
+            // hay 2 casos, que sea una variable o un parametro en la declaracion de un metodo
+            temp_result = cont_temp++;
+            fprintf(file, "LOAD T%d %s\n", temp_result, raiz->valor->name);
 
-            codigo3dir inst;
-            strcpy(inst.instruccion, "LOAD");
-            sprintf(inst.resultado, "T%d", temp);
-            sprintf(inst.argumento1, "%s", raiz->valor->name);
-            inst.argumento2[0] = '\0';
+            info *res = obtener_temp(temp_result);
+            info *arg1 = raiz->valor;
 
-            programa[cont_instrucciones] = inst;
-            cont_instrucciones++;
-
-            ultimo_temp = temp;
+            agregar_instruccion("LOAD", res, arg1, NULL);
+            ultimo_temp = temp_result;
             break;
         }
-        case T_PARAMETRO:{
-            int temp = cont_temp++; 
-            fprintf(file, "LOAD T%d %s\n", temp, raiz->valor->name);
+        case T_PARAMETRO: {
+            // parametro en la invocacion del metodo
+            // cuando la raiz es T_METHOD_DECL no vemos el hijo izq, por ende no entra nunca aca
+            // ver que onda si esto esta bien asi
+            temp_result = cont_temp++;
+            fprintf(file, "PARAM T%d\n", temp_result);
 
-            codigo3dir inst;
-            strcpy(inst.instruccion, "LOAD");
-            sprintf(inst.resultado, "T%d", temp);
-            sprintf(inst.argumento1, "%s", raiz->valor->name);
-            inst.argumento2[0] = '\0';
+            info *res = obtener_temp(temp_result);
+            info *arg1 = crear_constante(raiz->valor->nro);
 
-            programa[cont_instrucciones] = inst;
-            cont_instrucciones++;
-
-            ultimo_temp = temp;
+            agregar_instruccion("PARAM", res, arg1, NULL);
+            ultimo_temp = temp_result;
             break;
         }
-        case T_VTRUE: {
-            int temp = cont_temp++;
-            fprintf(file, "LOAD T%d true\n", temp);
-
-            codigo3dir inst;
-            strcpy(inst.instruccion, "LOAD");
-            sprintf(inst.resultado, "T%d", temp);
-            sprintf(inst.argumento1, "%s", "true");
-            inst.argumento2[0] = '\0';
-
-            programa[cont_instrucciones] = inst;
-            cont_instrucciones++;
-
-            ultimo_temp = temp;
-            break;
-        }
+        case T_VTRUE:
         case T_VFALSE: {
-            int temp = cont_temp++;
-            fprintf(file, "LOAD T%d false\n", temp);
+            temp_result = cont_temp++;
 
-            codigo3dir inst;
-            strcpy(inst.instruccion, "LOAD");
-            sprintf(inst.resultado, "T%d", temp);
-            sprintf(inst.argumento1, "%s", "false");
-            inst.argumento2[0] = '\0';
+            info *res = obtener_temp(temp_result);
+            info *arg1 = crear_constante_bool(raiz->valor->b);
 
-            programa[cont_instrucciones] = inst;
-            cont_instrucciones++;
+            agregar_instruccion("LOAD", res, arg1, NULL);
+            fprintf(file, "LOAD T%d %s\n", temp_result, raiz->valor->b ? "true" : "false");
 
-            ultimo_temp = temp;
+            ultimo_temp = temp_result;
             break;
         }
-        case T_OP_MAS: {
+        case T_OP_MAS:
+        case T_OP_MULT:
+        case T_OP_DIV:
+        case T_OP_RESTO:
+        case T_OP_AND:
+        case T_OP_OR:
+        case T_IGUALDAD:
+        case T_MAYOR:
+        case T_MENOR: {
+            // generar codigo intermedio para el hijo izquierdo
             codigo_intermedio(raiz->izq, file);
             temp_izq = ultimo_temp;
+            info *izq = obtener_temp(temp_izq);
+
+            // generar codigo intermedio para el hijo derecho
             codigo_intermedio(raiz->der, file);
             temp_der = ultimo_temp;
+            info *der = obtener_temp(temp_der);
+
+            // crear nuevo temporal para el resultado
             temp_result = cont_temp++;
-            fprintf(file, "ADD T%d T%d T%d\n", temp_result, temp_izq, temp_der);
+            info *res = obtener_temp(temp_result);
 
-            codigo3dir inst;
-            strcpy(inst.instruccion, "ADD");
-            sprintf(inst.resultado, "T%d", temp_result);
-            sprintf(inst.argumento1, "T%d", temp_izq);
-            sprintf(inst.argumento2, "T%d", temp_der);
+            // determinar la instrucción segun el token
+            const char *op;
+            switch (raiz->valor->tipo_token) {
+                case T_OP_MAS:   op = "ADD"; break;
+                case T_OP_MULT:  op = "MUL"; break;
+                case T_OP_DIV:   op = "DIV"; break;
+                case T_OP_RESTO: op = "MOD"; break;
+                case T_OP_AND:   op = "AND"; break;
+                case T_OP_OR:    op = "OR"; break;
+                case T_IGUALDAD: op = "EQ"; break;
+                case T_MAYOR:    op = "GT"; break;
+                case T_MENOR:    op = "LT"; break;
+                default: op = "???"; break;
+            }
 
-            programa[cont_instrucciones] = inst;
-            cont_instrucciones++;
-
+            // guardar la instruccion
+            agregar_instruccion(op, res, izq, der);
+            fprintf(file, "%s T%d T%d T%d\n", op, temp_result, temp_izq, temp_der);
+            
             ultimo_temp = temp_result;
             break;
         }
         case T_OP_MENOS: {
             if (raiz->izq == NULL) {
-                // Menos Unario
+                // menos unario
                 codigo_intermedio(raiz->der, file);
                 temp_der = ultimo_temp;
+                info *der = obtener_temp(temp_der);
+
                 temp_result = cont_temp++;
+                info *res = obtener_temp(temp_result);
+
+                agregar_instruccion("NEG", res, der, NULL);
                 fprintf(file, "NEG T%d T%d\n", temp_result, temp_der);
-
-                codigo3dir inst;
-                strcpy(inst.instruccion, "NEG");
-                sprintf(inst.resultado, "T%d", temp_result);
-                sprintf(inst.argumento1, "T%d", temp_der);
-                inst.argumento2[0] = '\0';
-
-                programa[cont_instrucciones] = inst;
-                cont_instrucciones++;
 
                 ultimo_temp = temp_result;
             } else {
+                // menos binario
                 codigo_intermedio(raiz->izq, file);
                 temp_izq = ultimo_temp;
+                info *izq = obtener_temp(temp_izq);
+
                 codigo_intermedio(raiz->der, file);
                 temp_der = ultimo_temp;
+                info *der = obtener_temp(temp_der);
+
                 temp_result = cont_temp++;
+                info *res = obtener_temp(temp_result);
+
+                agregar_instruccion("SUB", res, izq, der);
                 fprintf(file, "SUB T%d T%d T%d\n", temp_result, temp_izq, temp_der);
-
-                codigo3dir inst;
-                strcpy(inst.instruccion, "SUB");
-                sprintf(inst.resultado, "T%d", temp_result);
-                sprintf(inst.argumento1, "T%d", temp_izq);
-                sprintf(inst.argumento2, "T%d", temp_der);
-
-                programa[cont_instrucciones] = inst;
-                cont_instrucciones++;
 
                 ultimo_temp = temp_result;
             }
             break;
         }
-        case T_OP_MULT: {
-            codigo_intermedio(raiz->izq, file);
-            temp_izq = ultimo_temp;
-            codigo_intermedio(raiz->der, file);
-            temp_der = ultimo_temp;
-            temp_result = cont_temp++;
-            fprintf(file, "MUL T%d T%d T%d\n", temp_result, temp_izq, temp_der);
-
-            codigo3dir inst;
-            strcpy(inst.instruccion, "MUL");
-            sprintf(inst.resultado, "T%d", temp_result);
-            sprintf(inst.argumento1, "T%d", temp_izq);
-            sprintf(inst.argumento2, "T%d", temp_der);
-
-            programa[cont_instrucciones] = inst;
-            cont_instrucciones++;
-
-            ultimo_temp = temp_result;
-            break;
-        }
-        case T_OP_DIV: {
-            codigo_intermedio(raiz->izq, file);
-            temp_izq = ultimo_temp;
-            codigo_intermedio(raiz->der, file);
-            temp_der = ultimo_temp;
-            temp_result = cont_temp++;
-            fprintf(file, "DIV T%d T%d T%d\n", temp_result, temp_izq, temp_der);
-
-            codigo3dir inst;
-            strcpy(inst.instruccion, "DIV");
-            sprintf(inst.resultado, "T%d", temp_result);
-            sprintf(inst.argumento1, "T%d", temp_izq);
-            sprintf(inst.argumento2, "T%d", temp_der);
-
-            programa[cont_instrucciones] = inst;
-            cont_instrucciones++;
-
-            ultimo_temp = temp_result;
-            break;
-        }
-        case T_OP_RESTO: {
-            codigo_intermedio(raiz->izq, file);
-            temp_izq = ultimo_temp;
-            codigo_intermedio(raiz->der, file);
-            temp_der = ultimo_temp;
-            temp_result = cont_temp++;
-            fprintf(file, "MOD T%d T%d T%d\n", temp_result, temp_izq, temp_der);
-
-            codigo3dir inst;
-            strcpy(inst.instruccion, "MOD");
-            sprintf(inst.resultado, "T%d", temp_result);
-            sprintf(inst.argumento1, "T%d", temp_izq);
-            sprintf(inst.argumento2, "T%d", temp_der);
-
-            programa[cont_instrucciones] = inst;
-            cont_instrucciones++;
-
-            ultimo_temp = temp_result;
-            break;
-        }
-        case T_OP_AND: {
-            codigo_intermedio(raiz->izq, file);
-            temp_izq = ultimo_temp;
-            codigo_intermedio(raiz->der, file);
-            temp_der = ultimo_temp;
-            temp_result = cont_temp++;
-            fprintf(file, "AND T%d T%d T%d\n", temp_result, temp_izq, temp_der);
-    
-            codigo3dir inst;
-            strcpy(inst.instruccion, "AND");
-            sprintf(inst.resultado, "T%d", temp_result);
-            sprintf(inst.argumento1, "T%d", temp_izq);
-            sprintf(inst.argumento2, "T%d", temp_der);
-
-            programa[cont_instrucciones] = inst;
-            cont_instrucciones++;
-        
-            ultimo_temp = temp_result;
-            break;
-        }
-        case T_OP_OR: {
-            codigo_intermedio(raiz->izq, file);
-            temp_izq = ultimo_temp;
-            codigo_intermedio(raiz->der, file);
-            temp_der = ultimo_temp;
-            temp_result = cont_temp++;
-            fprintf(file, "OR T%d T%d T%d\n", temp_result, temp_izq, temp_der);
-
-            codigo3dir inst;
-            strcpy(inst.instruccion, "OR");
-            sprintf(inst.resultado, "T%d", temp_result);
-            sprintf(inst.argumento1, "T%d", temp_izq);
-            sprintf(inst.argumento2, "T%d", temp_der);
-
-            programa[cont_instrucciones] = inst;
-            cont_instrucciones++;
-
-            ultimo_temp = temp_result;
-            break;
-        }
         case T_OP_NOT: {
+            // como es unario, vemos el hijo der
             codigo_intermedio(raiz->der, file);
-            temp_der = ultimo_temp;
-            temp_result = cont_temp++;
+            int temp_der = ultimo_temp;
+            info *der = obtener_temp(temp_der);
+
+            // crear un nuevo temporal para el resultado
+            int temp_result = cont_temp++;
+            info *res = obtener_temp(temp_result);
+
+            // guardar la instruccion
+            agregar_instruccion("NOT", res, der, NULL);
             fprintf(file, "NOT T%d T%d\n", temp_result, temp_der);
-
-            codigo3dir inst;
-            strcpy(inst.instruccion, "NOT");
-            sprintf(inst.resultado, "T%d", temp_result);
-            sprintf(inst.argumento1, "T%d", temp_der);
-            inst.argumento2[0] = '\0';
-
-            programa[cont_instrucciones] = inst;
-            cont_instrucciones++;
-
-            ultimo_temp = temp_result;
-            break;
-        }
-        case T_IGUALDAD:  {
-            codigo_intermedio(raiz->izq, file);
-            temp_izq = ultimo_temp;
-            codigo_intermedio(raiz->der, file);
-            temp_der = ultimo_temp;
-            temp_result = cont_temp++;
-            fprintf(file, "EQ T%d T%d T%d\n", temp_result, temp_izq, temp_der);
-
-            codigo3dir inst;
-            strcpy(inst.instruccion, "EQ");
-            sprintf(inst.resultado, "T%d", temp_result);
-            sprintf(inst.argumento1, "T%d", temp_izq);
-            sprintf(inst.argumento2, "T%d", temp_der);
-
-            programa[cont_instrucciones] = inst;
-            cont_instrucciones++;
             
             ultimo_temp = temp_result;
             break;
         }
-        case T_MAYOR: {
-            codigo_intermedio(raiz->izq, file);
-            temp_izq = ultimo_temp;
-            codigo_intermedio(raiz->der, file);
-            temp_der = ultimo_temp;
-            temp_result = cont_temp++;
-            fprintf(file, "GT T%d T%d T%d\n", temp_result, temp_izq, temp_der);
-
-            codigo3dir inst;
-            strcpy(inst.instruccion, "GT");
-            sprintf(inst.resultado, "T%d", temp_result);
-            sprintf(inst.argumento1, "T%d", temp_izq);
-            sprintf(inst.argumento2, "T%d", temp_der);
-
-            programa[cont_instrucciones] = inst;
-            cont_instrucciones++;
-
-            ultimo_temp = temp_result;
-            break;
-        }
-        case T_MENOR: {
-            codigo_intermedio(raiz->izq, file);
-            temp_izq = ultimo_temp;
-            codigo_intermedio(raiz->der, file);
-            temp_der = ultimo_temp;
-            temp_result = cont_temp++;
-            fprintf(file, "LT T%d T%d T%d\n", temp_result, temp_izq, temp_der);
-
-            codigo3dir inst;
-            strcpy(inst.instruccion, "LT");
-            sprintf(inst.resultado, "T%d", temp_result);
-            sprintf(inst.argumento1, "T%d", temp_izq);
-            sprintf(inst.argumento2, "T%d", temp_der);
-
-            programa[cont_instrucciones] = inst;
-            cont_instrucciones++;
-
-            ultimo_temp = temp_result;
-            break;
-        }
         case T_ASIGNACION: {
+            // primero se procesa el lado derecho (la expresion)
             codigo_intermedio(raiz->der, file);
-            temp_der = ultimo_temp;
-            fprintf(file, "ASSIGN %s T%d\n", raiz->izq->valor->name, temp_der);
 
-            codigo3dir inst;
-            strcpy(inst.instruccion, "ASSIGN");
-            sprintf(inst.resultado, "%s", raiz->izq->valor->name);
-            sprintf(inst.argumento1, "T%d", temp_der);
-            inst.argumento2[0] = '\0';
+            // el resultado queda en el ultimo temporal
+            info *valor = obtener_temp(ultimo_temp);
 
-            programa[cont_instrucciones] = inst;
-            cont_instrucciones++;
+            // el lado izq es la variable
+            info *var = raiz->izq->valor;
+
+            agregar_instruccion("ASSIGN", var, valor, NULL);
+            fprintf(file, "ASSIGN %s T%d\n", var->name, ultimo_temp);
 
             ultimo_temp = -1;
             break;
         }
         case T_VAR_DECL: {
-            if (raiz->der != NULL) {
-                codigo_intermedio(raiz->der, file);
-                temp_der = ultimo_temp;
-                fprintf(file, "ASSIGN %s T%d\n", raiz->izq->valor->name, temp_der);
+            // primero vemos la expresion del hijo der
+            codigo_intermedio(raiz->der, file);
 
-                codigo3dir inst;
-                strcpy(inst.instruccion, "ASSIGN");
-                sprintf(inst.resultado, "%s", raiz->izq->valor->name);
-                sprintf(inst.argumento1, "T%d", temp_der);
-                inst.argumento2[0] = '\0';
-
-                programa[cont_instrucciones] = inst;
-                cont_instrucciones++;
-            }
-            ultimo_temp = -1;
+            info *valor = obtener_temp(ultimo_temp);
+            info *var = raiz->izq->valor;
+            agregar_instruccion("ASSIGN", var, valor, NULL);
+            fprintf(file, "ASSIGN %s T%d\n", var->name, ultimo_temp);
             break;
         }
         case T_RETURN: {
             if (raiz->izq) {
+                // return con expresion
                 codigo_intermedio(raiz->izq, file);
-                temp_der = ultimo_temp;
-                fprintf(file, "RET T%d\n", temp_der);
 
-                codigo3dir inst;
-                strcpy(inst.instruccion, "RET");
-                sprintf(inst.resultado, "T%d", temp_der);
-                inst.argumento1[0] = '\0';
-                inst.argumento2[0] = '\0';
-
-                programa[cont_instrucciones] = inst;
-                cont_instrucciones++;
+                info *valor = obtener_temp(ultimo_temp);
+                agregar_instruccion("RET", valor, NULL, NULL);
+                fprintf(file, "RET T%d\n", ultimo_temp);
             } else {
+                // return sin expresion
+                agregar_instruccion("RET", NULL, NULL, NULL);
                 fprintf(file, "RET\n");
-
-                codigo3dir inst;
-                strcpy(inst.instruccion, "RET");
-                inst.resultado[0] = '\0';
-                inst.argumento1[0] = '\0';
-                inst.argumento2[0] = '\0';
-
-                programa[cont_instrucciones] = inst;
-                cont_instrucciones++;
             }
             ultimo_temp = -1;
             break;
         }
         case T_METHOD_DECL: {
             if (raiz->izq && raiz->izq->valor->tipo_token == T_EXTERN) {
+                // metodo externo
                 fprintf(file, "EXTERN %s\n", raiz->valor->name);
-                
-                codigo3dir inst;
-                strcpy(inst.instruccion, "EXTERN");
-                sprintf(inst.resultado, "%s", raiz->valor->name);
-                inst.argumento1[0] = '\0';
-                inst.argumento2[0] = '\0';
-
-                programa[cont_instrucciones] = inst;
-                cont_instrucciones++;
-
+                agregar_instruccion("EXTERN", raiz->valor, NULL, NULL);
+                ultimo_temp = -1;
                 break;
             } else {
-                codigo3dir metodo;
-                snprintf(metodo.instruccion, sizeof(metodo.instruccion), "%s:", raiz->valor->name);
-                metodo.resultado[0] = '\0';
-                metodo.argumento1[0] = '\0';
-                metodo.argumento2[0] = '\0';
+                fprintf(file, "LABEL %s\n", raiz->valor->name);
+                agregar_instruccion("LABEL", raiz->valor, NULL, NULL);
+                // ver si hacer algo con los parametros aca o no (antes de ver el hijo der)
+                // generamos codigo intermedio para el cuerpo del metodo
+                if (raiz->der) {
+                    codigo_intermedio(raiz->der, file);
+                }
 
-                programa[cont_instrucciones] = metodo;
-                cont_instrucciones++;
-                
-                fprintf(file, "%s:\n", raiz->valor->name);
-                codigo_intermedio(raiz->der, file);
+                // remarcar el fin del metodo (lo podemos sacar si queremos)
+                // capaz sirve, capaz no
+                fprintf(file, "END %s\n", raiz->valor->name);
+                agregar_instruccion("END", raiz->valor, NULL, NULL);
+
+                ultimo_temp = -1;
             }
             break;
         }
@@ -435,193 +320,116 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
                 procesar_argumentos(raiz->der, file);
             }
 
-            if (raiz->valor->tipo_info == TIPO_VOID) {
-                fprintf(file, "CALL %s\n", raiz->izq->valor->name);
-
-                codigo3dir inst;
-                strcpy(inst.instruccion, "CALL");
-                sprintf(inst.resultado, "%s", raiz->izq->valor->name);
-                inst.argumento1[0] = '\0';
-                inst.argumento2[0] = '\0';
-
-                programa[cont_instrucciones] = inst;
-                cont_instrucciones++;
-                
-                ultimo_temp = -1;
-            } else {
+            // ver que devuelve el metodo
+            if (raiz->valor->tipo_info != TIPO_VOID) {
+                // si devuelve integer o bool, lo guardamos en un temporal
                 temp_result = cont_temp++;
+                info *res = obtener_temp(temp_result);
+
                 fprintf(file, "CALL T%d %s\n", temp_result, raiz->izq->valor->name);
-
-                codigo3dir inst;
-                strcpy(inst.instruccion, "CALL");
-                sprintf(inst.resultado, "T%d", temp_result);
-                sprintf(inst.argumento1, "%s", raiz->izq->valor->name);
-                inst.argumento2[0] = '\0';
-
-                programa[cont_instrucciones] = inst;
-                cont_instrucciones++;
+                agregar_instruccion("CALL", res, raiz->izq->valor, NULL);
 
                 ultimo_temp = temp_result;
+            } else {
+                // si es void, no necesitamos un temporal
+                fprintf(file, "CALL %s\n", raiz->izq->valor->name);
+                agregar_instruccion("CALL", raiz->izq->valor, NULL, NULL);
+                ultimo_temp = -1;
             }
             break;
         }
         case T_EXTERN: {
+            // ver si queremos agregar algo mas aca
             fprintf(file, "EXTERN\n");
-
-            codigo3dir inst;
-            strcpy(inst.instruccion, "EXTERN");
-            sprintf(inst.resultado, "%s", raiz->valor->name);
-            inst.argumento1[0] = '\0';
-            inst.argumento2[0] = '\0';
-
-            programa[cont_instrucciones] = inst;
-            cont_instrucciones++;
-
+            agregar_instruccion("EXTERN", NULL, NULL, NULL);
+            ultimo_temp = -1;
             break;
         }
         case T_IF: {
+            // generamos codigo intermedio para la condicion
             codigo_intermedio(raiz->izq, file);
             temp_izq = ultimo_temp;
+            info *cond = obtener_temp(temp_izq);
 
-            int label_end = cont_label++;
+            // aca en vez de usar un arreglo de char, se podria
+            // usar directamente char*. ver si cambiarlo o no
+            // lo mismo para los case T_IF_ELSE y T_WHILE
+            char label_end[16];
+            snprintf(label_end, sizeof(label_end), "L%d", cont_label++);
 
-            fprintf(file, "Salto cond: if T%d L%d\n", temp_izq, label_end);
-            
-            codigo3dir inst;
-            strcpy(inst.instruccion, "Salto cond: if");
-            sprintf(inst.resultado, "T%d", temp_izq);
-            sprintf(inst.argumento1, "L%d", label_end);
-            inst.argumento2[0] = '\0';
+            fprintf(file, "IF_FALSE T%d %s\n", temp_izq, label_end);
+            info *endif = obtener_label(label_end);
+            agregar_instruccion("IF_FALSE", cond, endif, NULL);
 
-            programa[cont_instrucciones] = inst;
-            cont_instrucciones++;
+            if (raiz->der) codigo_intermedio(raiz->der, file);
 
-            codigo_intermedio(raiz->der, file);
-
-            fprintf(file, "L%d:\n", label_end);
-
-            codigo3dir lab;
-            snprintf(lab.instruccion, sizeof(lab.instruccion), "L%d:", label_end);
-            lab.resultado[0] = '\0';
-            lab.argumento1[0] = '\0';
-            lab.argumento2[0] = '\0';
-
-            programa[cont_instrucciones] = lab;
-            cont_instrucciones++;
+            fprintf(file, "LABEL %s\n", label_end);
+            agregar_instruccion("LABEL", endif, NULL, NULL);
 
             ultimo_temp = -1;
             break;
         }
         case T_IF_ELSE: {
+            // generamos codigo intermedio para la condicion
             codigo_intermedio(raiz->izq, file);
             temp_izq = ultimo_temp;
+            info *cond = obtener_temp(temp_izq);
 
-            int label_else = cont_label++;
-            int label_end = cont_label++;
+            char label_else[16], label_end[16];
+            snprintf(label_else, sizeof(label_else), "L%d", cont_label++);
+            snprintf(label_end, sizeof(label_end), "L%d", cont_label++);
 
-            fprintf(file, "Salto cond: if else T%d L%d\n", temp_izq, label_else);
+            fprintf(file, "IF_FALSE T%d %s\n", temp_izq, label_else);
+            // ver si se cambia IF_FALSE por otra cosa
+            agregar_instruccion("IF_FALSE", cond, obtener_label(label_else), NULL);
 
-            codigo3dir inst;
-            strcpy(inst.instruccion, "Salto cond: if else");
-            sprintf(inst.resultado, "T%d", temp_izq);
-            sprintf(inst.argumento1, "L%d", label_else);
-            inst.argumento2[0] = '\0';
+            // codigo intermedio para el THEN
+            if (raiz->med) codigo_intermedio(raiz->med, file);
 
-            programa[cont_instrucciones] = inst;
-            cont_instrucciones++;
+            // salto incondicional al final, una vez terminado el THEN
+            fprintf(file, "GOTO %s\n", label_end);
+            agregar_instruccion("GOTO", obtener_label(label_end), NULL, NULL);
 
-            codigo_intermedio(raiz->med, file);
+            // aca inicia el ELSE
+            fprintf(file, "LABEL %s\n", label_else);
+            agregar_instruccion("LABEL", obtener_label(label_else), NULL, NULL);
 
-            fprintf(file, "Salto incond: if else L%d\n", label_end);
+            // codigo intermedio para el ELSE
+            if (raiz->der) codigo_intermedio(raiz->der, file);
 
-            codigo3dir inst2;
-            strcpy(inst2.instruccion, "Salto incond: if else");
-            sprintf(inst2.resultado, "L%d", label_end);
-            inst2.argumento1[0] = '\0';
-            inst2.argumento2[0] = '\0';
-
-            programa[cont_instrucciones] = inst2;
-            cont_instrucciones++;
-
-            fprintf(file, "L%d:\n", label_else);
-
-            codigo3dir lab_else;
-            snprintf(lab_else.instruccion, sizeof(lab_else.instruccion), "L%d:", label_else);
-            lab_else.resultado[0] = '\0';
-            lab_else.argumento1[0] = '\0';
-            lab_else.argumento2[0] = '\0';
-
-            programa[cont_instrucciones] = lab_else;
-            cont_instrucciones++;
-
-            codigo_intermedio(raiz->der, file);
-
-            fprintf(file, "L%d:\n", label_end);
-
-            codigo3dir lab_end;
-            snprintf(lab_end.instruccion, sizeof(lab_end.instruccion), "L%d:", label_end);
-            lab_end.resultado[0] = '\0';
-            lab_end.argumento1[0] = '\0';
-            lab_end.argumento2[0] = '\0';
-
-            programa[cont_instrucciones] = lab_end;
-            cont_instrucciones++;
+            fprintf(file, "LABEL %s\n", label_end);
+            agregar_instruccion("LABEL", obtener_label(label_end), NULL, NULL);
 
             ultimo_temp = -1;
             break;
         }
         case T_WHILE: {
-            int label_cond = cont_label++;
-            int label_fin = cont_label++;
+            char label_inicio[16], label_end[16];
+            snprintf(label_inicio, sizeof(label_inicio), "L%d", cont_label++);
+            snprintf(label_end, sizeof(label_end), "L%d", cont_label++);
 
-            fprintf(file, "L%d:\n", label_cond);
+            // label para el inicio del while, antes de la condicion
+            fprintf(file, "LABEL %s\n", label_inicio);
+            agregar_instruccion("LABEL", obtener_label(label_inicio), NULL, NULL);
 
-            codigo3dir lab_cond;
-            snprintf(lab_cond.instruccion, sizeof(lab_cond.instruccion), "L%d:", label_cond);
-            lab_cond.resultado[0] = '\0';
-            lab_cond.argumento1[0] = '\0';
-            lab_cond.argumento2[0] = '\0';
-
-            programa[cont_instrucciones] = lab_cond;
-            cont_instrucciones++;
-
+            // generamos codigo intermedio para la condicion
             codigo_intermedio(raiz->izq, file);
             temp_izq = ultimo_temp;
+            info *cond = obtener_temp(temp_izq);
 
-            fprintf(file, "Salto cond: while T%d L%d\n", temp_izq, label_fin);
+            fprintf(file, "IF_FALSE T%d %s\n", temp_izq, label_end);
+            agregar_instruccion("IF_FALSE", cond, obtener_label(label_end), NULL);
 
-            codigo3dir inst;
-            strcpy(inst.instruccion, "Salto cond: while");
-            sprintf(inst.resultado, "T%d", temp_izq);
-            sprintf(inst.argumento1, "L%d", label_fin);
-            inst.argumento2[0] = '\0';
+            // cuerpo del while
+            if (raiz->der) codigo_intermedio(raiz->der, file);
 
-            programa[cont_instrucciones] = inst;
-            cont_instrucciones++;
+            // salto incondicional al inicio, para reevaluar la condicion
+            fprintf(file, "GOTO %s\n", label_inicio);
+            agregar_instruccion("GOTO", obtener_label(label_inicio), NULL, NULL);
 
-            codigo_intermedio(raiz->der, file);
-
-            fprintf(file, "Salto incond: while L%d\n", label_cond);
-
-            codigo3dir inst2;
-            strcpy(inst2.instruccion, "Salto incond: while");
-            sprintf(inst2.resultado, "L%d", label_cond);
-            inst2.argumento1[0] = '\0';
-            inst2.argumento2[0] = '\0';
-
-            programa[cont_instrucciones] = inst2;
-            cont_instrucciones++;
-
-            fprintf(file, "L%d:\n", label_fin);
-
-            codigo3dir lab_fin;
-            snprintf(lab_fin.instruccion, sizeof(lab_fin.instruccion), "L%d:", label_fin);
-            lab_fin.resultado[0] = '\0';
-            lab_fin.argumento1[0] = '\0';
-            lab_fin.argumento2[0] = '\0';
-
-            programa[cont_instrucciones] = lab_fin;
-            cont_instrucciones++;
+            // label para el fin del while
+            fprintf(file, "LABEL %s\n", label_end);
+            agregar_instruccion("LABEL", obtener_label(label_end), NULL, NULL);
 
             ultimo_temp = -1;
             break;
@@ -632,23 +440,3 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
             break;
     }
 }
-
-// Impresión por consola de código de 3 direcciones
-void imprimir_programa() {
-    printf("\n--- TABLA DE INSTRUCCIONES ---\n");
-    printf("%-5s  %-25s  %-10s  %-10s  %-10s\n",
-           "IDX", "INSTRUCCION", "RESULTADO", "ARG1", "ARG2");
-    printf("---------------------------------------------------------------\n");
-
-    for (int i = 0; i < cont_instrucciones; i++) {
-        printf("%-5d  %-25s  %-10s  %-10s  %-10s\n",
-               i,
-               programa[i].instruccion,
-               programa[i].resultado[0] ? programa[i].resultado : "-",
-               programa[i].argumento1[0] ? programa[i].argumento1 : "-",
-               programa[i].argumento2[0] ? programa[i].argumento2 : "-");
-    }
-
-    printf("---------------------------------------------------------------\n");
-}
-

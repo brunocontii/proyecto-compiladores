@@ -218,7 +218,9 @@ int main(int argc, char *argv[]) {
                 perror("No se pudo abrir el archivo de salida");
                 exit(1);
             }
-            generar_codigo_assembler(programa, out2);
+            // comente porque "programa" no está definido en main.c
+            // abria que pasar como parametro la lista de instrucciones generada
+            //generar_codigo_assembler(programa, out2);
         }    
     }
     else {
