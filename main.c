@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
     inicializar(ts);
 
     // Target por defecto
-    if (!target) target = "codinter";
+    if (!target) target = "assembly";
 
     if (debug) {
         printf("Archivo entrada: %s\n", archivo_entrada);
@@ -218,9 +218,10 @@ int main(int argc, char *argv[]) {
                 perror("No se pudo abrir el archivo de salida");
                 exit(1);
             }
-            // comente porque "programa" no está definido en main.c
-            // abria que pasar como parametro la lista de instrucciones generada
-            //generar_codigo_assembler(programa, out2);
+
+            // generar assembler desde la lista global 'programa'
+            generar_codigo_assembler(programa_inicio, out2);
+            fclose(out2);
         }    
     }
     else {

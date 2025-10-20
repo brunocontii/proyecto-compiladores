@@ -3,6 +3,6 @@
 
 #include "../codigo-intermedio/generador.h"
 
-void generar_codigo_assembler(codigo3dir programa[], FILE *out);
+void generar_codigo_assembler(codigo3dir *programa, FILE *out);
 
 #endif

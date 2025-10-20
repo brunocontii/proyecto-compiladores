@@ -5,6 +5,8 @@
 int cont_temp = 0;
 int cont_label = 0;
 int ultimo_temp = -1;
+int locales = 0;
+bool nuevo_metodo = false;
 
 // las funciones de obtener_temp, crear_constante, crear_constante_bool y obtener_label creo que
 // se pueden borrar pero para eso hay que manejar bien los temps dentro de cada nodo
@@ -117,7 +119,7 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
             // hay 2 casos, que sea una variable o un parametro en la declaracion de un metodo
             temp_result = cont_temp++;
             fprintf(file, "LOAD T%d %s\n", temp_result, raiz->valor->name);
-
+            
             info *res = obtener_temp(temp_result);
             info *arg1 = raiz->valor;
 
@@ -268,6 +270,13 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
             // primero vemos la expresion del hijo der
             codigo_intermedio(raiz->der, file);
 
+            if (nuevo_metodo){ // variable booleana tipo flag
+                locales = 0;
+                nuevo_metodo = false;
+            }
+            // aca yo se que es una nueva variable local, sumo para saber cuantas 
+            // variables locales tengo en el metodo corriente
+            locales++;
             info *valor = obtener_temp(ultimo_temp);
             info *var = raiz->izq->valor;
             agregar_instruccion("ASSIGN", var, valor, NULL);
@@ -300,6 +309,7 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
             } else {
                 fprintf(file, "LABEL %s\n", raiz->valor->name);
                 agregar_instruccion("LABEL", raiz->valor, NULL, NULL);
+                nuevo_metodo = true;
                 // ver si hacer algo con los parametros aca o no (antes de ver el hijo der)
                 // generamos codigo intermedio para el cuerpo del metodo
                 if (raiz->der) {

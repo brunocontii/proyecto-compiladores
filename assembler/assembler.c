@@ -1,24 +1,67 @@
+// assembler/assembler.c
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include "../codigo-intermedio/codigo3dir.h"
 #include "assembler.h"
 
-extern int cont_instrucciones;
+extern int locales;
 
-void generar_codigo_assembler(codigo3dir programa[], FILE *out) {
-    if (!out) return;
-    
-    for (int i = 0; i < cont_instrucciones; i++) {
-        codigo3dir inst = programa[i];
-        
-        if (strcmp(inst.instruccion, "LOAD") == 0) {
-            fprintf(out, "MOV %s, %s\n", inst.resultado, inst.argumento1);
+/*
+POR AHORA SIN USO
+static const char *reg_name_for_temp(int n) {
+    // temporales mapeados a r10 y r11, se usa uno luego otro y luego el primero de nuevo
+    return (n % 2 == 0) ? "%%r10d" : "%%r11d";
+}
+*/
+
+void generar_codigo_assembler(codigo3dir *programa, FILE *out) {
+    if (!out || !programa) return;
+
+    codigo3dir *inst = programa;
+
+    while (inst != NULL) {
+        char *instr = inst->instruccion;
+
+        if (strcmp(instr, "LABEL") == 0) {
+            fprintf(out, "%s:\n", inst->resultado->name);
+            fprintf(out, "    pushq %%rbp\n");
+            fprintf(out, "    movq %%rsp, %%rbp\n");
+
+            int N = 8 * locales; // reservar espacio para variables locales (8 bytes c/u)
+            if (N > 0) {
+                fprintf(out, "    subq $%d, %%rsp\n", N);
+            }
         }
-        else if (strcmp(inst.instruccion, "ADD") == 0) {
-            fprintf(out, "ADD %s, %s, %s\n", inst.resultado, inst.argumento1, inst.argumento2);
+        else if (strcmp(instr, "END") == 0) {
+            fprintf(out, "    movq %%rbp, %%rsp\n");
+            fprintf(out, "    popq %%rbp\n");
+            fprintf(out, "    ret\n");
         }
-        else if (strcmp(inst.instruccion, "CALL") == 0) {
-            fprintf(out, "CALL %s\n", inst.argumento1);
+        else if (strcmp(instr, "LOAD") == 0) {
+            // Cargar un valor inmediato o variable a un registro temporal
+            // Ejemplo: LOAD T1, 5  => movq $5, -8(%rbp)
+            if (inst->resultado && inst->arg1) {
+                fprintf(out, "    movq $%s, -8(%%rbp)   # %s = %s\n",
+                        inst->arg1, inst->resultado->name, inst->arg1);
+            }
+            // se debe hacer mas casos
         }
+
+        else if (strcmp(instr, "ASSIGN") == 0) {
+            // Asignación simple entre variables locales (por ahora solo comentario)
+            // Ejemplo: ASSIGN x, T1 => movq -8(%rbp), -16(%rbp)
+            if (inst->resultado && inst->arg1) {
+                fprintf(out, "    # %s = %s (asignacion local)\n",
+                        inst->resultado->name, inst->arg1->name);
+            }
+            // se debe hacer mas casos
+
+        else {
+            // instrucción no manejada: la imprimimos como comentario para debug
+            fprintf(out, "    # instruccion no traducida: %s\n", instr);
+        }
+
+        inst = inst->siguiente; // avanzar en la lista
     }
-
 }
