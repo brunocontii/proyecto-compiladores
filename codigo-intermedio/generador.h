@@ -13,7 +13,7 @@ extern int cont_label;
 extern int ultimo_temp;
 
 // funciones auxiliares para crear *info y procesar parametros en la llamada a un metodo
-info* obtener_temp(int n);
+info* obtener_temp(int n, tipo_info ti);
 info* crear_constante(int nro);
 info* crear_constante_bool(bool b);
 info* obtener_label(const char *label);

@@ -5,7 +5,57 @@
 #include "../codigo-intermedio/codigo3dir.h"
 #include "assembler.h"
 
-extern int locales;
+int contar_locales_por_metodo(codigo3dir *label) {
+
+    codigo3dir *p = label->siguiente;
+    // arreglo simple para nombres únicos (no sofisticado): max 1024 variables por función
+    const char *a[100];
+    int var_locales = 0;
+
+    while (p != NULL) {
+        if (strcmp(p->instruccion, "END") == 0) {
+            break; // si es END listo
+        }
+
+        if (strcmp(p->instruccion, "ASSIGN") == 0) {
+            if (p->resultado->esTemporal == 0) { // si es una variable real no temporal
+                int i; 
+                bool found = false;
+                for (i = 0; i < var_locales; ++i) {
+                    if (strcmp(a[i], p->resultado->name) == 0) {  // entra aca si ya estaba la variable en el arreglo
+                        found = true; 
+                        break; 
+                    }
+                }
+                if (!found) {
+                    a[var_locales] = p->resultado->name;
+                    var_locales++;
+                }
+            }
+        }
+
+        if (strcmp(p->instruccion, "VAR_DECL") == 0) {
+            if (p->resultado->esTemporal == 0) { // si es una variable real no temporal
+                int i; 
+                bool found = false;
+                for (i = 0; i < var_locales; ++i) {
+                    if (strcmp(a[i], p->resultado->name) == 0) {  // entra aca si ya estaba la variable en el arreglo
+                        found = true; 
+                        break; 
+                    }
+                }
+                if (!found) {
+                    a[var_locales] = p->resultado->name;
+                    var_locales++;
+                }
+            }
+        }
+
+        p = p->siguiente;
+    }
+
+    return var_locales;
+}
 
 /*
 POR AHORA SIN USO
@@ -28,6 +78,7 @@ void generar_codigo_assembler(codigo3dir *programa, FILE *out) {
             fprintf(out, "    pushq %%rbp\n");
             fprintf(out, "    movq %%rsp, %%rbp\n");
 
+            int locales = contar_locales_por_metodo(inst);
             int N = 8 * locales; // reservar espacio para variables locales (8 bytes c/u)
             if (N > 0) {
                 fprintf(out, "    subq $%d, %%rsp\n", N);
@@ -57,7 +108,7 @@ void generar_codigo_assembler(codigo3dir *programa, FILE *out) {
             }
             // se debe hacer mas casos
 
-        else {
+        }else {
             // instrucción no manejada: la imprimimos como comentario para debug
             fprintf(out, "    # instruccion no traducida: %s\n", instr);
         }

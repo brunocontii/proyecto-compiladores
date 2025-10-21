@@ -5,8 +5,6 @@
 int cont_temp = 0;
 int cont_label = 0;
 int ultimo_temp = -1;
-int locales = 0;
-bool nuevo_metodo = false;
 
 // las funciones de obtener_temp, crear_constante, crear_constante_bool y obtener_label creo que
 // se pueden borrar pero para eso hay que manejar bien los temps dentro de cada nodo
@@ -14,7 +12,7 @@ bool nuevo_metodo = false;
 // imprima los campos correctos del info, porque ahora siempre quiere imprimir el name (si no hay name imprime null)
 
 // crea un nuevo temporal como info
-info* obtener_temp(int n) {
+info* obtener_temp(int n, tipo_info ti) {
     if (n < 0) return NULL;
 
     info *t = (info*)malloc(sizeof(info));
@@ -22,7 +20,7 @@ info* obtener_temp(int n) {
     snprintf(buf, sizeof(buf), "T%d", n);
     t->name = strdup(buf);
     t->esTemporal = 1;
-    t->tipo_info = TIPO_INTEGER;            // ver de darle el tipo correcto despues
+    t->tipo_info = ti;            // ver de darle el tipo correcto despues
     t->tipo_token = T_ID;                   // ver de darle el token correcto despues
     return t;
 }
@@ -76,7 +74,7 @@ void procesar_argumentos(nodo *raiz, FILE *file) {
         if (raiz->der) {
             codigo_intermedio(raiz->der, file);
             
-            info *param = obtener_temp(ultimo_temp);
+            info *param = obtener_temp(ultimo_temp, raiz->valor->tipo_info);
             
             agregar_instruccion("PARAM", param, NULL, NULL);
             fprintf(file, "PARAM T%d\n", ultimo_temp);
@@ -85,7 +83,7 @@ void procesar_argumentos(nodo *raiz, FILE *file) {
         // caso base de la recursion: un solo parametro
         codigo_intermedio(raiz, file);
 
-        info *param = obtener_temp(ultimo_temp);
+        info *param = obtener_temp(ultimo_temp, raiz->valor->tipo_info);
 
         agregar_instruccion("PARAM", param, NULL, NULL);
         fprintf(file, "PARAM T%d\n", ultimo_temp);
@@ -108,7 +106,7 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
             temp_result = cont_temp++;
             fprintf(file, "LOAD T%d %d\n", temp_result, raiz->valor->nro);
 
-            info *res = obtener_temp(temp_result);
+            info *res = obtener_temp(temp_result, raiz->valor->tipo_info);
             info *arg1 = crear_constante(raiz->valor->nro);
 
             agregar_instruccion("LOAD", res, arg1, NULL);
@@ -120,7 +118,7 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
             temp_result = cont_temp++;
             fprintf(file, "LOAD T%d %s\n", temp_result, raiz->valor->name);
             
-            info *res = obtener_temp(temp_result);
+            info *res = obtener_temp(temp_result, raiz->valor->tipo_info);
             info *arg1 = raiz->valor;
 
             agregar_instruccion("LOAD", res, arg1, NULL);
@@ -134,7 +132,7 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
             temp_result = cont_temp++;
             fprintf(file, "PARAM T%d\n", temp_result);
 
-            info *res = obtener_temp(temp_result);
+            info *res = obtener_temp(temp_result, raiz->valor->tipo_info);
             info *arg1 = crear_constante(raiz->valor->nro);
 
             agregar_instruccion("PARAM", res, arg1, NULL);
@@ -145,7 +143,7 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
         case T_VFALSE: {
             temp_result = cont_temp++;
 
-            info *res = obtener_temp(temp_result);
+            info *res = obtener_temp(temp_result, raiz->valor->tipo_info);
             info *arg1 = crear_constante_bool(raiz->valor->b);
 
             agregar_instruccion("LOAD", res, arg1, NULL);
@@ -166,16 +164,16 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
             // generar codigo intermedio para el hijo izquierdo
             codigo_intermedio(raiz->izq, file);
             temp_izq = ultimo_temp;
-            info *izq = obtener_temp(temp_izq);
+            info *izq = obtener_temp(temp_izq, raiz->izq->valor->tipo_info);
 
             // generar codigo intermedio para el hijo derecho
             codigo_intermedio(raiz->der, file);
             temp_der = ultimo_temp;
-            info *der = obtener_temp(temp_der);
+            info *der = obtener_temp(temp_der, raiz->der->valor->tipo_info);
 
             // crear nuevo temporal para el resultado
             temp_result = cont_temp++;
-            info *res = obtener_temp(temp_result);
+            info *res = obtener_temp(temp_result, raiz->valor->tipo_info);
 
             // determinar la instrucción segun el token
             const char *op;
@@ -204,10 +202,10 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
                 // menos unario
                 codigo_intermedio(raiz->der, file);
                 temp_der = ultimo_temp;
-                info *der = obtener_temp(temp_der);
+                info *der = obtener_temp(temp_der, raiz->valor->tipo_info);
 
                 temp_result = cont_temp++;
-                info *res = obtener_temp(temp_result);
+                info *res = obtener_temp(temp_result, raiz->valor->tipo_info);
 
                 agregar_instruccion("NEG", res, der, NULL);
                 fprintf(file, "NEG T%d T%d\n", temp_result, temp_der);
@@ -217,14 +215,14 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
                 // menos binario
                 codigo_intermedio(raiz->izq, file);
                 temp_izq = ultimo_temp;
-                info *izq = obtener_temp(temp_izq);
+                info *izq = obtener_temp(temp_izq, raiz->valor->tipo_info);
 
                 codigo_intermedio(raiz->der, file);
                 temp_der = ultimo_temp;
-                info *der = obtener_temp(temp_der);
+                info *der = obtener_temp(temp_der, raiz->valor->tipo_info);
 
                 temp_result = cont_temp++;
-                info *res = obtener_temp(temp_result);
+                info *res = obtener_temp(temp_result, raiz->valor->tipo_info);
 
                 agregar_instruccion("SUB", res, izq, der);
                 fprintf(file, "SUB T%d T%d T%d\n", temp_result, temp_izq, temp_der);
@@ -237,11 +235,11 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
             // como es unario, vemos el hijo der
             codigo_intermedio(raiz->der, file);
             int temp_der = ultimo_temp;
-            info *der = obtener_temp(temp_der);
+            info *der = obtener_temp(temp_der, raiz->valor->tipo_info);
 
             // crear un nuevo temporal para el resultado
             int temp_result = cont_temp++;
-            info *res = obtener_temp(temp_result);
+            info *res = obtener_temp(temp_result, raiz->valor->tipo_info);
 
             // guardar la instruccion
             agregar_instruccion("NOT", res, der, NULL);
@@ -255,7 +253,7 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
             codigo_intermedio(raiz->der, file);
 
             // el resultado queda en el ultimo temporal
-            info *valor = obtener_temp(ultimo_temp);
+            info *valor = obtener_temp(ultimo_temp, raiz->der->valor->tipo_info);
 
             // el lado izq es la variable
             info *var = raiz->izq->valor;
@@ -270,14 +268,9 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
             // primero vemos la expresion del hijo der
             codigo_intermedio(raiz->der, file);
 
-            if (nuevo_metodo){ // variable booleana tipo flag
-                locales = 0;
-                nuevo_metodo = false;
-            }
             // aca yo se que es una nueva variable local, sumo para saber cuantas 
             // variables locales tengo en el metodo corriente
-            locales++;
-            info *valor = obtener_temp(ultimo_temp);
+            info *valor = obtener_temp(ultimo_temp, raiz->izq->valor->tipo_info);
             info *var = raiz->izq->valor;
             agregar_instruccion("ASSIGN", var, valor, NULL);
             fprintf(file, "ASSIGN %s T%d\n", var->name, ultimo_temp);
@@ -288,7 +281,7 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
                 // return con expresion
                 codigo_intermedio(raiz->izq, file);
 
-                info *valor = obtener_temp(ultimo_temp);
+                info *valor = obtener_temp(ultimo_temp, raiz->valor->tipo_info);
                 agregar_instruccion("RET", valor, NULL, NULL);
                 fprintf(file, "RET T%d\n", ultimo_temp);
             } else {
@@ -309,7 +302,6 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
             } else {
                 fprintf(file, "LABEL %s\n", raiz->valor->name);
                 agregar_instruccion("LABEL", raiz->valor, NULL, NULL);
-                nuevo_metodo = true;
                 // ver si hacer algo con los parametros aca o no (antes de ver el hijo der)
                 // generamos codigo intermedio para el cuerpo del metodo
                 if (raiz->der) {
@@ -320,7 +312,6 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
                 // capaz sirve, capaz no
                 fprintf(file, "END %s\n", raiz->valor->name);
                 agregar_instruccion("END", raiz->valor, NULL, NULL);
-
                 ultimo_temp = -1;
             }
             break;
@@ -334,7 +325,7 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
             if (raiz->valor->tipo_info != TIPO_VOID) {
                 // si devuelve integer o bool, lo guardamos en un temporal
                 temp_result = cont_temp++;
-                info *res = obtener_temp(temp_result);
+                info *res = obtener_temp(temp_result, raiz->valor->tipo_info);
 
                 fprintf(file, "CALL T%d %s\n", temp_result, raiz->izq->valor->name);
                 agregar_instruccion("CALL", res, raiz->izq->valor, NULL);
@@ -359,7 +350,7 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
             // generamos codigo intermedio para la condicion
             codigo_intermedio(raiz->izq, file);
             temp_izq = ultimo_temp;
-            info *cond = obtener_temp(temp_izq);
+            info *cond = obtener_temp(temp_izq, raiz->valor->tipo_info);
 
             // aca en vez de usar un arreglo de char, se podria
             // usar directamente char*. ver si cambiarlo o no
@@ -383,7 +374,7 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
             // generamos codigo intermedio para la condicion
             codigo_intermedio(raiz->izq, file);
             temp_izq = ultimo_temp;
-            info *cond = obtener_temp(temp_izq);
+            info *cond = obtener_temp(temp_izq, raiz->valor->tipo_info);
 
             char label_else[16], label_end[16];
             snprintf(label_else, sizeof(label_else), "L%d", cont_label++);
@@ -425,7 +416,7 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
             // generamos codigo intermedio para la condicion
             codigo_intermedio(raiz->izq, file);
             temp_izq = ultimo_temp;
-            info *cond = obtener_temp(temp_izq);
+            info *cond = obtener_temp(temp_izq, raiz->valor->tipo_info);
 
             fprintf(file, "IF_FALSE T%d %s\n", temp_izq, label_end);
             agregar_instruccion("IF_FALSE", cond, obtener_label(label_end), NULL);
