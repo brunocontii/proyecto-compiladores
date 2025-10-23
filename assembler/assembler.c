@@ -303,8 +303,11 @@ void generar_codigo_assembler(codigo3dir *programa, FILE *out) {
             // CASO 3: Cargar variable (p, r, qqw, etc)
             else if (inst->arg1->tipo_token == T_ID) {
                 char *src = obtener_ubicacion_vars_locales(inst->arg1);
-                fprintf(out, "    movq %s, %rax\n", src);
-                fprintf(out, "    movq %rax, %s\n", dest);
+                
+                // para no generar inst r r
+                if (strcmp(src, dest) != 0) {
+                    fprintf(out, "    movq %s, %s\n", src, dest);
+                }
             }
         }
 
@@ -323,16 +326,137 @@ void generar_codigo_assembler(codigo3dir *programa, FILE *out) {
                     dest = obtener_ubicacion_vars_locales(inst->resultado);
                 }
                 
-                if (src[0] == '%' && dest[0] != '%') {
-                    fprintf(out, "    movq %s, %s\n", src, dest);  // Directo reg->mem
-                } else {
-                    fprintf(out, "    movq %s, %rax\n", src);
-                    fprintf(out, "    movq %rax, %s\n", dest);
-                }
+                fprintf(out, "    movq %s, %s\n", src, dest);
 
             }
+        }
 
-        } else {
+        else if ((strcmp(instr, "ADD") == 0 || strcmp(instr, "SUB") == 0 || 
+            strcmp(instr, "AND") == 0 || strcmp(instr, "OR") == 0)) {
+            
+
+            char *reg_dest = obtener_registro_temporal(extraer_numero_temporal(inst->resultado->name));
+
+            // si no anda usar esto
+            // char *reg_dest = obtener_ubicacion_vars_locales(inst->resultado); // Asume que devuelve %r10 o %r11
+
+            // si el destino es r10 ,reg_aux es r11 y viceversa. para que no quede el mismo registro en una instruccion
+            char *reg_aux = (strcmp(reg_dest, "%r10") == 0) ? "%r11" : "%r10";
+            
+            // cargar arg1
+            char *src1 = obtener_ubicacion_vars_locales(inst->arg1);
+            fprintf(out, "    movq %s, %s\n", src1, reg_dest);
+
+            // cargar arg2
+            char *src2 = obtener_ubicacion_vars_locales(inst->arg2);
+            fprintf(out, "    movq %s, %s\n", src2, reg_aux);
+
+            if (strcmp(instr, "ADD") == 0) {
+                fprintf(out, "    addq %s, %s\n", reg_aux, reg_dest);
+            } else if (strcmp(instr, "SUB") == 0) {
+                fprintf(out, "    subq %s, %s\n", reg_aux, reg_dest);
+            } else if (strcmp(instr, "AND") == 0) {
+                fprintf(out, "    andq %s, %s\n", reg_aux, reg_dest);
+            } else { // OR
+                fprintf(out, "    orq %s, %s\n", reg_aux, reg_dest);
+            }
+        } 
+        
+        else if (strcmp(instr, "MUL") == 0) {
+            // Se debe mover el resultado de %rax a reg_dest.
+            
+            char* reg_dest = obtener_registro_temporal(extraer_numero_temporal(inst->resultado->name));
+
+            // cargar el primer operando a %rax si o si convencion de assembler
+            char *src1 = obtener_ubicacion_vars_locales(inst->arg1);
+            fprintf(out, "    movq %s, %%rax\n", src1);
+
+            // cargar segundo operando a un auxiliar
+            char *src2 = obtener_ubicacion_vars_locales(inst->arg2);
+            fprintf(out, "    movq %s, %%r11\n", src2);
+
+            fprintf(out, "    imulq %%r11, %%rax\n");
+            
+            // guarda el resultado en r10 o r11
+            fprintf(out, "    movq %%rax, %s\n", reg_dest);
+        }
+
+        else if (strcmp(instr, "DIV") == 0 || strcmp(instr, "MOD") == 0) {
+            // si o si se tienen que usar %rax y %rdx
+            char* reg_dest = obtener_registro_temporal(extraer_numero_temporal(inst->resultado->name));
+            
+            char *src1 = obtener_ubicacion_vars_locales(inst->arg1);
+            fprintf(out, "    movq %s, %%rax\n", src1);
+
+            // extension de signo de %rax a %rdx (Obligatorio para IDIVQ)
+            fprintf(out, "    cqto\n");
+            
+            // aca se puede usar auxiliar usamos %r11
+            char *src2 = obtener_ubicacion_vars_locales(inst->arg2);
+            fprintf(out, "    movq %s, %%r11\n", src2);
+            
+            // divide %rdx:%rax por %r11. cociente en %rax, Resto en %rdx)
+            fprintf(out, "    idivq %%r11\n");
+            
+            // guardar el resultado en reg_dest, puede ser r10 o r11 y para div o mod 
+            if (strcmp(instr, "DIV") == 0) {
+                // Cociente en %rax
+                fprintf(out, "    movq %%rax, %s\n", reg_dest);
+            } else { // MOD
+                // Resto en %rdx
+                fprintf(out, "    movq %%rdx, %s\n", reg_dest);
+            }
+        }
+
+        else if (strcmp(instr, "NEG") == 0) {
+            char *reg_dest = obtener_registro_temporal(extraer_numero_temporal(inst->resultado->name));
+
+            char *src1 = obtener_ubicacion_vars_locales(inst->arg1);
+            fprintf(out, "    movq %s, %s\n", src1, reg_dest);
+            fprintf(out, "    negq %s\n", reg_dest);
+            
+        }
+
+        else if (strcmp(instr, "NOT") == 0) {
+            
+            char *reg_dest = obtener_registro_temporal(extraer_numero_temporal(inst->resultado->name));
+            
+            char *src1 = obtener_ubicacion_vars_locales(inst->arg1);
+            fprintf(out, "    movq %s, %s\n", src1, reg_dest);
+
+            // xor se usa xq invierte el bit (0->1, 1->0)
+            fprintf(out, "    xorq $1, %s\n", reg_dest); 
+
+        }
+        
+        else if (strcmp(instr, "EQ") == 0 || strcmp(instr, "GT") == 0 || strcmp(instr, "LT") == 0) {
+
+            char *reg_dest = obtener_registro_temporal(extraer_numero_temporal(inst->resultado->name));
+            
+            char *src1 = obtener_ubicacion_vars_locales(inst->arg1);
+            fprintf(out, "    movq %s, %%r10\n", src1);
+
+            char *src2 = obtener_ubicacion_vars_locales(inst->arg2);
+            fprintf(out, "    movq %s, %%r11\n", src2);
+
+            fprintf(out, "    cmpq %%r11, %%r10\n");
+
+            // registro %al (parte baja de %rax), se usa si o si
+            if (strcmp(instr, "EQ") == 0) {
+                fprintf(out, "    sete %%al\n"); // setea si es igual
+            } else if (strcmp(instr, "GT") == 0) {
+                fprintf(out, "    setg %%al\n"); // setea si es mayor
+            } else { // LT
+                fprintf(out, "    setl %%al\n"); // setea si es menor
+            }
+            
+            // se mueve el byte de %al (0 o 1) a reg_dest, usando movzbl para limpiar los 64 bits.
+            // se usa %r10d como intermediario para la movzbl.
+            fprintf(out, "    movzbl %%al, %%r10d\n"); 
+            fprintf(out, "    movq %%r10, %s\n", reg_dest);
+        }
+        
+        else {
             // instrucción no manejada: la imprimimos como comentario para debug
             fprintf(out, "    # instruccion no traducida: %s\n", instr);
         }
