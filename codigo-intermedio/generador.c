@@ -11,6 +11,27 @@ int ultimo_temp = -1;
 // del arbol, ademas de eso habria que cambiar tambien el print de codigo3dir para que
 // imprima los campos correctos del info, porque ahora siempre quiere imprimir el name (si no hay name imprime null)
 
+int contar_parametros_decl(nodo *params) {
+    if (!params) return 0;
+    
+    int count = 0;
+    nodo *actual = params;
+    
+    while (actual != NULL) {
+        if (actual->valor->tipo_token == T_PARAMETROS || actual->valor->tipo_token == T_EXPRS) {
+            count++;
+            actual = actual->izq;  // siguiente parámetro
+        } else if (actual->valor->tipo_token) {
+            count++;
+            break;
+        } else {
+            break;
+        }
+    }
+    
+    return count;
+}
+
 // crea un nuevo temporal como info
 info* obtener_temp(int n, tipo_info ti) {
     if (n < 0) return NULL;
@@ -300,6 +321,8 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
                 ultimo_temp = -1;
                 break;
             } else {
+                int num_params = contar_parametros_decl(raiz->izq);
+                raiz->valor->num_parametros = num_params;
                 fprintf(file, "LABEL %s\n", raiz->valor->name);
                 agregar_instruccion("LABEL", raiz->valor, NULL, NULL);
                 // ver si hacer algo con los parametros aca o no (antes de ver el hijo der)

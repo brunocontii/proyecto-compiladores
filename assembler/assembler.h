@@ -10,6 +10,12 @@ typedef struct var_global {
     struct var_global *siguiente;
 } var_global;
 
+typedef struct var_offset {
+    char *nombre;
+    int offset;
+    struct var_offset *siguiente;
+} var_offset;
+
 void generar_codigo_assembler(codigo3dir *programa, FILE *out);
 void agregar_variable_global(const char *nombre, const char *valor);
 void recolectar_variables_globales(codigo3dir *programa);
