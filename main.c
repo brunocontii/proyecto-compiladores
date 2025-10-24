@@ -213,7 +213,7 @@ int main(int argc, char *argv[]) {
             imprimir_programa();
             fclose(out);
 
-            FILE *out2 = fopen("assembler.asm", "w");
+            FILE *out2 = fopen("assembler.s", "w");
             if (!out2) {
                 perror("No se pudo abrir el archivo de salida");
                 exit(1);
