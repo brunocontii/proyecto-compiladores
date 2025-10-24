@@ -36,6 +36,27 @@ void agregar_instruccion(const char *instruc, info *r, info *a1, info *a2) {
 
 }
 
+// función auxiliar para imprimir un operando según su tipo
+void imprimir_operando(info *operando, char *buffer, size_t size) {
+    if (!operando) {
+        snprintf(buffer, size, "-");
+        return;
+    }
+    
+    if (operando->tipo_token == T_DIGIT) {
+        snprintf(buffer, size, "%d", operando->nro);
+    }
+    else if (operando->tipo_token == T_VTRUE || operando->tipo_token == T_VFALSE) {
+        snprintf(buffer, size, "%s", operando->bool_string);
+    }
+    else if (operando->tipo_token == T_ID || operando->esTemporal == 1) {
+        snprintf(buffer, size, "%s", operando->name);
+    }
+    else {
+        snprintf(buffer, size, "%s", operando->name);
+    }
+}
+
 void imprimir_programa(void) {
     printf("\n--- TABLA DE INSTRUCCIONES ---\n");
     printf("%-5s %-20s %-15s %-15s %-15s\n",
@@ -46,12 +67,22 @@ void imprimir_programa(void) {
     int idx = 0;
     
     while (actual != NULL) {
+        char resultado_str[16];
+        char arg1_str[16];
+        char arg2_str[16];
+        
+        // Obtener strings formateados según el tipo
+        imprimir_operando(actual->resultado, resultado_str, sizeof(resultado_str));
+        imprimir_operando(actual->arg1, arg1_str, sizeof(arg1_str));
+        imprimir_operando(actual->arg2, arg2_str, sizeof(arg2_str));
+        
         printf("%-5d %-20s %-15s %-15s %-15s\n",
                 idx,
                 actual->instruccion,
-                actual->resultado ? actual->resultado->name : "-",
-                actual->arg1 ? actual->arg1->name : "-",
-                actual->arg2 ? actual->arg2->name : "-");
+                resultado_str,
+                arg1_str,
+                arg2_str);
+        
         actual = actual->siguiente;
         idx++;
     }
