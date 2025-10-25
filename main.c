@@ -176,14 +176,8 @@ int main(int argc, char *argv[]) {
             if (!hay_main) {
                 reportar_error(yylineno, "Error semántico: Falta definir la función main\n");
             }
-            FILE *out = fopen("codigo-intermedio.txt", "w");
-            if (!out) {
-                perror("No se pudo abrir el archivo de salida");
-                exit(1);
-            }
-            codigo_intermedio(raiz, out);
+            codigo_intermedio(raiz);
             imprimir_programa();
-            fclose(out);
         }
     }
     else if (strcmp(target, "assembly") == 0) {
@@ -204,14 +198,8 @@ int main(int argc, char *argv[]) {
             if (!hay_main) {
                 reportar_error(yylineno, "Error semántico: Falta definir la función main\n");
             }
-            FILE *out = fopen("codigo-intermedio.txt", "w");
-            if (!out) {
-                perror("No se pudo abrir el archivo de salida");
-                exit(1);
-            }
-            codigo_intermedio(raiz, out);
+            codigo_intermedio(raiz);
             imprimir_programa();
-            fclose(out);
 
             FILE *out2 = fopen("assembler.s", "w");
             if (!out2) {

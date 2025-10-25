@@ -17,9 +17,9 @@ info* obtener_temp(int n, tipo_info ti);
 info* crear_constante(int nro);
 info* crear_constante_bool(bool b);
 info* obtener_label(const char *label);
-void procesar_argumentos(nodo *args, FILE *file);
+void procesar_argumentos(nodo *args);
 
 // funcion principal de generacion de codigo intermedio
-void codigo_intermedio(nodo *raiz, FILE *file);
+void codigo_intermedio(nodo *raiz);
 
 #endif
