@@ -7,7 +7,7 @@
 static var_global *variables_globales = NULL;
 static var_offset *mapeo_variables = NULL;
 static int num_vars_locales = 0;
-static int num_params_actual = 0;
+static char *nombre_metodo_actual = NULL;
 
 bool es_variable_global(const char *nombre) {
     var_global *actual = variables_globales;
@@ -93,29 +93,6 @@ int obtener_offset_variable(const char *nombre) {
 const char *obtener_registro_temporal(int n) {
     // temporales mapeados a r10 y r11, se usa uno luego otro y luego el primero de nuevo
     return (n % 2 == 0) ? "%r10" : "%r11";
-}
-
-// Función corregida para obtener ubicación
-char* obtener_ubicacion_vars_locales(info *operando) {
-    char *loc = malloc(32);
-    
-    // Si es temporal, usar stack temporal
-    if (operando->esTemporal == 1) {
-        int num_temp = extraer_numero_temporal(operando->name);
-        const char *reg_temp = obtener_registro_temporal(num_temp);
-        sprintf(loc, "%s", reg_temp);
-    }
-    // Si es variable local
-    else if (!es_variable_global(operando->name)) {
-        int offset = obtener_offset_variable(operando->name);
-        sprintf(loc, "%d(%%rbp)", offset);
-    }
-    // Si es variable global
-    else {
-        sprintf(loc, "%s(%%rip)", operando->name);
-    }
-    
-    return loc;
 }
 
 void agregar_variable_global(const char *nombre, const char *valor) {
@@ -241,13 +218,11 @@ void crear_epilogo_metodo(FILE *out) {
     fprintf(out, "    movq %%rbp, %%rsp\n");
     fprintf(out, "    popq %%rbp\n");
     fprintf(out, "    ret\n");
-    
+
     // resetear contadores para el siguiente metodo
     num_vars_locales = 0;
-    num_params_actual = 0;
 }
 
-// NUEVA FUNCIÓN: maneja constantes, variables y temporales
 char* obtener_ubicacion_operando(info *operando) {
     if (!operando) return NULL;
     
@@ -304,10 +279,21 @@ void generar_codigo_assembler(codigo3dir *programa, FILE *out) {
         char *instr = inst->instruccion;
 
         if (strcmp(instr, "LABEL") == 0) {
-            printf("LABEL=numero de parametros del metodo %s: %d\n", inst->resultado->name, inst->resultado->num_parametros);
 
-            crear_mapeo_variables_locales(inst);
-            crear_prologo_metodo(out, inst->resultado->name);
+            if (nombre_metodo_actual != NULL) {
+                free(nombre_metodo_actual);
+            }
+
+            nombre_metodo_actual = strdup(inst->resultado->name);
+
+            // esto se hace solo si es un metodo, puede ser un label con una etiqueta solamente
+            if (inst->resultado->tipo_token == T_METHOD_DECL) {
+                printf("LABEL=numero de parametros del metodo %s: %d\n", inst->resultado->name, inst->resultado->num_parametros);
+                crear_mapeo_variables_locales(inst);
+                crear_prologo_metodo(out, inst->resultado->name);
+            } else { //sino es metodo entonces es label tipo L0
+                fprintf(out, "%s:\n", inst->resultado->name);
+            }
         }
         
         else if (strcmp(instr, "END") == 0) {
@@ -316,19 +302,12 @@ void generar_codigo_assembler(codigo3dir *programa, FILE *out) {
 
         else if (strcmp(instr, "ASSIGN") == 0) {
             if (inst->resultado && inst->arg1) {
-                // CAMBIAR: usar obtener_ubicacion_operando en lugar de obtener_ubicacion_vars_locales
                 char *src = obtener_ubicacion_operando(inst->arg1);
                 
                 // obtener ubicacion de la variable destino (resultado)
-                char *dest;
-                if (es_variable_global(inst->resultado->name)) {
-                    dest = malloc(32);
-                    sprintf(dest, "%s(%%rip)", inst->resultado->name);
-                } else {
-                    dest = obtener_ubicacion_vars_locales(inst->resultado);
-                }
+                char *dest = obtener_ubicacion_operando(inst->resultado);
 
-                // si ambos son memoria, usar registro intermedio
+                // si ambos son memoria, usar registro intermedio porque assembler no deja instruccion de memoria a memoria
                 bool src_es_memoria = (src[0] != '$' && src[0] != '%');
                 bool dest_es_memoria = (dest[0] != '$' && dest[0] != '%');
 
@@ -464,6 +443,43 @@ void generar_codigo_assembler(codigo3dir *programa, FILE *out) {
             
             free(src1);
             free(src2);
+        }
+
+        
+        else if (strcmp(instr, "RET") == 0) {
+            // si hay retorno con valor, ese valor va a rax(registro para retorno)
+            if (inst->arg1) {
+                    
+                    char *src = obtener_ubicacion_operando(inst->arg1);
+                    
+                    fprintf(out, "    movq %s, %%rax\n", src);
+                }
+
+            // tanto si es return con valor o no se va derecho al epilogo, con el guardado del nombre del metodo actual/corriente
+            fprintf(out, "    jmp END_%s\n", nombre_metodo_actual);
+        }
+
+        else if (strcmp(instr, "GOTO") == 0) {
+            // salta si o si
+            fprintf(out, "    jmp %s\n", inst->resultado->name);
+        }
+        
+        else if (strcmp(instr, "IF_FALSE") == 0) {
+            
+            // 1. OBTENER LA UBICACIÓN DE LA CONDICIÓN
+            // Esto devuelve: OFFSET de 'probando' (Memoria) O %r10/r11 (Temporal)
+            char *cond_src = obtener_ubicacion_operando(inst->arg1);
+            char *label_name = inst->resultado->name; // L0, L2, L4, L
+            // Paso 2: Mover el valor booleano (0 o 1) a RAX para CMP
+
+            // si cond_src es -algo(%rbp), esta instrucción mueve memoria-registro.
+            // si cond_src es algun registro, esta instrucción mueve de registro-registro (redundante pero funcional, ver).
+            fprintf(out, "    movq %s, %%rax\n", cond_src);
+            // Paso 3: Comparar el valor con 0 (FALSO)
+            // El C3D está diseñado para saltar si la condición es FALSO (valor = 0).
+            fprintf(out, "    cmpq $0, %%rax\n");
+            // Paso 4: Saltar si es IGUAL (JE) a 0 (FALSO)
+            fprintf(out, "    je %s\n", label_name);
         }
         
         else {

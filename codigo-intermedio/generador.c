@@ -41,8 +41,8 @@ info* obtener_temp(int n, tipo_info ti) {
     snprintf(buf, sizeof(buf), "T%d", n);
     t->name = strdup(buf);
     t->esTemporal = 1;
-    t->tipo_info = ti;            // ver de darle el tipo correcto despues
-    t->tipo_token = T_ID;                   // ver de darle el token correcto despues
+    t->tipo_info = ti;           
+    t->tipo_token = T_ID;
     return t;
 }
 
@@ -54,8 +54,8 @@ info* crear_constante(int nro) {
     c->name = strdup(buf);
     c->nro = nro;
     c->esTemporal = 0;
-    c->tipo_info = TIPO_INTEGER;            // aca creo q esta bien poner integer porque es un numero
-    c->tipo_token = T_DIGIT;                // aca creo q esta bien poner digit porque es un numero literal
+    c->tipo_info = TIPO_INTEGER;            
+    c->tipo_token = T_DIGIT;                
     return c;
 }
 
@@ -68,8 +68,8 @@ info* crear_constante_bool(bool b) {
     bool_info->b = b;
     bool_info->bool_string = b ? "true" : "false";
     bool_info->esTemporal = 0;
-    bool_info->tipo_info = TIPO_BOOL;                   // tipo bool
-    bool_info->tipo_token = b ? T_VTRUE : T_VFALSE;     // token booleano segun como sea
+    bool_info->tipo_info = TIPO_BOOL;                   
+    bool_info->tipo_token = b ? T_VTRUE : T_VFALSE;
     return bool_info;
 }
 
@@ -472,8 +472,14 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
         case T_IF: {
             // generamos codigo intermedio para la condicion
             codigo_intermedio(raiz->izq, file);
-            temp_izq = ultimo_temp;
-            info *cond = obtener_temp(temp_izq, raiz->valor->tipo_info);
+            
+            info* cond = NULL;
+            if (ultimo_temp != -1) {
+                temp_izq = ultimo_temp;
+                cond = obtener_temp(temp_izq, raiz->valor->tipo_info);
+            } else {
+                cond = raiz->izq->valor;
+            }
 
             // aca en vez de usar un arreglo de char, se podria
             // usar directamente char*. ver si cambiarlo o no
@@ -483,7 +489,7 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
 
             fprintf(file, "IF_FALSE T%d %s\n", temp_izq, label_end);
             info *endif = obtener_label(label_end);
-            agregar_instruccion("IF_FALSE", cond, endif, NULL);
+            agregar_instruccion("IF_FALSE", endif, cond, NULL);
 
             if (raiz->der) codigo_intermedio(raiz->der, file);
 
@@ -496,8 +502,15 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
         case T_IF_ELSE: {
             // generamos codigo intermedio para la condicion
             codigo_intermedio(raiz->izq, file);
-            temp_izq = ultimo_temp;
-            info *cond = obtener_temp(temp_izq, raiz->valor->tipo_info);
+
+            // si existe el temporal entonces hay que agarrar el temporal
+            info* cond = NULL;
+            if (ultimo_temp != -1) {
+                temp_izq = ultimo_temp;
+                cond = obtener_temp(temp_izq, raiz->valor->tipo_info);
+            } else {
+                cond = raiz->izq->valor;
+            }
 
             char label_else[16], label_end[16];
             snprintf(label_else, sizeof(label_else), "L%d", cont_label++);
@@ -505,8 +518,7 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
 
             fprintf(file, "IF_FALSE T%d %s\n", temp_izq, label_else);
             // ver si se cambia IF_FALSE por otra cosa
-            agregar_instruccion("IF_FALSE", cond, obtener_label(label_else), NULL);
-
+            agregar_instruccion("IF_FALSE", obtener_label(label_else), cond, NULL);
             // codigo intermedio para el THEN
             if (raiz->med) codigo_intermedio(raiz->med, file);
 
@@ -538,11 +550,16 @@ void codigo_intermedio(nodo *raiz, FILE *file) {
 
             // generamos codigo intermedio para la condicion
             codigo_intermedio(raiz->izq, file);
-            temp_izq = ultimo_temp;
-            info *cond = obtener_temp(temp_izq, raiz->valor->tipo_info);
+            info* cond = NULL;
+            if (ultimo_temp != -1) {
+                temp_izq = ultimo_temp;
+                cond = obtener_temp(temp_izq, raiz->valor->tipo_info);
+            } else {
+                cond = raiz->izq->valor;
+            }
 
             fprintf(file, "IF_FALSE T%d %s\n", temp_izq, label_end);
-            agregar_instruccion("IF_FALSE", cond, obtener_label(label_end), NULL);
+            agregar_instruccion("IF_FALSE", obtener_label(label_end), cond, NULL);
 
             // cuerpo del while
             if (raiz->der) codigo_intermedio(raiz->der, file);
