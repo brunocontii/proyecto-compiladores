@@ -27,6 +27,8 @@ SEMANTICO_SRC = $(SEMANTICO_DIR)/semantico.c
 UTILS_SRC = $(UTILS_DIR)/manejo_errores.c
 CI_SRC = $(CI_DIR)/generador.c $(CI_DIR)/codigo3dir.c
 ASSEMBLER_SRC = assembler/assembler.c
+RUNTIME_DIR = runtime
+RUNTIME_SRC = $(RUNTIME_DIR)/func-extern.c
 
 # Main
 MAIN_SRC = main.c
@@ -48,10 +50,27 @@ $(LEX_OUT): $(LEX_SRC) $(YACC_H)
 	cd $(LEX_DIR) && flex lexer.l
 
 # Ejecutar el programa
+# run: $(TARGET)
+# 	@if [ -f "$(TEST)" ]; then \
+# 		echo "▶️ Ejecutando test: $(TEST)"; \
+# 		./$(TARGET) $(TEST); \
+# 	else \
+# 		echo "❌ ERROR: El archivo $(TEST) no existe"; \
+# 		exit 1; \
+# 	fi
+
 run: $(TARGET)
 	@if [ -f "$(TEST)" ]; then \
-		echo "▶️ Ejecutando test: $(TEST)"; \
-		./$(TARGET) $(TEST); \
+		echo "▶️ Compilando: $(TEST)"; \
+		./$(TARGET) -target assembly $(TEST); \
+		if [ -f assembler.s ]; then \
+			echo "🔧 Generando ejecutable..."; \
+			gcc -no-pie assembler.s $(RUNTIME_SRC) -o prog; \
+			echo "🚀 Ejecutando programa:"; \
+			./prog; \
+		else \
+			echo "❌ Error: No se generó assembler.s"; \
+		fi \
 	else \
 		echo "❌ ERROR: El archivo $(TEST) no existe"; \
 		exit 1; \
@@ -137,6 +156,6 @@ test-semantico: $(TARGET)
 
 # Limpiar archivos generados
 clean:
-	rm -f $(TARGET) $(LEX_OUT) $(YACC_C) $(YACC_H) *.dot *.png *.txt
+	rm -f $(TARGET) $(LEX_OUT) $(YACC_C) $(YACC_H) *.dot *.png *.txt *.s prog assembler.s
 
 .PHONY: all run clean test-all test-sintactico test-semantico
