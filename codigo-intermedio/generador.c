@@ -358,7 +358,15 @@ void codigo_intermedio(nodo *raiz) {
             if (raiz->izq) {
                 // return con expresion
                 codigo_intermedio(raiz->izq);
-                info *valor = obtener_temp(ultimo_temp, raiz->valor->tipo_info);
+        
+                info *valor;
+                if (ultimo_temp == -1) {
+                    // Es una variable o constante directa (no una expresión)
+                    valor = raiz->izq->valor;
+                } else {
+                    // Es resultado de una expresión (temporal)
+                    valor = obtener_temp(ultimo_temp, raiz->izq->valor->tipo_info);
+                }
                 agregar_instruccion("RET", valor, NULL, NULL);
             } else {
                 // return sin expresion

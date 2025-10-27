@@ -19,10 +19,8 @@ program {
         integer x = recursion(3,4,0);
         if (x == 16) then{
             print_bool(true);
-            print_int(x);
         } else {
             print_bool(false);
-            print_int(x);
         }
     }
 }

@@ -8,10 +8,9 @@ program {
         x = x && false;
 
         if (!x) then {
-            print_bool(x);
             print_bool(true);
         } else {
-            print_bool(x);
+            print_bool(false);
         }
     }
 }

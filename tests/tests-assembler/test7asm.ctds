@@ -25,12 +25,10 @@ program {
 
     void main() {
         integer x = ciclo(3,3);
-        if (x > 0) then{
+        if (x == 10) then{
             print_bool(true);
-            print_int(x);
         } else {
             print_bool(false);
-            print_int(x);
         }
     }
 }
