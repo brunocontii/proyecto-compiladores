@@ -368,7 +368,7 @@ void codigo_intermedio(nodo *raiz) {
             break;
         }
         case T_METHOD_DECL: {
-            if (raiz->izq && raiz->izq->valor->tipo_token == T_EXTERN) {
+            if (raiz->der && raiz->der->valor->tipo_token == T_EXTERN) {
                 // metodo externo
                 agregar_instruccion("EXTERN", raiz->valor, NULL, NULL);
                 ultimo_temp = -1;
@@ -394,22 +394,71 @@ void codigo_intermedio(nodo *raiz) {
             break;
         }
         case T_METHOD_CALL: {
-            if (raiz->der) {
-                procesar_argumentos(raiz->der);
-            }
+            // la idea es primero evaluar los parametros para despues pasarlos
+            // porque si no son evaluados puede que un parametros sea otra funcion, entonces
+            // se pasan mal los parametros
+            int num_params = 0;
+            info **params_evaluados = NULL;
 
+            if (raiz->der) {
+                // contar parametros
+                nodo *temp = raiz->der;
+                while (temp != NULL) {
+                    num_params++;
+                    if (temp->valor->tipo_token == T_EXPRS && temp->izq) {
+                        temp = temp->izq;
+                    } else {
+                        break;
+                    }
+                }
+
+                // reservar espacio para la cantidad de parametros
+                params_evaluados = malloc(num_params * sizeof(info*));
+
+                // ahora se evalua cada expresion de parametro
+                nodo *arg = raiz->der;
+                int idx = num_params - 1;  // llenamos de atras hacia adelante
+
+                while (arg != NULL && idx >= 0) {
+                    nodo *expr = (arg->valor->tipo_token == T_EXPRS) ? arg->der : arg;
+
+                    // generar codigo para la expresion del parametro
+                    codigo_intermedio(expr);
+
+                    if (ultimo_temp == -1) {
+                        params_evaluados[idx] = expr->valor;
+                    } else {
+                        params_evaluados[idx] = obtener_temp(ultimo_temp, expr->valor->tipo_info);
+                    }
+
+                    if (arg->valor->tipo_token == T_EXPRS && arg->izq) {
+                        arg = arg->izq;
+                    } else {
+                        break;
+                    }
+                    idx--;
+                }
+
+                // ahora generar los PARAM en orden correcto
+                for (int i = 0; i < num_params; i++) {
+                    agregar_instruccion("PARAM", params_evaluados[i], NULL, NULL);
+                }
+
+                free(params_evaluados);
+            }
+        
             // ver que devuelve el metodo
             if (raiz->valor->tipo_info != TIPO_VOID) {
                 // si devuelve integer o bool, lo guardamos en un temporal
                 temp_result = cont_temp++;
                 info *res = obtener_temp(temp_result, raiz->valor->tipo_info);
-
+            
                 agregar_instruccion("CALL", res, raiz->izq->valor, NULL);
-
+            
                 ultimo_temp = temp_result;
             } else {
                 // si es void, no necesitamos un temporal
-                agregar_instruccion("CALL", raiz->izq->valor, NULL, NULL);
+                agregar_instruccion("CALL", NULL, raiz->izq->valor, NULL);
                 ultimo_temp = -1;
             }
             break;
