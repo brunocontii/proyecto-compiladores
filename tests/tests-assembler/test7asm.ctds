@@ -1,0 +1,36 @@
+program {
+
+    integer ciclo(integer x, integer y) {
+        bool a = true;
+        integer z = 0;
+        integer w = 3;
+
+        while (x > 0) {
+            if (y > 0) then {
+                while (y > 0) {
+                    z = z + y;
+                    y = y - 1;
+                }
+            }
+            x = x - 1;
+            w = w - 1;
+            y = w;
+        }
+
+        return z;
+    }
+
+    void print_int(integer x) extern;
+    void print_bool(bool a) extern;
+
+    void main() {
+        integer x = ciclo(3,3);
+        if (x > 0) then{
+            print_bool(true);
+            print_int(x);
+        } else {
+            print_bool(false);
+            print_int(x);
+        }
+    }
+}

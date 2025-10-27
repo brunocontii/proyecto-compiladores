@@ -1,0 +1,28 @@
+program {
+
+    integer a = 10;
+
+    integer aux(integer a, bool b) {
+        integer x = a;
+        if (b) then{
+            return a;
+        } else {
+            x = x * a;
+            return x;
+        }
+    }
+
+    void auxiliar() {
+        a = a / 2;
+    }
+
+    void print_int(integer x) extern;
+
+    void main() {
+        bool c = true;
+        integer x = aux(a,c);
+        print_int(x);
+        auxiliar();
+        print_int(a);
+    }
+}

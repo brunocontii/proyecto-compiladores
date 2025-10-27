@@ -1,0 +1,17 @@
+program {
+
+    void print_bool(bool x) extern;
+
+    void main() {
+
+        bool x = true;
+        x = x && false;
+
+        if (!x) then {
+            print_bool(x);
+            print_bool(true);
+        } else {
+            print_bool(x);
+        }
+    }
+}

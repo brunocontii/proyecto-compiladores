@@ -1,0 +1,17 @@
+program {
+
+    void print_int(integer x) extern;
+
+    void main() {
+
+        integer x = 4;
+        x = x * (-1);
+
+        if (x > 0) then {
+            print_int(x);
+        } else {
+            print_int(2);
+            print_int(x);
+        }
+    }
+}
