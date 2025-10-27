@@ -621,6 +621,9 @@ void generar_codigo_assembler(codigo3dir *programa, FILE *out) {
                 fprintf(out, "    movq %s, %%rax\n", src);
                 free(src);
             }
+            fprintf(out, "    movq %%rbp, %%rsp\n");
+            fprintf(out, "    popq %%rbp\n");
+            fprintf(out, "    ret\n");
         }
 
         else if (strcmp(instr, "GOTO") == 0) {

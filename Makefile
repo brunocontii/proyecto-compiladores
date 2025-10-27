@@ -49,16 +49,6 @@ $(YACC_C) $(YACC_H): $(YACC_SRC)
 $(LEX_OUT): $(LEX_SRC) $(YACC_H)
 	cd $(LEX_DIR) && flex lexer.l
 
-# Ejecutar el programa
-# run: $(TARGET)
-# 	@if [ -f "$(TEST)" ]; then \
-# 		echo "▶️ Ejecutando test: $(TEST)"; \
-# 		./$(TARGET) $(TEST); \
-# 	else \
-# 		echo "❌ ERROR: El archivo $(TEST) no existe"; \
-# 		exit 1; \
-# 	fi
-
 run: $(TARGET)
 	@if [ -f "$(TEST)" ]; then \
 		echo "▶️ Compilando: $(TEST)"; \
@@ -73,6 +63,84 @@ run: $(TARGET)
 		fi \
 	else \
 		echo "❌ ERROR: El archivo $(TEST) no existe"; \
+		exit 1; \
+	fi
+
+# Ejecutar tests de assembler
+test-assembler: $(TARGET)
+	@echo " EJECUTANDO TESTS DE ASSEMBLER "
+	@echo ""
+	@passed=0; failed=0; total=0; \
+	for test in tests/tests-assembler/*.ctds; do \
+		if [ -f "$$test" ]; then \
+			total=$$((total + 1)); \
+			basename_test=$$(basename "$$test"); \
+			printf "📋 Test %2d: %-35s " "$$total" "$$basename_test"; \
+			\
+			./$(TARGET) -target assembly "$$test" > /tmp/compiler_output.txt 2>&1; \
+			compile_exit=$$?; \
+			\
+			if [ $$compile_exit -ne 0 ] || [ ! -f assembler.s ]; then \
+				printf "\033[31m❌ ERROR DE COMPILACIÓN\033[0m\n"; \
+				echo "   └─ Error del compilador:"; \
+				cat /tmp/compiler_output.txt | sed 's/^/      /'; \
+				failed=$$((failed + 1)); \
+				continue; \
+			fi; \
+			\
+			gcc -no-pie assembler.s $(RUNTIME_SRC) -o prog > /tmp/gcc_output.txt 2>&1; \
+			gcc_exit=$$?; \
+			\
+			if [ $$gcc_exit -ne 0 ]; then \
+				printf "\033[31m❌ ERROR EN GCC\033[0m\n"; \
+				echo "   └─ Error de ensamblado:"; \
+				cat /tmp/gcc_output.txt | sed 's/^/      /'; \
+				failed=$$((failed + 1)); \
+				rm -f assembler.s; \
+				continue; \
+			fi; \
+			\
+			output=$$(./prog 2>&1); \
+			run_exit=$$?; \
+			\
+			if [ $$run_exit -ne 0 ]; then \
+				printf "\033[31m❌ ERROR EN EJECUCIÓN\033[0m\n"; \
+				echo "   └─ Código de salida: $$run_exit"; \
+				echo "   └─ Salida: $$output"; \
+				failed=$$((failed + 1)); \
+			elif echo "$$output" | grep -q "^1$$"; then \
+				printf "\033[32m✅ PASÓ\033[0m\n"; \
+				passed=$$((passed + 1)); \
+			elif echo "$$output" | grep -q "^0$$"; then \
+				printf "\033[31m❌ FALLÓ (test retornó false)\033[0m\n"; \
+				echo "   └─ El programa indicó que el test falló"; \
+				failed=$$((failed + 1)); \
+			else \
+				printf "\033[33m⚠️  SALIDA INESPERADA\033[0m\n"; \
+				echo "   └─ Esperado: 1 (true)"; \
+				echo "   └─ Obtenido: $$output"; \
+				failed=$$((failed + 1)); \
+			fi; \
+			\
+			rm -f assembler.s prog; \
+		fi; \
+	done; \
+	echo ""; \
+	echo " RESUMEN DE TESTS "; \
+	printf "  Total de tests:     %3d \n" "$$total"; \
+	printf "  \033[32m✅ Tests pasados:    %3d\033[0m \n" "$$passed"; \
+	printf "  \033[31m❌ Tests fallados:   %3d\033[0m \n" "$$failed"; \
+	echo ""; \
+	if [ $$failed -eq 0 ] && [ $$total -gt 0 ]; then \
+		echo ""; \
+		echo "\033[32m🎉 ¡TODOS LOS TESTS PASARON! 🎉\033[0m"; \
+		echo ""; \
+	elif [ $$total -eq 0 ]; then \
+		echo ""; \
+		echo "\033[33m⚠️  No se encontraron tests en tests/tests-assembler/\033[0m"; \
+		echo ""; \
+	fi; \
+	if [ $$failed -gt 0 ]; then \
 		exit 1; \
 	fi
 

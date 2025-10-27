@@ -7,8 +7,14 @@ void print_int(long long i) {
     fflush(stdout);
 }
 
+// void print_bool(bool a) {
+//     // Imprime "true" / "false" (una línea)
+//     printf("%s\n", a ? "true" : "false");
+//     fflush(stdout);
+// }
+
 void print_bool(bool a) {
-    // Imprime "true" / "false" (una línea)
-    printf("%s\n", a ? "true" : "false");
+    // Imprime 1 para true y 0 para false (una línea)
+    printf("%d\n", a ? 1 : 0);
     fflush(stdout);
 }

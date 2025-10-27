@@ -1,0 +1,147 @@
+#!/bin/bash
+
+# Script para verificar manualmente tests de assembler
+# Útil para debugging cuando un test falla
+# Uso: ./verify_test.sh <archivo.ctds>
+
+RUNTIME_SRC="runtime/func-extern.c"
+COMPILER="./c-tds"
+
+# Colores
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Verificar que el compilador existe
+if [ ! -f "$COMPILER" ]; then
+    echo -e "${RED}❌ Error: No se encuentra el compilador c-tds${NC}"
+    echo "   Ejecuta 'make' primero"
+    exit 1
+fi
+
+# Verificar que existen las funciones runtime
+if [ ! -f "$RUNTIME_SRC" ]; then
+    echo -e "${RED}❌ Error: No se encuentra $RUNTIME_SRC${NC}"
+    exit 1
+fi
+
+# Verificar argumentos
+if [ $# -eq 0 ]; then
+    echo -e "${YELLOW}Uso: $0 <archivo.ctds>${NC}"
+    echo ""
+    echo "Ejemplo:"
+    echo "  $0 tests/tests-assembler/test1asm.ctds"
+    exit 1
+fi
+
+test_file="$1"
+
+if [ ! -f "$test_file" ]; then
+    echo -e "${RED}❌ Error: El archivo $test_file no existe${NC}"
+    exit 1
+fi
+
+basename_test=$(basename "$test_file")
+
+echo -e "${BLUE}╔═══════════════════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}║              VERIFICACIÓN DE TEST                         ║${NC}"
+echo -e "${BLUE}╠═══════════════════════════════════════════════════════════╣${NC}"
+echo -e "${BLUE}║${NC} Archivo: $basename_test"
+echo -e "${BLUE}╚═══════════════════════════════════════════════════════════╝${NC}"
+echo ""
+
+# Paso 1: Compilar a assembler
+echo -e "${BLUE}[1/4]${NC} Compilando a assembler..."
+$COMPILER -target assembly "$test_file" > /tmp/compiler_output.txt 2>&1
+compile_exit=$?
+
+if [ $compile_exit -ne 0 ] || [ ! -f assembler.s ]; then
+    echo -e "${RED}   ❌ Error de compilación${NC}"
+    echo ""
+    cat /tmp/compiler_output.txt
+    exit 1
+fi
+echo -e "${GREEN}   ✅ Assembler generado correctamente${NC}"
+
+# Paso 2: Mostrar código assembler generado
+echo ""
+echo -e "${BLUE}[2/4]${NC} Código assembler generado:"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+cat assembler.s | head -50
+if [ $(wc -l < assembler.s) -gt 50 ]; then
+    echo "..."
+    echo "(mostrando primeras 50 líneas de $(wc -l < assembler.s) totales)"
+fi
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# Paso 3: Compilar con gcc
+echo ""
+echo -e "${BLUE}[3/4]${NC} Compilando con gcc..."
+gcc -no-pie assembler.s $RUNTIME_SRC -o prog > /tmp/gcc_output.txt 2>&1
+gcc_exit=$?
+
+if [ $gcc_exit -ne 0 ]; then
+    echo -e "${RED}   ❌ Error en gcc${NC}"
+    echo ""
+    cat /tmp/gcc_output.txt
+    rm -f assembler.s
+    exit 1
+fi
+echo -e "${GREEN}   ✅ Ejecutable generado correctamente${NC}"
+
+# Paso 4: Ejecutar programa
+echo ""
+echo -e "${BLUE}[4/4]${NC} Ejecutando programa..."
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+output=$(./prog 2>&1)
+run_exit=$?
+
+echo "Salida del programa:"
+echo "$output"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# Verificar resultado
+echo ""
+echo -e "${BLUE}╔═══════════════════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}║                      RESULTADO                            ║${NC}"
+echo -e "${BLUE}╠═══════════════════════════════════════════════════════════╣${NC}"
+
+if [ $run_exit -ne 0 ]; then
+    echo -e "${BLUE}║${NC} ${RED}❌ ERROR EN EJECUCIÓN${NC}"
+    echo -e "${BLUE}║${NC}    Código de salida: $run_exit"
+    result=1
+elif echo "$output" | grep -q "^1$"; then
+    echo -e "${BLUE}║${NC} ${GREEN}✅ TEST PASÓ${NC}"
+    echo -e "${BLUE}║${NC}    El programa retornó true (1)"
+    result=0
+elif echo "$output" | grep -q "^0$"; then
+    echo -e "${BLUE}║${NC} ${RED}❌ TEST FALLÓ${NC}"
+    echo -e "${BLUE}║${NC}    El programa retornó false (0)"
+    echo -e "${BLUE}║${NC}    Esto significa que la condición en el test no se cumplió"
+    result=1
+else
+    echo -e "${BLUE}║${NC} ${YELLOW}⚠️  SALIDA INESPERADA${NC}"
+    echo -e "${BLUE}║${NC}    Esperado: 1 (true)"
+    echo -e "${BLUE}║${NC}    Obtenido: $output"
+    result=1
+fi
+
+echo -e "${BLUE}╚═══════════════════════════════════════════════════════════╝${NC}"
+echo ""
+
+# Preguntar si mantener archivos
+echo -n "¿Deseas mantener los archivos generados (assembler.s, prog)? [y/N]: "
+read -r keep_files
+
+if [[ ! $keep_files =~ ^[Yy]$ ]]; then
+    rm -f assembler.s prog
+    echo -e "${GREEN}Archivos limpiados${NC}"
+else
+    echo -e "${YELLOW}Archivos mantenidos:${NC}"
+    echo "  - assembler.s (código assembler)"
+    echo "  - prog (ejecutable)"
+fi
+
+exit $result
