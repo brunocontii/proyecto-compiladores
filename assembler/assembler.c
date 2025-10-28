@@ -171,30 +171,45 @@ void crear_mapeo_variables_locales(codigo3dir *label) {
     }
     
     codigo3dir *p = label->siguiente;
-    const char *variables[100];
+    const char *variables[200];
     int var_count = 0;
     
-    // recolectar variables unicas (solo las que NO son globales ni temporales)
-    while (p != NULL) {
-        if (strcmp(p->instruccion, "END") == 0) break;
-        
+    // recolectar variables locales, temporales y parametros
+    while (p != NULL && strcmp(p->instruccion, "END") != 0) {
         // ASSIGN y LOAD_PARAM crean variables locales
         // osea que se trata de la misma manera a las variables que a los parametros
         if (strcmp(p->instruccion, "ASSIGN") == 0 || strcmp(p->instruccion, "LOAD_PARAM") == 0) {
-            if (p->resultado->esTemporal == 0 && !es_variable_global(p->resultado->name)) {
-                bool found = false;
-                for (int i = 0; i < var_count; i++) {
-                    if (strcmp(variables[i], p->resultado->name) == 0) {
-                        found = true;
-                        break;
+            if (p->resultado && p->resultado->name) {
+                if (!es_variable_global(p->resultado->name)) {
+                    bool found = false;
+                    for (int i = 0; i < var_count; i++) {
+                        if (strcmp(variables[i], p->resultado->name) == 0) {
+                            found = true;
+                            break;
+                        }
                     }
-                }
-                if (!found) {
-                    variables[var_count] = p->resultado->name;
-                    var_count++;
+                    if (!found) {
+                        variables[var_count++] = p->resultado->name;
+                    }
                 }
             }
         }
+
+        // tambien buscar temporales en otras instrucciones
+        // porque algunos temporales solo aparecen como resultado de operaciones
+        if (p->resultado && p->resultado->esTemporal == 1 && p->resultado->name) {
+            bool found = false;
+            for (int i = 0; i < var_count; i++) {
+                if (strcmp(variables[i], p->resultado->name) == 0) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                variables[var_count++] = p->resultado->name;
+            }
+        }
+
         p = p->siguiente;
     }
     
@@ -224,18 +239,6 @@ int obtener_offset_variable(const char *nombre) {
     return -8;
 }
 
-int extraer_numero_temporal(char *nombre) {
-    if (nombre[0] == 'T') {
-        return atoi(nombre + 1);
-    }
-    return -1;
-}
-
-const char *obtener_registro_temporal(int n) {
-    const char *regs[] = {"%r10", "%r11", "%r12", "%r13", "%r14", "%r15"};
-    return regs[n % 6];
-}
-
 char* obtener_ubicacion_operando(info *operando) {
     if (!operando) return NULL;
     
@@ -256,9 +259,8 @@ char* obtener_ubicacion_operando(info *operando) {
     
     // CASO 3: temporal
     if (operando->esTemporal == 1) {
-        int num_temp = extraer_numero_temporal(operando->name);
-        const char *reg_temp = obtener_registro_temporal(num_temp);
-        sprintf(loc, "%s", reg_temp);
+        int offset = obtener_offset_variable(operando->name);
+        sprintf(loc, "%d(%%rbp)", offset);
         return loc;
     }
     
@@ -323,40 +325,21 @@ void crear_prologo_metodo(FILE *out, const char *nombre_metodo) {
     fprintf(out, "    pushq %%rbp\n");
     fprintf(out, "    movq %%rsp, %%rbp\n");
 
-    // calcular espacio total necesario:
-    // - 4 registros callee-saved (r12-r15) = 32 bytes
-    // - variables locales = num_vars_locales * 8 bytes
-    int espacio_registros = 32;  // 4 registros * 8 bytes
-    int espacio_variables = 8 * metodo->num_vars_locales;
-    int espacio_total = espacio_registros + espacio_variables;
-
-    int ajuste = (8 + espacio_total) % 16;
-    if (ajuste != 0) {
-        espacio_total += (16 - ajuste);
+    // espacion para variables locales, temporales y parametros
+    int espacio_total = 8 * metodo->num_vars_locales;
+    
+    // alinear a 16 bytes, debido a la convencion
+    if (espacio_total % 16 != 0) {
+        espacio_total += (16 - (espacio_total % 16));
     }
     
     if (espacio_total > 0) {
         fprintf(out, "    subq $%d, %%rsp\n", espacio_total);
     }
-    
-    // guardar registros callee-saved en las primeras posiciones
-    fprintf(out, "    movq %%r12, 0(%%rsp)\n");
-    fprintf(out, "    movq %%r13, 8(%%rsp)\n");
-    fprintf(out, "    movq %%r14, 16(%%rsp)\n");
-    fprintf(out, "    movq %%r15, 24(%%rsp)\n");
 }
 
 void crear_epilogo_metodo(FILE *out) {
     if (!out) return;
-    
-    metodo_info *metodo = get_metodo_actual();
-    if (!metodo) return;
-
-    // restaurar registros callee-saved
-    fprintf(out, "    movq 0(%%rsp), %%r12\n");
-    fprintf(out, "    movq 8(%%rsp), %%r13\n");
-    fprintf(out, "    movq 16(%%rsp), %%r14\n");
-    fprintf(out, "    movq 24(%%rsp), %%r15\n");
     
     // restaurar stack pointer
     fprintf(out, "    movq %%rbp, %%rsp\n");
@@ -446,29 +429,8 @@ void generar_codigo_assembler(codigo3dir *programa, FILE *out) {
                     actual = actual->siguiente;
                 }
             }
-            
-            // paso 1: parametros 7+ van al stack (en orden inverso)
-            for (int i = call_actual.count - 1; i >= 6; i--) {
-                char *src = obtener_ubicacion_operando(params_array[i]);
-                
-                if (src[0] == '%' && src[1] != 'r' && strncmp(src, "%rbp", 4) != 0) {
-                    fprintf(out, "    pushq %s\n", src);
-                } else {
-                    fprintf(out, "    movq %s, %%rax\n", src);
-                    fprintf(out, "    pushq %%rax\n");
-                }
-                
-                free(src);
-            }
-            
-            // paso 2: parametros 1-6 van a registros
-            for (int i = 0; i < call_actual.count && i < 6; i++) {
-                char *src = obtener_ubicacion_operando(params_array[i]);
-                fprintf(out, "    movq %s, %s\n", src, param_regs[i]);
-                free(src);
-            }
-            
-            // paso 3: alinear stack a 16 bytes
+
+            // paso 1: alinear stack a 16 bytes
             // ver esto, segun la convencion dice que antes de llamar a una funcion
             // el stack debe estar alineado a 16 bytes
             int stack_params = (call_actual.count > 6) ? (call_actual.count - 6) : 0;
@@ -479,9 +441,23 @@ void generar_codigo_assembler(codigo3dir *programa, FILE *out) {
                 fprintf(out, "    subq $8, %%rsp\n");
             }
             
+            // paso 2: parametros 7+ van al stack (en orden inverso)
+            for (int i = call_actual.count - 1; i >= 6; i--) {
+                char *src = obtener_ubicacion_operando(params_array[i]);
+                fprintf(out, "    movq %s, %%rax\n", src);
+                fprintf(out, "    pushq %%rax\n");
+                free(src);
+            }
+            
+            // paso 3: parametros 1-6 van a registros
+            for (int i = 0; i < call_actual.count && i < 6; i++) {
+                char *src = obtener_ubicacion_operando(params_array[i]);
+                fprintf(out, "    movq %s, %s\n", src, param_regs[i]);
+                free(src);
+            }
+            
             // paso 4: hacer la llamada
-            char *nombre_funcion = inst->arg1->name;
-            fprintf(out, "    call %s\n", nombre_funcion);
+            fprintf(out, "    call %s\n", inst->arg1->name);
             
             // paso 5: limpiar el stack
             // ver esto tambie, segun la convencion el llamador limpia el stack
@@ -495,14 +471,10 @@ void generar_codigo_assembler(codigo3dir *programa, FILE *out) {
             }
 
             // paso 6: mover resultado
-            if (inst->resultado && inst->resultado->esTemporal == 1) {
-                const char *reg_dest = obtener_registro_temporal(
-                    extraer_numero_temporal(inst->resultado->name)
-                );
-                
-                if (strcmp(reg_dest, "%rax") != 0) {
-                    fprintf(out, "    movq %%rax, %s\n", reg_dest);
-                }
+            if (inst->resultado) {
+                char *dest = obtener_ubicacion_operando(inst->resultado);
+                fprintf(out, "    movq %%rax, %s\n", dest);
+                free(dest);
             }
 
             // paso 7: limpiar
@@ -531,118 +503,115 @@ void generar_codigo_assembler(codigo3dir *programa, FILE *out) {
             }
         }
 
-        else if (strcmp(instr, "ADD") == 0 || strcmp(instr, "SUB") == 0 || 
-                strcmp(instr, "AND") == 0 || strcmp(instr, "OR") == 0) {
-
-            const char *reg_dest = obtener_registro_temporal(extraer_numero_temporal(inst->resultado->name));
-            
+        else if (strcmp(instr, "ADD") == 0 || strcmp(instr, "SUB") == 0 || strcmp(instr, "AND") == 0 || strcmp(instr, "OR") == 0) {
+            // obtener ubicaciones, son offsets de memoria
             char *src1 = obtener_ubicacion_operando(inst->arg1);
             char *src2 = obtener_ubicacion_operando(inst->arg2);
+            char *dest = obtener_ubicacion_operando(inst->resultado);
 
-            // cargar src1 en reg_dest
-            fprintf(out, "    movq %s, %s\n", src1, reg_dest);
-            
+            // cargar src1 en %rax
+            fprintf(out, "    movq %s, %%rax\n", src1);
+
             // aplicar operación con src2
             if (strcmp(instr, "ADD") == 0) {
-                fprintf(out, "    addq %s, %s\n", src2, reg_dest);
+                fprintf(out, "    addq %s, %%rax\n", src2);
             } else if (strcmp(instr, "SUB") == 0) {
-                fprintf(out, "    subq %s, %s\n", src2, reg_dest);
+                fprintf(out, "    subq %s, %%rax\n", src2);
             } else if (strcmp(instr, "AND") == 0) {
-                fprintf(out, "    andq %s, %s\n", src2, reg_dest);
+                fprintf(out, "    andq %s, %%rax\n", src2);
             } else {
-                fprintf(out, "    orq %s, %s\n", src2, reg_dest);
+                fprintf(out, "    orq %s, %%rax\n", src2);
             }
+
+            // guardar resultado en memoria (dest)
+            fprintf(out, "    movq %%rax, %s\n", dest);
             
             free(src1);
             free(src2);
+            free(dest);
         } 
         
         else if (strcmp(instr, "MUL") == 0) {
-            // se debe mover el resultado de %rax a reg_dest.
-            const char* reg_dest = obtener_registro_temporal(extraer_numero_temporal(inst->resultado->name));
-            
             char *src1 = obtener_ubicacion_operando(inst->arg1);
             char *src2 = obtener_ubicacion_operando(inst->arg2);
+            char *dest = obtener_ubicacion_operando(inst->resultado);
             
             fprintf(out, "    movq %s, %%rax\n", src1);
             fprintf(out, "    imulq %s, %%rax\n", src2);
-            
-            // guarda el resultado en r10 o r11
-            if (strcmp(reg_dest, "%rax") != 0) {
-                fprintf(out, "    movq %%rax, %s\n", reg_dest);
-            }
+            fprintf(out, "    movq %%rax, %s\n", dest);
             
             free(src1);
             free(src2);
+            free(dest);
         }
 
         else if (strcmp(instr, "DIV") == 0 || strcmp(instr, "MOD") == 0) {
-            // si o si se tienen que usar %rax y %rdx
-            const char* reg_dest = obtener_registro_temporal(extraer_numero_temporal(inst->resultado->name));
-            
             char *src1 = obtener_ubicacion_operando(inst->arg1);
             char *src2 = obtener_ubicacion_operando(inst->arg2);
+            char *dest = obtener_ubicacion_operando(inst->resultado);
             
             fprintf(out, "    movq %s, %%rax\n", src1);
             fprintf(out, "    cqto\n");
             fprintf(out, "    movq %s, %%r11\n", src2);
             fprintf(out, "    idivq %%r11\n");
             
-            // guardar el resultado en reg_dest, puede ser r10 o r11 y para div o mod 
             if (strcmp(instr, "DIV") == 0) {
-                // cociente en %rax
-                fprintf(out, "    movq %%rax, %s\n", reg_dest);
+                fprintf(out, "    movq %%rax, %s\n", dest);  // cociente
             } else {
-                // resto en %rdx
-                fprintf(out, "    movq %%rdx, %s\n", reg_dest);
+                fprintf(out, "    movq %%rdx, %s\n", dest);  // resto
             }
             
             free(src1);
             free(src2);
+            free(dest);
         }
 
         else if (strcmp(instr, "NEG") == 0) {
-            const char *reg_dest = obtener_registro_temporal(extraer_numero_temporal(inst->resultado->name));
+            char *src = obtener_ubicacion_operando(inst->arg1);
+            char *dest = obtener_ubicacion_operando(inst->resultado);
             
-            char *src1 = obtener_ubicacion_operando(inst->arg1);
-            fprintf(out, "    movq %s, %s\n", src1, reg_dest);
-            fprintf(out, "    negq %s\n", reg_dest);
+            fprintf(out, "    movq %s, %%rax\n", src);
+            fprintf(out, "    negq %%rax\n");
+            fprintf(out, "    movq %%rax, %s\n", dest);
             
-            free(src1);
+            free(src);
+            free(dest);
         }
 
         else if (strcmp(instr, "NOT") == 0) {
-            const char *reg_dest = obtener_registro_temporal(extraer_numero_temporal(inst->resultado->name));
+            char *src = obtener_ubicacion_operando(inst->arg1);
+            char *dest = obtener_ubicacion_operando(inst->resultado);
             
-            char *src1 = obtener_ubicacion_operando(inst->arg1);
-            fprintf(out, "    movq %s, %s\n", src1, reg_dest);
-            fprintf(out, "    xorq $1, %s\n", reg_dest);
+            fprintf(out, "    movq %s, %%rax\n", src);
+            fprintf(out, "    xorq $1, %%rax\n");
+            fprintf(out, "    movq %%rax, %s\n", dest);
             
-            free(src1);
+            free(src);
+            free(dest);
         }
         
         else if (strcmp(instr, "EQ") == 0 || strcmp(instr, "GT") == 0 || strcmp(instr, "LT") == 0) {
-            const char *reg_dest = obtener_registro_temporal(extraer_numero_temporal(inst->resultado->name));
-            
             char *src1 = obtener_ubicacion_operando(inst->arg1);
             char *src2 = obtener_ubicacion_operando(inst->arg2);
+            char *dest = obtener_ubicacion_operando(inst->resultado);
 
             fprintf(out, "    movq %s, %%rax\n", src1);
             fprintf(out, "    cmpq %s, %%rax\n", src2);
 
             if (strcmp(instr, "EQ") == 0) {
-                fprintf(out, "    sete %%al\n"); // setea si es igual
+                fprintf(out, "    sete %%al\n");
             } else if (strcmp(instr, "GT") == 0) {
-                fprintf(out, "    setg %%al\n"); // setea si es mayor
+                fprintf(out, "    setg %%al\n");
             } else {
-                fprintf(out, "    setl %%al\n"); // setea si es menor
+                fprintf(out, "    setl %%al\n");
             }
             
             fprintf(out, "    movzbl %%al, %%eax\n");
-            fprintf(out, "    movq %%rax, %s\n", reg_dest);
+            fprintf(out, "    movq %%rax, %s\n", dest);
             
             free(src1);
             free(src2);
+            free(dest);
         }
 
         else if (strcmp(instr, "EXTERN") == 0) {
@@ -671,11 +640,10 @@ void generar_codigo_assembler(codigo3dir *programa, FILE *out) {
         
         else if (strcmp(instr, "IF_FALSE") == 0) {
             char *cond_src = obtener_ubicacion_operando(inst->arg1);
-            char *label_name = inst->resultado->name;
             
             fprintf(out, "    movq %s, %%rax\n", cond_src);
             fprintf(out, "    cmpq $0, %%rax\n");
-            fprintf(out, "    je %s\n", label_name);
+            fprintf(out, "    je %s\n", inst->resultado->name);
             
             free(cond_src);
         }

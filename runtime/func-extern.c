@@ -17,8 +17,16 @@ long long get_int() {
     char buffer[256];
     long long i = 0;
     
+    fprintf(stdout, "Escriba un número: ");
+    fflush(stdout); 
+
+    // lee la linea completa de entrada
     if (fgets(buffer, sizeof(buffer), stdin) != NULL) {
-        sscanf(buffer, "%lld", &i);
+        // analizar el entero de 64 bits (long long)
+        if (sscanf(buffer, "%lld", &i) != 1) {
+            // manejo de entrada no valida
+            i = 0; 
+        }
     }
     
     return i;
