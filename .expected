@@ -45,11 +45,11 @@ fi
 
 basename_test=$(basename "$test_file")
 
-echo -e "${BLUE}╔═══════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║              VERIFICACIÓN DE TEST                         ║${NC}"
-echo -e "${BLUE}╠═══════════════════════════════════════════════════════════╣${NC}"
-echo -e "${BLUE}║${NC} Archivo: $basename_test"
-echo -e "${BLUE}╚═══════════════════════════════════════════════════════════╝${NC}"
+echo -e "${BLUE}╔════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}║              VERIFICACIÓN DE TEST                          ║${NC}"
+echo -e "${BLUE}╠════════════════════════════════════════════════════════════╣${NC}"
+echo -e "${BLUE}║${NC} Archivo: $basename_test                                     ""${BLUE}║${NC}"
+echo -e "${BLUE}╚════════════════════════════════════════════════════════════╝${NC}"
 echo ""
 
 # Paso 1: Compilar a assembler
@@ -68,13 +68,9 @@ echo -e "${GREEN}   ✅ Assembler generado correctamente${NC}"
 # Paso 2: Mostrar código assembler generado
 echo ""
 echo -e "${BLUE}[2/4]${NC} Código assembler generado:"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-cat assembler.s | head -50
-if [ $(wc -l < assembler.s) -gt 50 ]; then
-    echo "..."
-    echo "(mostrando primeras 50 líneas de $(wc -l < assembler.s) totales)"
-fi
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+cat assembler.s
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # Paso 3: Compilar con gcc
 echo ""
@@ -94,41 +90,41 @@ echo -e "${GREEN}   ✅ Ejecutable generado correctamente${NC}"
 # Paso 4: Ejecutar programa
 echo ""
 echo -e "${BLUE}[4/4]${NC} Ejecutando programa..."
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 output=$(./prog 2>&1)
 run_exit=$?
 
 echo "Salida del programa:"
 echo "$output"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # Verificar resultado
 echo ""
-echo -e "${BLUE}╔═══════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║                      RESULTADO                            ║${NC}"
-echo -e "${BLUE}╠═══════════════════════════════════════════════════════════╣${NC}"
+echo -e "${BLUE}╔═════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}║                      RESULTADO                              ║${NC}"
+echo -e "${BLUE}╠═════════════════════════════════════════════════════════════╣${NC}"
 
 if [ $run_exit -ne 0 ]; then
-    echo -e "${BLUE}║${NC} ${RED}❌ ERROR EN EJECUCIÓN${NC}"
-    echo -e "${BLUE}║${NC}    Código de salida: $run_exit"
+    echo -e "${BLUE}║${NC} ${RED}❌ ERROR EN EJECUCIÓN${NC}                                      " "${BLUE}║${NC}"
+    echo -e "${BLUE}║${NC}    Código de salida: $run_exit                                   " "${BLUE}║${NC}"
     result=1
 elif echo "$output" | grep -q "^1$"; then
-    echo -e "${BLUE}║${NC} ${GREEN}✅ TEST PASÓ${NC}"
-    echo -e "${BLUE}║${NC}    El programa retornó true (1)"
+    echo -e "${BLUE}║${NC} ${GREEN}✅ TEST PASÓ${NC}                                               " "${BLUE}║${NC}"
+    echo -e "${BLUE}║${NC}    El programa retornó true (1)                            " "${BLUE}║${NC}"
     result=0
 elif echo "$output" | grep -q "^0$"; then
-    echo -e "${BLUE}║${NC} ${RED}❌ TEST FALLÓ${NC}"
-    echo -e "${BLUE}║${NC}    El programa retornó false (0)"
-    echo -e "${BLUE}║${NC}    Esto significa que la condición en el test no se cumplió"
+    echo -e "${BLUE}║${NC} ${RED}❌ TEST FALLÓ${NC}                                              " "${BLUE}║${NC}"
+    echo -e "${BLUE}║${NC}    El programa retornó false (0)                           " "${BLUE}║${NC}"
+    echo -e "${BLUE}║${NC}    Esto significa que la condición en el test no se cumplió" "${BLUE}║${NC}"
     result=1
 else
-    echo -e "${BLUE}║${NC} ${YELLOW}⚠️  SALIDA INESPERADA${NC}"
-    echo -e "${BLUE}║${NC}    Esperado: 1 (true)"
-    echo -e "${BLUE}║${NC}    Obtenido: $output"
+    echo -e "${BLUE}║${NC} ${YELLOW}⚠️  SALIDA INESPERADA${NC}                                       " "${BLUE}║${NC}"
+    echo -e "${BLUE}║${NC}    Esperado: 1 (true)                                      " "${BLUE}║${NC}"
+    echo -e "${BLUE}║${NC}    Obtenido: $output                                             " "${BLUE}║${NC}"
     result=1
 fi
 
-echo -e "${BLUE}╚═══════════════════════════════════════════════════════════╝${NC}"
+echo -e "${BLUE}╚═════════════════════════════════════════════════════════════╝${NC}"
 echo ""
 
 # Preguntar si mantener archivos
