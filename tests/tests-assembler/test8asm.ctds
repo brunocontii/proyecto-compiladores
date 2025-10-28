@@ -1,0 +1,23 @@
+program {
+
+    void print_int(integer x) extern;
+    void print_bool(bool x) extern;
+
+    void main() {
+
+        integer x = 10;
+
+        if (x < 5) then {
+            print_bool(false);
+            print_int(x);
+        } else {
+            if (x < 15) then{
+                print_bool(true);
+                print_int(x);
+            } else {
+                print_bool(false);
+                print_int(x);
+            }
+        }
+    }
+}
