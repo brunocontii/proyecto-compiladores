@@ -472,9 +472,7 @@ void codigo_intermedio(nodo *raiz) {
             break;
         }
         case T_EXTERN: {
-            // ver si queremos agregar algo mas aca
-            agregar_instruccion("EXTERN", NULL, NULL, NULL);
-            ultimo_temp = -1;
+            // no hacer nada, ya que se maneja en T_METHOD_DECL
             break;
         }
         case T_IF: {

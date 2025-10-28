@@ -23,6 +23,7 @@ typedef struct metodo_info {
     int num_vars_locales;            // cantidad de variables locales
     var_offset *mapeo_vars;          // mapeo de variables locales
     struct metodo_info *siguiente;   // para manejar llamadas anidadas
+    tipo_info tipo_retorno;          // tipo de retorno del metodo
 } metodo_info;
 
 static var_global *variables_globales = NULL;
@@ -125,13 +126,14 @@ void recolectar_variables_globales(codigo3dir *programa) {
     }
 }
 
-void push_metodo(const char *nombre) {
+void push_metodo(const char *nombre, tipo_info tipo_ret) {
     metodo_info *nuevo = malloc(sizeof(metodo_info));
     nuevo->nombre = strdup(nombre);
     nuevo->num_vars_locales = 0;
     nuevo->mapeo_vars = NULL;
     nuevo->siguiente = metodo_stack;
     metodo_stack = nuevo;
+    nuevo->tipo_retorno = tipo_ret;
 }
 
 void pop_metodo() {
@@ -230,7 +232,8 @@ int extraer_numero_temporal(char *nombre) {
 }
 
 const char *obtener_registro_temporal(int n) {
-    return (n % 2 == 0) ? "%r10" : "%r11";
+    const char *regs[] = {"%r10", "%r11", "%r12", "%r13", "%r14", "%r15"};
+    return regs[n % 6];
 }
 
 char* obtener_ubicacion_operando(info *operando) {
@@ -319,11 +322,28 @@ void crear_prologo_metodo(FILE *out, const char *nombre_metodo) {
     fprintf(out, "%s:\n", nombre_metodo);
     fprintf(out, "    pushq %%rbp\n");
     fprintf(out, "    movq %%rsp, %%rbp\n");
-    
-    int n = 8 * metodo->num_vars_locales;
-    if (n > 0) {
-        fprintf(out, "    subq $%d, %%rsp\n", n);
+
+    // calcular espacio total necesario:
+    // - 4 registros callee-saved (r12-r15) = 32 bytes
+    // - variables locales = num_vars_locales * 8 bytes
+    int espacio_registros = 32;  // 4 registros * 8 bytes
+    int espacio_variables = 8 * metodo->num_vars_locales;
+    int espacio_total = espacio_registros + espacio_variables;
+
+    int ajuste = (8 + espacio_total) % 16;
+    if (ajuste != 0) {
+        espacio_total += (16 - ajuste);
     }
+    
+    if (espacio_total > 0) {
+        fprintf(out, "    subq $%d, %%rsp\n", espacio_total);
+    }
+    
+    // guardar registros callee-saved en las primeras posiciones
+    fprintf(out, "    movq %%r12, 0(%%rsp)\n");
+    fprintf(out, "    movq %%r13, 8(%%rsp)\n");
+    fprintf(out, "    movq %%r14, 16(%%rsp)\n");
+    fprintf(out, "    movq %%r15, 24(%%rsp)\n");
 }
 
 void crear_epilogo_metodo(FILE *out) {
@@ -332,7 +352,13 @@ void crear_epilogo_metodo(FILE *out) {
     metodo_info *metodo = get_metodo_actual();
     if (!metodo) return;
 
-    // fprintf(out, "END_%s:\n", metodo->nombre); en teoria no sirve
+    // restaurar registros callee-saved
+    fprintf(out, "    movq 0(%%rsp), %%r12\n");
+    fprintf(out, "    movq 8(%%rsp), %%r13\n");
+    fprintf(out, "    movq 16(%%rsp), %%r14\n");
+    fprintf(out, "    movq 24(%%rsp), %%r15\n");
+    
+    // restaurar stack pointer
     fprintf(out, "    movq %%rbp, %%rsp\n");
     fprintf(out, "    popq %%rbp\n");
     fprintf(out, "    ret\n");
@@ -358,7 +384,7 @@ void generar_codigo_assembler(codigo3dir *programa, FILE *out) {
         if (strcmp(instr, "LABEL") == 0) {
             if (inst->resultado->tipo_token == T_METHOD_DECL) {
                 // es un metodo nuevo
-                push_metodo(inst->resultado->name);
+                push_metodo(inst->resultado->name, inst->resultado->tipo_info);
                 // print para debug
                 printf("LABEL: metodo %s con %d parámetros\n", inst->resultado->name, inst->resultado->num_parametros);
                 
@@ -371,7 +397,12 @@ void generar_codigo_assembler(codigo3dir *programa, FILE *out) {
         }
 
         else if (strcmp(instr, "END") == 0) {
-            crear_epilogo_metodo(out);
+            metodo_info *metodo = get_metodo_actual();
+
+            if (metodo && metodo->tipo_retorno == TIPO_VOID) {
+                crear_epilogo_metodo(out);
+            }
+        
             pop_metodo();
         }
 
@@ -614,16 +645,24 @@ void generar_codigo_assembler(codigo3dir *programa, FILE *out) {
             free(src2);
         }
 
+        else if (strcmp(instr, "EXTERN") == 0) {
+            // no hacer nada
+        }
+
         else if (strcmp(instr, "RET") == 0) {
+            metodo_info *metodo = get_metodo_actual();
+
             // si el campo resultado no es NULL, entonces es porque el metodo retorna un valor
             if (inst->resultado) {
                 char *src = obtener_ubicacion_operando(inst->resultado);
                 fprintf(out, "    movq %s, %%rax\n", src);
                 free(src);
             }
-            fprintf(out, "    movq %%rbp, %%rsp\n");
-            fprintf(out, "    popq %%rbp\n");
-            fprintf(out, "    ret\n");
+            // solo generar epilogo si NO es un metodo void
+            // los metodos void generan su epilogo en END
+            if (metodo && metodo->tipo_retorno != TIPO_VOID) {
+                crear_epilogo_metodo(out);
+            }
         }
 
         else if (strcmp(instr, "GOTO") == 0) {
