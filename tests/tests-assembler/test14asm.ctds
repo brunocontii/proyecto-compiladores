@@ -1,0 +1,28 @@
+program {
+
+    integer factorial(integer x, integer result) {
+
+        if (x < 0) then {
+            return -1;
+        }
+
+        if (x < 2) then {
+            return result;
+        }
+
+        return factorial(x-1, result * x);
+    }
+
+    void print_int(integer x) extern;
+    void print_bool(bool a) extern;
+
+    void main() {
+        integer x = factorial(5, 1);
+        print_int(x);
+        if (x == 120) then{
+            print_bool(true);
+        } else {
+            print_bool(false);
+        }
+    }
+}

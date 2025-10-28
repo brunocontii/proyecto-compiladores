@@ -1,0 +1,27 @@
+program {
+    integer x = 1;
+    integer y = 2;
+    integer z = 3;
+    integer w = 4;
+    integer a = 5;
+    integer b = 6;
+    integer c = 7;
+    integer d = 8;
+    integer e = 9;
+    integer f = 10;
+
+    void print_int(integer x) extern;
+
+    integer sumatoriaN(integer p1, integer p2, integer p3, integer p4, integer p5, integer p6, integer p7, integer p8, integer p9, integer p10) {
+        integer temp1 = p1 + p2 + p3;
+        integer temp2 = p4 + p5 + p6;
+        integer temp3 = p7 + p8 + p9;
+        return temp1 + temp2 + temp3 + p10;
+    }
+
+    void main() {
+        integer res = sumatoriaN(x, y, z, w, a, b, c, d, e, f);
+        print_int(res);
+        return ;
+    }
+}
