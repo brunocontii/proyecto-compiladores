@@ -11,6 +11,7 @@ program {
     integer f = 10;
 
     void print_int(integer x) extern;
+    void print_bool(bool x) extern;
 
     integer sumatoriaN(integer p1, integer p2, integer p3, integer p4, integer p5, integer p6, integer p7, integer p8, integer p9, integer p10) {
         integer temp1 = p1 + p2 + p3;
@@ -21,7 +22,12 @@ program {
 
     void main() {
         integer res = sumatoriaN(x, y, z, w, a, b, c, d, e, f);
-        print_int(res);
+        if (res == 55) then {
+            print_int(res);
+            print_bool(true);
+        } else {
+            print_bool(false);
+        }
         return ;
     }
 }

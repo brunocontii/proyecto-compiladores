@@ -3,6 +3,7 @@ program {
     integer GLOBAL_A = 10;
     bool GLOBAL_FLAG = true;
     void print_int(integer x) extern;
+    void print_bool(bool x) extern;
 
     void main() {
         integer v_add = 5 + 3;          // Resultado: 8
@@ -28,7 +29,12 @@ program {
         // Asignación final a global para no optimizar la última variable
         GLOBAL_A = v_div;               // GLOBAL_A = 3
 
-        print_int(GLOBAL_A);
+        if (GLOBAL_A == 3) then {
+            print_int(GLOBAL_A);
+            print_bool(true);
+        } else {
+            print_bool(false);
+        }
 
         return;
     }
