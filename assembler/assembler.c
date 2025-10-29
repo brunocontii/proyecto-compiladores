@@ -180,17 +180,15 @@ void crear_mapeo_variables_locales(codigo3dir *label) {
         // osea que se trata de la misma manera a las variables que a los parametros
         if (strcmp(p->instruccion, "ASSIGN") == 0 || strcmp(p->instruccion, "LOAD_PARAM") == 0) {
             if (p->resultado && p->resultado->name) {
-                if (!es_variable_global(p->resultado->name)) {
-                    bool found = false;
-                    for (int i = 0; i < var_count; i++) {
-                        if (strcmp(variables[i], p->resultado->name) == 0) {
-                            found = true;
-                            break;
-                        }
+                bool found = false;
+                for (int i = 0; i < var_count; i++) {
+                    if (strcmp(variables[i], p->resultado->name) == 0) {
+                        found = true;
+                        break;
                     }
-                    if (!found) {
-                        variables[var_count++] = p->resultado->name;
-                    }
+                }
+                if (!found) {
+                    variables[var_count++] = p->resultado->name;
                 }
             }
         }

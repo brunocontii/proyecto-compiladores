@@ -20,7 +20,6 @@ extern codigo3dir *programa_inicio;
 extern codigo3dir *programa_final;
 
 // funciones para manipular la lista de instrucciones
-void inicializar_programa(void);
 void agregar_instruccion(const char *instruc, info *r, info *a1, info *a2);
 void imprimir_programa(void);
 

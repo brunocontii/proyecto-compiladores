@@ -68,7 +68,7 @@ run: $(TARGET)
 
 # Ejecutar tests de assembler
 test-assembler: $(TARGET)
-	@echo " EJECUTANDO TESTS DE ASSEMBLER "
+	@echo "\nEJECUTANDO TESTS DE ASSEMBLER"
 	@echo ""
 	@passed=0; failed=0; total=0; \
 	for test in tests/tests-assembler/*.ctds; do \
@@ -126,10 +126,10 @@ test-assembler: $(TARGET)
 		fi; \
 	done; \
 	echo ""; \
-	echo " RESUMEN DE TESTS "; \
-	printf "  Total de tests:     %3d \n" "$$total"; \
-	printf "  \033[32m✅ Tests pasados:    %3d\033[0m \n" "$$passed"; \
-	printf "  \033[31m❌ Tests fallados:   %3d\033[0m \n" "$$failed"; \
+	echo "RESUMEN DE TESTS"; \
+	printf " Total de tests:      %3d \n" "$$total"; \
+	printf " \033[32m✅ Tests pasados:    %3d\033[0m \n" "$$passed"; \
+	printf " \033[31m❌ Tests fallados:   %3d\033[0m \n" "$$failed"; \
 	echo ""; \
 	if [ $$failed -gt 0 ]; then \
 		exit 1; \

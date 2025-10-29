@@ -4,11 +4,6 @@
 codigo3dir *programa_inicio = NULL;
 codigo3dir *programa_final = NULL;
 
-void inicializar_programa(void) {
-    programa_inicio = NULL;
-    programa_final = NULL;
-}
-
 // agregar una instruccion al final de la lista
 void agregar_instruccion(const char *instruc, info *r, info *a1, info *a2) {
     codigo3dir *nueva = (codigo3dir*)malloc(sizeof(codigo3dir));
@@ -33,7 +28,6 @@ void agregar_instruccion(const char *instruc, info *r, info *a1, info *a2) {
         programa_final->siguiente = nueva;
         programa_final = nueva;
     }
-
 }
 
 // función auxiliar para imprimir un operando según su tipo
@@ -71,7 +65,7 @@ void imprimir_programa(void) {
         char arg1_str[16];
         char arg2_str[16];
         
-        // Obtener strings formateados según el tipo
+        // obtener strings formateados segun el tipo
         imprimir_operando(actual->resultado, resultado_str, sizeof(resultado_str));
         imprimir_operando(actual->arg1, arg1_str, sizeof(arg1_str));
         imprimir_operando(actual->arg2, arg2_str, sizeof(arg2_str));
