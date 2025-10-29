@@ -1,0 +1,26 @@
+program {
+    void print_int(integer x) extern;
+    void print_bool(bool x) extern;
+    integer get_int() extern;
+    
+    integer fibonacci(integer n) {
+        if (n < 0) then {
+            return -1;
+        }
+        if (n < 2) then {
+            return n;
+        }
+        return fibonacci(n-1) + fibonacci(n-2);
+    }
+    void main() {
+        integer x = 6;
+        integer y = fibonacci(x);
+        if (y == 8) then {
+            print_bool(true);
+        } else {
+            print_bool(false);
+            print_int(y);
+        }
+        return;
+    }
+}

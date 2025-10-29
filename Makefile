@@ -131,15 +131,6 @@ test-assembler: $(TARGET)
 	printf "  \033[32m✅ Tests pasados:    %3d\033[0m \n" "$$passed"; \
 	printf "  \033[31m❌ Tests fallados:   %3d\033[0m \n" "$$failed"; \
 	echo ""; \
-	if [ $$failed -eq 0 ] && [ $$total -gt 0 ]; then \
-		echo ""; \
-		echo "\033[32m🎉 ¡TODOS LOS TESTS PASARON! 🎉\033[0m"; \
-		echo ""; \
-	elif [ $$total -eq 0 ]; then \
-		echo ""; \
-		echo "\033[33m⚠️  No se encontraron tests en tests/tests-assembler/\033[0m"; \
-		echo ""; \
-	fi; \
 	if [ $$failed -gt 0 ]; then \
 		exit 1; \
 	fi
@@ -168,9 +159,6 @@ test-all: $(TARGET)
 	echo "Total tests ejecutados: $$total"; \
 	echo "\033[32m✅ Pasaron: $$passed\033[0m"; \
 	echo "\033[31m❌ Fallaron: $$failed\033[0m"; \
-	if [ $$failed -eq 0 ]; then \
-		echo "\033[32m🎉 TODOS LOS TESTS PASARON\033[0m"; \
-	fi
 
 # Ejecutar solo tests sintácticos
 test-sintactico: $(TARGET)
