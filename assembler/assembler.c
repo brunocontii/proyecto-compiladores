@@ -3,239 +3,7 @@
 #include <stdlib.h>
 #include "../codigo-intermedio/codigo3dir.h"
 #include "assembler.h"
-
-// nodo de la lista enlazada para parametros
-typedef struct param_node {
-    info *param;
-    struct param_node *siguiente;
-} param_node;
-
-// estructura para acumular parametros de un CALL
-typedef struct param_call {
-    param_node *primero;     // primer parametro
-    param_node *ultimo;      // ultimo parametro (para insercion O(1))
-    int count;               // cantidad de parametros
-} param_call;
-
-// estructura para informacion de metodos (para preservar contexto si hay anidamiento)
-typedef struct metodo_info {
-    char *nombre;                    // nombre del metodo
-    int num_vars_locales;            // cantidad de variables locales
-    var_offset *mapeo_vars;          // mapeo de variables locales
-    struct metodo_info *siguiente;   // para manejar llamadas anidadas
-    tipo_info tipo_retorno;          // tipo de retorno del metodo
-} metodo_info;
-
-static var_global *variables_globales = NULL;
-static param_call call_actual = {.primero = NULL, .ultimo = NULL, .count = 0};  // CALL actual
-static metodo_info *metodo_stack = NULL;       // stack de metodos (para anidamiento)
-
-bool es_variable_global(const char *nombre) {
-    var_global *actual = variables_globales;
-    while (actual != NULL) {
-        if (strcmp(actual->nombre, nombre) == 0) {
-            return true;
-        }
-        actual = actual->siguiente;
-    }
-    return false;
-}
-
-// agregar parametro al final de la lista
-void agregar_param(info *param) {
-    param_node *nuevo = malloc(sizeof(param_node));
-    nuevo->param = param;
-    nuevo->siguiente = NULL;
-    
-    if (call_actual.primero == NULL) {
-        // lista vacia
-        call_actual.primero = nuevo;
-        call_actual.ultimo = nuevo;
-    } else {
-        // agregar al final
-        call_actual.ultimo->siguiente = nuevo;
-        call_actual.ultimo = nuevo;
-    }
-    
-    call_actual.count++;
-}
-
-// limpiar lista de parámetros
-void limpiar_params() {
-    param_node *actual = call_actual.primero;
-    while (actual != NULL) {
-        param_node *temp = actual;
-        actual = actual->siguiente;
-        free(temp);
-    }
-    call_actual.primero = NULL;
-    call_actual.ultimo = NULL;
-    call_actual.count = 0;
-}
-
-void agregar_variable_global(const char *nombre, const char *valor) {
-    var_global *var_g = (var_global *)malloc(sizeof(var_global));
-    var_g->nombre = strdup(nombre);
-    var_g->valor_inicial = strdup(valor);
-    var_g->siguiente = NULL;
-    
-    if (variables_globales == NULL) {
-        variables_globales = var_g;
-    } else {
-        var_global *actual = variables_globales;
-        while (actual->siguiente != NULL) {
-            actual = actual->siguiente;
-        }
-        actual->siguiente = var_g;
-    }
-}
-
-void recolectar_variables_globales(codigo3dir *programa) {
-    codigo3dir *inst = programa;
-
-    while (inst != NULL) {
-        if (strcmp(inst->instruccion, "LABEL") == 0) {
-            break;
-        }
-
-        if (strcmp(inst->instruccion, "ASSIGN") == 0) {
-            if (inst->resultado && inst->resultado->name && inst->arg1) {
-                char valor_str[32];
-                
-                if (inst->arg1->tipo_token == T_DIGIT) {
-                    sprintf(valor_str, "%d", inst->arg1->nro);
-                }
-                else if (inst->arg1->tipo_token == T_VTRUE || inst->arg1->tipo_token == T_VFALSE) {
-                    strcpy(valor_str, inst->arg1->bool_string);
-                }
-                else if (inst->arg1->tipo_token == T_ID) {
-                    strcpy(valor_str, inst->arg1->name);
-                }
-                else if (inst->arg1->esTemporal == 1) {
-                    strcpy(valor_str, "0");
-                }
-                else {
-                    strcpy(valor_str, "0");
-                }
-                
-                agregar_variable_global(inst->resultado->name, valor_str);
-            }
-        }
-
-        inst = inst->siguiente;
-    }
-}
-
-void push_metodo(const char *nombre, tipo_info tipo_ret) {
-    metodo_info *nuevo = malloc(sizeof(metodo_info));
-    nuevo->nombre = strdup(nombre);
-    nuevo->num_vars_locales = 0;
-    nuevo->mapeo_vars = NULL;
-    nuevo->siguiente = metodo_stack;
-    metodo_stack = nuevo;
-    nuevo->tipo_retorno = tipo_ret;
-}
-
-void pop_metodo() {
-    if (metodo_stack == NULL) return;
-    
-    metodo_info *temp = metodo_stack;
-    metodo_stack = metodo_stack->siguiente;
-    
-    // Liberar mapeo de variables
-    while (temp->mapeo_vars != NULL) {
-        var_offset *v = temp->mapeo_vars;
-        temp->mapeo_vars = temp->mapeo_vars->siguiente;
-        free(v->nombre);
-        free(v);
-    }
-    
-    free(temp->nombre);
-    free(temp);
-}
-
-metodo_info* get_metodo_actual() {
-    return metodo_stack;
-}
-
-void crear_mapeo_variables_locales(codigo3dir *label) {
-    metodo_info *metodo = get_metodo_actual();
-    if (!metodo) return;
-    
-    // limpiar mapeo anterior del metodo actual
-    while (metodo->mapeo_vars != NULL) {
-        var_offset *temp = metodo->mapeo_vars;
-        metodo->mapeo_vars = metodo->mapeo_vars->siguiente;
-        free(temp->nombre);
-        free(temp);
-    }
-    
-    codigo3dir *p = label->siguiente;
-    const char *variables[200];
-    int var_count = 0;
-    
-    // recolectar variables locales, temporales y parametros
-    while (p != NULL && strcmp(p->instruccion, "END") != 0) {
-        // ASSIGN y LOAD_PARAM crean variables locales
-        // osea que se trata de la misma manera a las variables que a los parametros
-        if (strcmp(p->instruccion, "ASSIGN") == 0 || strcmp(p->instruccion, "LOAD_PARAM") == 0) {
-            if (p->resultado && p->resultado->name) {
-                bool found = false;
-                for (int i = 0; i < var_count; i++) {
-                    if (strcmp(variables[i], p->resultado->name) == 0) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    variables[var_count++] = p->resultado->name;
-                }
-            }
-        }
-
-        // tambien buscar temporales en otras instrucciones
-        // porque algunos temporales solo aparecen como resultado de operaciones
-        if (p->resultado && p->resultado->esTemporal == 1 && p->resultado->name) {
-            bool found = false;
-            for (int i = 0; i < var_count; i++) {
-                if (strcmp(variables[i], p->resultado->name) == 0) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                variables[var_count++] = p->resultado->name;
-            }
-        }
-
-        p = p->siguiente;
-    }
-    
-    // crear mapeo con offsets
-    for (int i = 0; i < var_count; i++) {
-        var_offset *nuevo = malloc(sizeof(var_offset));
-        nuevo->nombre = strdup(variables[i]);
-        nuevo->offset = -8 * (i + 1);
-        nuevo->siguiente = metodo->mapeo_vars;
-        metodo->mapeo_vars = nuevo;
-    }
-    
-    metodo->num_vars_locales = var_count;
-}
-
-int obtener_offset_variable(const char *nombre) {
-    metodo_info *metodo = get_metodo_actual();
-    if (!metodo) return -8;
-    
-    var_offset *actual = metodo->mapeo_vars;
-    while (actual != NULL) {
-        if (strcmp(actual->nombre, nombre) == 0) {
-            return actual->offset;
-        }
-        actual = actual->siguiente;
-    }
-    return -8;
-}
+#include "estructuras_metodos.h"
 
 char* obtener_ubicacion_operando(info *operando) {
     if (!operando) return NULL;
@@ -272,77 +40,6 @@ char* obtener_ubicacion_operando(info *operando) {
     // CASO 5: variable global
     sprintf(loc, "%s(%%rip)", operando->name);
     return loc;
-}
-
-void generar_seccion_data(FILE *out) {
-    if (variables_globales == NULL || out == NULL) return;
-
-    fprintf(out, "\t.data\n");
-    var_global *actual = variables_globales;
-
-    while (actual != NULL) {
-        fprintf(out, "%s:\n", actual->nombre);
-        
-        if (strcmp(actual->valor_inicial, "true") == 0) {
-            fprintf(out, "    .quad 1\n");
-        } else if (strcmp(actual->valor_inicial, "false") == 0) {
-            fprintf(out, "    .quad 0\n");
-        } else {
-            fprintf(out, "    .quad %s\n", actual->valor_inicial);
-        }
-        
-        actual = actual->siguiente;
-    }
-    fprintf(out, "\n");
-}
-
-void generar_seccion_text(FILE *out) {
-    if (out == NULL) return;
-
-    fprintf(out, "\t.text\n");
-    fprintf(out, "\t.globl\tmain\n");
-    fprintf(out, "\t.type\tmain, @function\n");
-    fprintf(out, "\n");
-}
-
-void generar_epilogo_archivo(FILE *out) {
-    if (out == NULL) return;
-
-    fprintf(out, "\n.LFE0:\n");
-    fprintf(out, "\t.size\tmain, .-main\n");
-    fprintf(out, "\t.section\t.note.GNU-stack,\"\",@progbits\n");
-}
-
-void crear_prologo_metodo(FILE *out, const char *nombre_metodo) {
-    if (!out || !nombre_metodo) return;
-    
-    metodo_info *metodo = get_metodo_actual();
-    if (!metodo) return;
-
-    fprintf(out, "%s:\n", nombre_metodo);
-    fprintf(out, "    pushq %%rbp\n");
-    fprintf(out, "    movq %%rsp, %%rbp\n");
-
-    // espacion para variables locales, temporales y parametros
-    int espacio_total = 8 * metodo->num_vars_locales;
-    
-    // alinear a 16 bytes, debido a la convencion
-    if (espacio_total % 16 != 0) {
-        espacio_total += (16 - (espacio_total % 16));
-    }
-    
-    if (espacio_total > 0) {
-        fprintf(out, "    subq $%d, %%rsp\n", espacio_total);
-    }
-}
-
-void crear_epilogo_metodo(FILE *out) {
-    if (!out) return;
-    
-    // restaurar stack pointer
-    fprintf(out, "    movq %%rbp, %%rsp\n");
-    fprintf(out, "    popq %%rbp\n");
-    fprintf(out, "    ret\n");
 }
 
 void generar_codigo_assembler(codigo3dir *programa, FILE *out) {
@@ -416,22 +113,14 @@ void generar_codigo_assembler(codigo3dir *programa, FILE *out) {
         else if (strcmp(instr, "CALL") == 0) {
             const char *param_regs[6] = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
             
-            // convertir lista a array temporal para facilitar acceso por indice
-            info **params_array = NULL;
-            if (call_actual.count > 0) {
-                params_array = malloc(call_actual.count * sizeof(info*));
-                param_node *actual = call_actual.primero;
-                int idx = 0;
-                while (actual != NULL) {
-                    params_array[idx++] = actual->param;
-                    actual = actual->siguiente;
-                }
-            }
+            // obtener parametros
+            int param_count = get_param_count();
+            info **params_array = get_params_array();
 
             // paso 1: alinear stack a 16 bytes
             // ver esto, segun la convencion dice que antes de llamar a una funcion
             // el stack debe estar alineado a 16 bytes
-            int stack_params = (call_actual.count > 6) ? (call_actual.count - 6) : 0;
+            int stack_params = (param_count > 6) ? (param_count - 6) : 0;
             int stack_bytes = stack_params * 8;
             bool need_alignment = (stack_bytes % 16 != 0);
             
@@ -440,7 +129,7 @@ void generar_codigo_assembler(codigo3dir *programa, FILE *out) {
             }
             
             // paso 2: parametros 7+ van al stack (en orden inverso)
-            for (int i = call_actual.count - 1; i >= 6; i--) {
+            for (int i = param_count - 1; i >= 6; i--) {
                 char *src = obtener_ubicacion_operando(params_array[i]);
                 fprintf(out, "    movq %s, %%rax\n", src);
                 fprintf(out, "    pushq %%rax\n");
@@ -448,7 +137,7 @@ void generar_codigo_assembler(codigo3dir *programa, FILE *out) {
             }
             
             // paso 3: parametros 1-6 van a registros
-            for (int i = 0; i < call_actual.count && i < 6; i++) {
+            for (int i = 0; i < param_count && i < 6; i++) {
                 char *src = obtener_ubicacion_operando(params_array[i]);
                 fprintf(out, "    movq %s, %s\n", src, param_regs[i]);
                 free(src);
@@ -476,7 +165,9 @@ void generar_codigo_assembler(codigo3dir *programa, FILE *out) {
             }
 
             // paso 7: limpiar
-            free(params_array);
+            if (params_array != NULL) {
+                free(params_array);
+            }           
             limpiar_params();
         }
         
