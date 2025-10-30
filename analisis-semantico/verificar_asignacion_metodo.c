@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
-#include "../analisis-semantico/semantico.h"
-#include "../utils/manejo_errores.h"
+#include "./semantico.h"
+#include "./manejo_errores.h"
 
 void verificar_asignacion_metodo(nodo *method_call, tabla_simbolos *ts) {
     if (!method_call) return;

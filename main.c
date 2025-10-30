@@ -6,7 +6,7 @@
 #include "arbol-sintactico/arbol.h"
 #include "tabla-simbolos/tabla_simbolos.h"
 #include "analisis-semantico/semantico.h"
-#include "utils/manejo_errores.h"
+#include "analisis-semantico/manejo_errores.h"
 #include "codigo-intermedio/generador.h"
 #include "assembler/assembler.h"
 

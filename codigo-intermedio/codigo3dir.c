@@ -31,7 +31,7 @@ void agregar_instruccion(const char *instruc, info *r, info *a1, info *a2) {
 }
 
 // función auxiliar para imprimir un operando según su tipo
-void imprimir_operando(info *operando, char *buffer, size_t size) {
+static void imprimir_operando(info *operando, char *buffer, size_t size) {
     if (!operando) {
         snprintf(buffer, size, "-");
         return;

@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <string.h>
 #include "semantico.h"
-#include "../utils/manejo_errores.h"
-#include "../utils/verificar_parametros.c"
-#include "../utils/calcular_tipo_expresion.c"
-#include "../utils/verificar_asignacion_metodo.c"
+#include "./manejo_errores.h"
+#include "./verificar_parametros.c"
+#include "./calcular_tipo_expresion.c"
+#include "./verificar_asignacion_metodo.c"
 
 bool es_metodo = true;
 bool es_extern = false;

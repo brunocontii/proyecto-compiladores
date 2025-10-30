@@ -8,7 +8,6 @@ LEX_DIR = lexico_sintactico
 TREE_DIR = arbol-sintactico
 SIMBOLOS_DIR = tabla-simbolos
 SEMANTICO_DIR = analisis-semantico
-UTILS_DIR = utils
 CI_DIR = codigo-intermedio
 
 # Archivos de entrada para Bison y Flex
@@ -23,10 +22,9 @@ YACC_H = $(LEX_DIR)/parser.tab.h
 # Archivos adicionales
 TREE_SRC = $(TREE_DIR)/arbol.c  $(TREE_DIR)/image_ast.c
 SIMBOLOS_SRC = $(SIMBOLOS_DIR)/tabla_simbolos.c
-SEMANTICO_SRC = $(SEMANTICO_DIR)/semantico.c
-UTILS_SRC = $(UTILS_DIR)/manejo_errores.c
-CI_SRC = $(CI_DIR)/generador.c $(CI_DIR)/codigo3dir.c
-ASSEMBLER_SRC = assembler/assembler.c
+SEMANTICO_SRC = $(SEMANTICO_DIR)/semantico.c $(SEMANTICO_DIR)/manejo_errores.c
+CI_SRC = $(CI_DIR)/generador.c $(CI_DIR)/codigo3dir.c $(CI_DIR)/auxiliares.c $(CI_DIR)/parametros.c
+ASSEMBLER_SRC = assembler/assembler.c 
 RUNTIME_DIR = runtime
 RUNTIME_SRC = $(RUNTIME_DIR)/func-extern.c
 
@@ -40,7 +38,7 @@ TEST ?= tests/tests-semantico/test1.ctds
 all: $(TARGET)
 
 # Compilacion
-$(TARGET): $(MAIN_SRC) $(YACC_C) $(LEX_OUT) $(TREE_SRC) $(SIMBOLOS_SRC) $(SEMANTICO_SRC) $(UTILS_SRC) $(CI_SRC) $(ASSEMBLER_SRC)
+$(TARGET): $(MAIN_SRC) $(YACC_C) $(LEX_OUT) $(TREE_SRC) $(SIMBOLOS_SRC) $(SEMANTICO_SRC) $(CI_SRC) $(ASSEMBLER_SRC)
 	$(CC) $(CFLAGS) -o $@ $^ -lfl
 
 $(YACC_C) $(YACC_H): $(YACC_SRC)
