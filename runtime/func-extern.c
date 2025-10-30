@@ -59,6 +59,11 @@ void tds_printf(long long id) {
         case 4: puts("Error: operación inválida"); break;
         case 5: puts("(1) para contunuar, (0) para salir: "); break;
         case 6: puts("Resultado:"); break;
+        case 7: puts("Factorial:"); break;
+        case 8: puts("Pow:"); break;
+        case 9: puts("Sqrt:"); break;
+        case 10: puts("Hipotenusa:"); break;
+        case 11: puts("Fibonacci:"); break;
         default:
             printf("Error: id no conocido\n");
             break;
