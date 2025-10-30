@@ -46,15 +46,20 @@ void limpiar_params(void) {
     call_actual.count = 0;
 }
 
+// obtener cantidad de parametros actuales
 int get_param_count() {
     return call_actual.count;
 }
 
+// obtener array de punteros a parametros
 info** get_params_array(void) {
     if (call_actual.count == 0) return NULL;
     
     info **array = malloc(call_actual.count * sizeof(info*));
-    if (!array) return NULL;
+    if (!array) {
+        fprintf(stderr, "Error: No se pudo asignar memoria para array de parámetros\n");
+        exit(1);
+    }
     
     param_node *actual = call_actual.primero;
     int idx = 0;

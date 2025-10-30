@@ -4,6 +4,51 @@
 
 static metodo_info *metodo_stack = NULL; // stack de metodos (para anidamiento)
 
+// nodo temporal para recoleccion de variables
+typedef struct var_temp_node {
+    const char *nombre;
+    struct var_temp_node *siguiente;
+} var_temp_node;
+
+// estructura para almacenar variables locales, temporales y parametros temporalmente
+typedef struct {
+    var_temp_node *primero;
+    int count;
+} var_temp_list;
+
+// verifica si la variable ya esta en la lista
+static bool variable_en_lista(var_temp_node *lista, const char *nombre) {
+    while (lista != NULL) {
+        if (strcmp(lista->nombre, nombre) == 0) {
+            return true;
+        }
+        lista = lista->siguiente;
+    }
+    return false;
+}
+
+// agrega la variable a la lista si no existe
+static void agregar_variable_unica(var_temp_list *lista, const char *nombre) {
+    if (!variable_en_lista(lista->primero, nombre)) {
+        var_temp_node *nuevo = malloc(sizeof(var_temp_node));
+        nuevo->nombre = nombre;
+        nuevo->siguiente = lista->primero;
+        lista->primero = nuevo;
+        lista->count++;
+    }
+}
+
+// libera la lista temporal
+static void liberar_lista_temporal(var_temp_list *lista) {
+    while (lista->primero != NULL) {
+        var_temp_node *temp = lista->primero;
+        lista->primero = lista->primero->siguiente;
+        free(temp);
+    }
+    lista->count = 0;
+}
+
+// push de un nuevo metodo al stack
 void push_metodo(const char *nombre, tipo_info tipo_ret) {
     metodo_info *nuevo = malloc(sizeof(metodo_info));
     nuevo->nombre = strdup(nombre);
@@ -14,6 +59,7 @@ void push_metodo(const char *nombre, tipo_info tipo_ret) {
     metodo_stack = nuevo;
 }
 
+// pop del metodo actual del stack
 void pop_metodo(void) {
     if (metodo_stack == NULL) return;
     
@@ -31,10 +77,12 @@ void pop_metodo(void) {
     free(temp);
 }
 
+// obtener el metodo actual (tope del stack)
 metodo_info* get_metodo_actual(void) {
     return metodo_stack;
 }
 
+// crear mapeo de variables locales, temporales y parametros a offsets en el stack
 void crear_mapeo_variables_locales(codigo3dir *label) {
     metodo_info *metodo = get_metodo_actual();
     if (!metodo) return;
@@ -47,55 +95,44 @@ void crear_mapeo_variables_locales(codigo3dir *label) {
         free(temp);
     }
     
+    // inicializar lista temporal
+    var_temp_list variables = {.primero = NULL, .count = 0};
     codigo3dir *p = label->siguiente;
-    const char *variables[200];
-    int var_count = 0;
     
     // recolectar variables locales, temporales y parametros
     while (p != NULL && strcmp(p->instruccion, "END") != 0) {
         // ASSIGN y LOAD_PARAM crean variables locales
-        // osea que se trata de la misma manera a las variables que a los parametros
-        if (strcmp(p->instruccion, "ASSIGN") == 0 || strcmp(p->instruccion, "LOAD_PARAM") == 0) {
+        if (strcmp(p->instruccion, "ASSIGN") == 0 || 
+            strcmp(p->instruccion, "LOAD_PARAM") == 0) {
             if (p->resultado && p->resultado->name) {
-                bool found = false;
-                for (int i = 0; i < var_count; i++) {
-                    if (strcmp(variables[i], p->resultado->name) == 0) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    variables[var_count++] = p->resultado->name;
-                }
+                agregar_variable_unica(&variables, p->resultado->name);
             }
         }
 
-        // tambien buscar temporales en otras instrucciones
-        // porque algunos temporales solo aparecen como resultado de operaciones
+        // buscar temporales en resultados de operaciones
         if (p->resultado && p->resultado->esTemporal == 1 && p->resultado->name) {
-            bool found = false;
-            for (int i = 0; i < var_count; i++) {
-                if (strcmp(variables[i], p->resultado->name) == 0) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                variables[var_count++] = p->resultado->name;
-            }
+            agregar_variable_unica(&variables, p->resultado->name);
         }
 
         p = p->siguiente;
     }
     
-    // crear mapeo con offsets
-    for (int i = 0; i < var_count; i++) {
+    // crear mapeo con offsets negativos desde %rbp
+    var_temp_node *actual = variables.primero;
+    int offset_idx = 0;
+    
+    while (actual != NULL) {
         var_offset *nuevo = malloc(sizeof(var_offset));
-        nuevo->nombre = strdup(variables[i]);
-        nuevo->offset = -8 * (i + 1);
+        nuevo->nombre = strdup(actual->nombre);
+        nuevo->offset = -8 * (offset_idx + 1);
         nuevo->siguiente = metodo->mapeo_vars;
         metodo->mapeo_vars = nuevo;
+        
+        offset_idx++;
+        actual = actual->siguiente;
     }
     
-    metodo->num_vars_locales = var_count;
+    metodo->num_vars_locales = variables.count;
+    
+    liberar_lista_temporal(&variables);
 }

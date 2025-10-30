@@ -4,6 +4,7 @@
 
 extern var_global* get_variables_globales(void);
 
+// genera la seccion .data con las variables globales
 void generar_seccion_data(FILE *out) {
     var_global *vars = get_variables_globales();
     if (!vars || !out) return;
@@ -27,6 +28,7 @@ void generar_seccion_data(FILE *out) {
     fprintf(out, "\n");
 }
 
+// genera la seccion .text con el prologo inicial, indicando que la ejecucion comienza en main
 void generar_seccion_text(FILE *out) {
     if (!out) return;
     fprintf(out, "\t.text\n");
@@ -34,6 +36,7 @@ void generar_seccion_text(FILE *out) {
     fprintf(out, "\t.type\tmain, @function\n\n");
 }
 
+// genera el epilogo del archivo ensamblador, cerrando secciones y definiendo tamaño de main
 void generar_epilogo_archivo(FILE *out) {
     if (!out) return;
     fprintf(out, "\n.LFE0:\n");
@@ -41,7 +44,8 @@ void generar_epilogo_archivo(FILE *out) {
     fprintf(out, "\t.section\t.note.GNU-stack,\"\",@progbits\n");
 }
 
-void crear_prologo_metodo(FILE *out, const char *nombre_metodo) {
+// genera el prologo de un metodo, reservando espacio en el stack para variables locales, temporales y parametros
+void generar_prologo_metodo(FILE *out, const char *nombre_metodo) {
     if (!out || !nombre_metodo) return;
     
     metodo_info *metodo = get_metodo_actual();
@@ -53,7 +57,7 @@ void crear_prologo_metodo(FILE *out, const char *nombre_metodo) {
 
     int espacio_total = 8 * metodo->num_vars_locales;
     
-    // Alinear a 16 bytes
+    // alinear a 16 bytes, requerido por la convencion de llamadas
     if (espacio_total % 16 != 0) {
         espacio_total += (16 - (espacio_total % 16));
     }
@@ -63,7 +67,8 @@ void crear_prologo_metodo(FILE *out, const char *nombre_metodo) {
     }
 }
 
-void crear_epilogo_metodo(FILE *out) {
+// genera el epilogo de un metodo, restaurando el stack y retornando
+void generar_epilogo_metodo(FILE *out) {
     if (!out) return;
     fprintf(out, "    movq %%rbp, %%rsp\n");
     fprintf(out, "    popq %%rbp\n");

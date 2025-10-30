@@ -67,7 +67,7 @@ void generar_codigo_assembler(codigo3dir *programa, FILE *out) {
                 printf("LABEL: metodo %s con %d parámetros\n", inst->resultado->name, inst->resultado->num_parametros);
                 
                 crear_mapeo_variables_locales(inst);
-                crear_prologo_metodo(out, inst->resultado->name);
+                generar_prologo_metodo(out, inst->resultado->name);
             } else {
                 // es una etiqueta de control de flujo (L0, L1, etc.)
                 fprintf(out, "%s:\n", inst->resultado->name);
@@ -78,7 +78,7 @@ void generar_codigo_assembler(codigo3dir *programa, FILE *out) {
             metodo_info *metodo = get_metodo_actual();
 
             if (metodo && metodo->tipo_retorno == TIPO_VOID) {
-                crear_epilogo_metodo(out);
+                generar_epilogo_metodo(out);
             }
         
             pop_metodo();
@@ -319,7 +319,7 @@ void generar_codigo_assembler(codigo3dir *programa, FILE *out) {
             // solo generar epilogo si NO es un metodo void
             // los metodos void generan su epilogo en END
             if (metodo && metodo->tipo_retorno != TIPO_VOID) {
-                crear_epilogo_metodo(out);
+                generar_epilogo_metodo(out);
             }
         }
 

@@ -33,7 +33,7 @@ RUNTIME_SRC = $(RUNTIME_DIR)/func-extern.c
 MAIN_SRC = main.c
 
 # Variable para testeo
-TEST ?= tests/tests-semantico/test1.ctds
+TEST ?= tests/tests-semantico/test01.ctds
 
 # Regla principal
 all: $(TARGET)
