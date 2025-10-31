@@ -25,7 +25,7 @@ TREE_SRC = $(TREE_DIR)/arbol.c  $(TREE_DIR)/image_ast.c
 SIMBOLOS_SRC = $(SIMBOLOS_DIR)/tabla_simbolos.c
 SEMANTICO_SRC = $(SEMANTICO_DIR)/semantico.c $(SEMANTICO_DIR)/manejo_errores.c
 CI_SRC = $(CI_DIR)/generador.c $(CI_DIR)/codigo3dir.c $(CI_DIR)/auxiliares.c $(CI_DIR)/parametros.c
-ASSEMBLER_SRC = $(ASSEMBLER_DIR)/assembler.c $(ASSEMBLER_DIR)/metodos.c $(ASSEMBLER_DIR)/parametros.c $(ASSEMBLER_DIR)/secciones.c $(ASSEMBLER_DIR)/variables.c
+ASSEMBLER_SRC = $(ASSEMBLER_DIR)/assembler.c $(ASSEMBLER_DIR)/metodos.c $(ASSEMBLER_DIR)/parametros.c $(ASSEMBLER_DIR)/secciones.c $(ASSEMBLER_DIR)/variables.c $(ASSEMBLER_DIR)/instrucciones.c
 RUNTIME_DIR = runtime
 RUNTIME_SRC = $(RUNTIME_DIR)/func-extern.c
 
