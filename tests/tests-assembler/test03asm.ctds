@@ -1,0 +1,35 @@
+program {
+
+    integer a = 10;
+
+    integer aux(integer t, bool b) {
+        integer x = t;
+        if (b) then{
+            return t;
+        } else {
+            x = x * t;
+            return x;
+        }
+    }
+
+    void auxiliar() {
+        a = a / 2;
+    }
+
+    void print_int(integer x) extern;
+    void print_bool(bool x) extern;
+
+    void main() {
+        bool c = true;
+        integer x = aux(a,c);
+        auxiliar();
+        if (x == 10 && a == 5) then {
+            print_bool(true);
+            print_int(x);
+            print_int(a);
+        } else {
+            print_bool(false);
+            print_int(x);
+        }
+    }
+}

@@ -1,0 +1,41 @@
+program {
+
+    integer GLOBAL_A = 10;
+    bool GLOBAL_FLAG = true;
+    void print_int(integer x) extern;
+    void print_bool(bool x) extern;
+
+    void main() {
+        integer v_add = 5 + 3;          // Resultado: 8
+        integer v_sub = v_add - 1;      // Resultado: 7
+        integer v_mul = v_sub * 2;      // Resultado: 14
+        integer v_div = v_mul / 4;      // Resultado: 3 (División entera)
+        integer v_mod = v_div % 3;      // Resultado: 0
+        integer v_neg = -v_sub;         // Resultado: -7
+
+        bool b_true = GLOBAL_FLAG;      // Resultado: true (1)
+        bool b_false = v_mod == 0;      // Resultado: true (1)
+
+        bool b_and = b_true && b_false; // Resultado: true (1)
+        bool b_or = b_true || false;    // Resultado: true (1)
+
+        bool b_not = !b_and;            // Resultado: false (0)
+        
+        // Comparaciones
+        bool c_eq = v_add == 8;         // Resultado: true (1)
+        bool c_gt = v_mul > v_add;      // Resultado: true (1)
+        bool c_lt = v_sub < 1;          // Resultado: false (0)
+
+        // Asignación final a global para no optimizar la última variable
+        GLOBAL_A = v_div;               // GLOBAL_A = 3
+
+        if (GLOBAL_A == 3) then {
+            print_int(GLOBAL_A);
+            print_bool(true);
+        } else {
+            print_bool(false);
+        }
+
+        return;
+    }
+}

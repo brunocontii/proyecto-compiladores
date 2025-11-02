@@ -1,0 +1,32 @@
+program {
+
+    void print_int(integer x) extern;
+    void print_bool(bool a) extern;
+
+    integer manyParams(integer x, integer y, bool a, bool b, integer z, integer w, bool c, bool d) {
+        integer aux = 0;
+        if (a && b) then {
+            aux = x * y;
+            return aux;
+        } else {
+            if (c || d) then {
+                aux = x * z + y * w;
+                return aux;
+            } else {
+                aux = z * w;
+                return aux;
+            }
+        }
+        return aux;
+    }
+
+    void main() {
+        integer x = manyParams(2,3,false,true,2,4,false,false);
+        if (x == 8) then{
+            print_bool(true);
+            print_int(x);
+        } else {
+            print_bool(false);
+        }
+    }
+}

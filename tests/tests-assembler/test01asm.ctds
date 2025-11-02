@@ -1,0 +1,18 @@
+program {
+
+    void print_int(integer x) extern;
+    void print_bool(bool x) extern;
+
+    void main() {
+
+        integer x = 4;
+        x = x * (-1);
+
+        if (x == (-4)) then {
+            print_bool(true);
+            print_int(x);
+        } else {
+            print_bool(false);
+        }
+    }
+}

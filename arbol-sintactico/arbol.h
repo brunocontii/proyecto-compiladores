@@ -48,12 +48,14 @@ typedef enum {
 
 typedef struct {
     int nro;
+    int esTemporal;         // 1 si es temporal, 0 si es variable normal
+    int num_parametros;
     bool b;
     char *name;
     char *op;
     char *bool_string;
     tipo_info tipo_info;
-    tipo_token tipo_token; 
+    tipo_token tipo_token;
 } info;
 
 

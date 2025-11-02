@@ -1,0 +1,36 @@
+program {
+
+    void tds_printf(integer x) extern;
+    void print_int(integer x) extern;
+    void print_bool(bool x) extern;
+    integer get_int() extern;
+    bool get_bool() extern;
+
+    integer factorial(integer x) {
+
+        if (x < 0) then {
+            return -1;
+        }
+
+        if (x < 2) then {
+            return 1;
+        }
+
+        return x * factorial(x-1);
+    }
+
+    void main() {
+        bool a = true;
+        integer x = 0;
+        integer y = 0;
+
+        while (a) {
+
+            x = get_int();
+            y = factorial(x);
+            tds_printf(6);
+            print_int(y);
+            a = get_bool();
+        }
+    }
+}

@@ -6,8 +6,9 @@
 #include "arbol-sintactico/arbol.h"
 #include "tabla-simbolos/tabla_simbolos.h"
 #include "analisis-semantico/semantico.h"
-#include "utils/manejo_errores.h"
+#include "analisis-semantico/manejo_errores.h"
 #include "codigo-intermedio/generador.h"
+#include "assembler/assembler.h"
 
 #define COLOR_RED     "\033[31m"
 #define COLOR_GREEN   "\033[32m"
@@ -101,7 +102,7 @@ int main(int argc, char *argv[]) {
     inicializar(ts);
 
     // Target por defecto
-    if (!target) target = "codinter";
+    if (!target) target = "assembly";
 
     if (debug) {
         printf("Archivo entrada: %s\n", archivo_entrada);
@@ -175,18 +176,41 @@ int main(int argc, char *argv[]) {
             if (!hay_main) {
                 reportar_error(yylineno, "Error semántico: Falta definir la función main\n");
             }
-            FILE *out = fopen("codigo-intermedio.txt", "w");
-            if (!out) {
-                perror("No se pudo abrir el archivo de salida");
-                exit(1);
-            }
-            codigo_intermedio(raiz, out);
+            codigo_intermedio(raiz);
             imprimir_programa();
-            fclose(out);
         }
     }
     else if (strcmp(target, "assembly") == 0) {
-        printf("Target assembly: pendiente implementar\n");
+        int res = yyparse();
+        fclose(yyin);
+        if (res != 0) {
+            printf(COLOR_RED "Errores de parseo, no se puede continuar.\n" COLOR_RESET);
+            exit(1);
+        }
+
+        if (raiz) {
+            mostrarArbol(raiz, 0);
+            if (!archivo_salida) {
+                archivo_salida = "ctds_arbol";
+            }
+            generateASTDotFile(raiz, archivo_salida);     
+            recorridoSemantico(raiz, ts);
+            if (!hay_main) {
+                reportar_error(yylineno, "Error semántico: Falta definir la función main\n");
+            }
+            codigo_intermedio(raiz);
+            imprimir_programa();
+
+            FILE *out2 = fopen("assembler.s", "w");
+            if (!out2) {
+                perror("No se pudo abrir el archivo de salida");
+                exit(1);
+            }
+
+            // generar assembler desde la lista global 'programa'
+            generar_codigo_assembler(programa_inicio, out2);
+            fclose(out2);
+        }    
     }
     else {
         printf(COLOR_YELLOW "Target desconocido: %s\n" COLOR_RESET , target);

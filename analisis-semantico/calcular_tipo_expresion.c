@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
-#include "../analisis-semantico/semantico.h"
-#include "../utils/manejo_errores.h"
+#include "./semantico.h"
+#include "./manejo_errores.h"
 
 
 tipo_info calcular_tipo_expresion(nodo *expr, tabla_simbolos *ts) {

@@ -1,0 +1,26 @@
+program {
+
+    integer recursion(integer x, integer y, integer z) {
+
+        if (x < 1 || y < 1) then {
+            return 1;
+        }
+        else {
+            z = z + x + y + recursion(x-1,y-1,z);
+        }
+
+        return z;
+    }
+
+    void print_int(integer x) extern;
+    void print_bool(bool a) extern;
+
+    void main() {
+        integer x = recursion(3,4,0);
+        if (x == 16) then{
+            print_bool(true);
+        } else {
+            print_bool(false);
+        }
+    }
+}

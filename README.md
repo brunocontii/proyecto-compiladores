@@ -8,7 +8,7 @@
 | **Generador Código Intermedio** | **Inicio** | Miércoles 01 de Octubre. | `codigo-intermedio` | ✅ Completado |
 |  | **Entrega** | Miércoles 08 de Octubre. | `codigo-intermedio` | ✅ Completado |
 | **Generador Código Objeto** | **Inicio** | Miércoles 08 de Octubre. | `assembler` | ✅ Completado |
-|  | **Entrega Enteros** | Lunes 27 de Octubre. | *(sin iniciar)* | ⬜ Pendiente |
-| **Optimizador** | **Inicio** | Lunes 27 de Octubre. | *(sin iniciar)* | ⬜ Pendiente |
-|  | **Entrega** | Miércoles 12 de Noviembre. | *(sin iniciar)* | ⬜ Pendiente |
+|  | **Entrega** | Lunes 27 de Octubre. | `assembler` | ✅ Completado | |
+| **Optimizador** | **Inicio** | Lunes 27 de Octubre. | `optimizaciones` | ⏳ En curso | |
+|  | **Entrega** | Miércoles 12 de Noviembre. | `optimizaciones` | ⏳ En curso |
 | **Entrega Final** | **Entrega** | Viernes 15 de Noviembre. | *(sin iniciar)* | ⬜ Pendiente |

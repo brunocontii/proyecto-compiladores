@@ -6,7 +6,7 @@
 #include <stdarg.h>
 #include "../arbol-sintactico/arbol.h"
 #include "../tabla-simbolos/tabla_simbolos.h"
-#include "../utils/manejo_errores.h"
+#include "../analisis-semantico/manejo_errores.h"
 
 extern int yylineno;
 void yyerror();

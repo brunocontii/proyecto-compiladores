@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
-#include "../analisis-semantico/semantico.h"
-#include "../utils/manejo_errores.h"
+#include "./semantico.h"
+#include "./manejo_errores.h"
 
 
 int contar_parametros(nodo *params, int tipo_lista) {

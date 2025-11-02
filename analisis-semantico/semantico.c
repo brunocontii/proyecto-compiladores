@@ -1,16 +1,25 @@
 #include <stdio.h>
 #include <string.h>
 #include "semantico.h"
-#include "../utils/manejo_errores.h"
-#include "../utils/verificar_parametros.c"
-#include "../utils/calcular_tipo_expresion.c"
-#include "../utils/verificar_asignacion_metodo.c"
+#include "./manejo_errores.h"
+#include "./verificar_parametros.c"
+#include "./calcular_tipo_expresion.c"
+#include "./verificar_asignacion_metodo.c"
 
-bool es_metodo = true;
+bool es_metodo = false;
 bool es_extern = false;
 bool hay_main = false;
 nodo *raiz_arbol = NULL;
 
+// verifica si una expresion es un literal
+bool es_literal(nodo *expr) {
+    if (!expr || !expr->valor) return false;
+        
+    // literales validos: numeros, true, false
+    return (expr->valor->tipo_token == T_DIGIT ||
+            expr->valor->tipo_token == T_VTRUE ||
+            expr->valor->tipo_token == T_VFALSE);
+}
 
 void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
 
@@ -53,8 +62,18 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
             }
             break;
         case T_VAR_DECL: {
+            bool es_global = !es_metodo;
+            
             // primero verificar la compatibilidad de tipos en la inicializacion
             if (raiz->der) {
+                // si es global, la inicializacion debe ser con literal
+                if (es_global && !es_literal(raiz->der)) {
+                    reportar_error(linea, "Error semantico: Las variables globales solo pueden "
+                                            "inicializarse con valores literales (números, true, false). "
+                                            "Variable '%s'\n", raiz->izq->valor->name);
+                    break;
+                }
+                
                 if (raiz->der->valor->tipo_token == T_METHOD_CALL) {
                     verificar_parametros(raiz->der, raiz_arbol, ts);
                 }
@@ -111,7 +130,7 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
             }
 
             cerrar_scope(ts);
-
+            es_metodo = false;
             break;
         }
         case T_BLOQUE:
@@ -290,4 +309,4 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
             break;
     }
 
-}   
+}
