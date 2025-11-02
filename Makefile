@@ -54,7 +54,7 @@ run: $(TARGET)
 		./$(TARGET) -target assembly $(TEST); \
 		if [ -f assembler.s ]; then \
 			echo "🔧 Generando ejecutable..."; \
-			gcc -no-pie assembler.s $(RUNTIME_SRC) -o prog; \
+			gcc -g assembler.s $(RUNTIME_SRC) -o prog; \
 			echo "🚀 Ejecutando programa:"; \
 			./prog; \
 		else \
