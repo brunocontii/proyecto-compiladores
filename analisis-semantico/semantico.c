@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "semantico.h"
 #include "./manejo_errores.h"
 #include "./verificar_parametros.c"
@@ -11,6 +12,42 @@ bool es_extern = false;
 bool hay_main = false;
 nodo *raiz_arbol = NULL;
 
+// estas 2 estan en auxiliares.h en codigo-intermedio
+
+// crea una nueva constante entera (literal) como info
+info* crear_constante2(int nro) { 
+    info *c = (info*)malloc(sizeof(info));
+    char buf[16];
+    snprintf(buf, sizeof(buf), "%d", nro);
+    c->name = strdup(buf);
+    c->nro = nro;
+    c->esTemporal = 0;
+    c->tipo_info = TIPO_INTEGER;            
+    c->tipo_token = T_DIGIT;                
+    return c;
+}
+
+// crea una nueva constante bool (literal) como info
+info* crear_constante_bool2(bool b) {
+    info *c = (info*)malloc(sizeof(info));
+    
+    if (b) {
+        c->name = strdup("true");
+        c->b = true;
+        c->tipo_token = T_VTRUE;
+    } else {
+        c->name = strdup("false");
+        c->b = false;
+        c->tipo_token = T_VFALSE;
+    }
+    
+    c->nro = b ? 1 : 0;
+    c->esTemporal = 0;
+    c->tipo_info = TIPO_BOOL;
+    
+    return c;
+}
+
 // verifica si una expresion es un literal
 bool es_literal(nodo *expr) {
     if (!expr || !expr->valor) return false;
@@ -19,6 +56,115 @@ bool es_literal(nodo *expr) {
     return (expr->valor->tipo_token == T_DIGIT ||
             expr->valor->tipo_token == T_VTRUE ||
             expr->valor->tipo_token == T_VFALSE);
+}
+
+
+void plegar_constantes(nodo *raiz) {
+
+    if (!raiz || !raiz->valor) return;
+
+    long long resultado_plegado = 0;
+    bool resultado_es_booleano = false;
+    bool pliegue = false;
+    
+    nodo *izq = raiz->izq;
+    nodo *der = raiz->der;
+
+    switch (raiz->valor->tipo_token) {
+
+        // casos unarios, el menos unario y not
+        case T_OP_NOT:
+        case T_OP_MENOS: {
+            if (raiz->izq == NULL && es_literal(der)) {
+                pliegue = true;
+                if (raiz->valor->tipo_token == T_OP_NOT) { // caso not
+                    resultado_es_booleano = true;
+                    bool der_val = der->valor->tipo_token == T_VTRUE;
+                    resultado_plegado = !der_val;
+                } else { // caso menos unario
+                    resultado_plegado = -(der->valor->nro);
+                }
+            }
+            break;
+        }
+
+        case T_OP_MAS:
+        case T_OP_MULT:
+        case T_OP_DIV:
+        case T_OP_RESTO:
+        case T_OP_AND:
+        case T_OP_OR:
+        case T_IGUALDAD:
+        case T_MAYOR:
+        case T_MENOR: {
+            if (!es_literal(izq) || !es_literal(der)) {
+                return;
+            }
+            
+            pliegue = true;
+            
+            long long izq_val = (izq->valor->tipo_token == T_DIGIT) ? izq->valor->nro : (izq->valor->tipo_token == T_VTRUE ? 1 : 0);
+            long long der_val = (der->valor->tipo_token == T_DIGIT) ? der->valor->nro : (der->valor->tipo_token == T_VTRUE ? 1 : 0);
+
+            switch (raiz->valor->tipo_token) {
+                // aritmeticos
+                case T_OP_MAS:    
+                    resultado_plegado = izq_val + der_val; 
+                    break;
+                case T_OP_MENOS:  
+                    resultado_plegado = izq_val - der_val; 
+                    break;
+                case T_OP_MULT:   
+                    resultado_plegado = izq_val * der_val; 
+                    break;
+                case T_OP_DIV:    
+                    resultado_plegado = izq_val / der_val; 
+                    break;
+                case T_OP_RESTO:  
+                    resultado_plegado = izq_val % der_val; 
+                    break;
+
+                // logico y comparativo(mayor,menor,igualdad)
+                case T_OP_AND:    
+                    resultado_plegado = izq_val && der_val; 
+                    resultado_es_booleano = true; 
+                    break;
+                case T_OP_OR:     
+                    resultado_plegado = izq_val || der_val; 
+                    resultado_es_booleano = true; 
+                    break;
+                case T_IGUALDAD:  
+                    resultado_plegado = (izq_val == der_val); 
+                    resultado_es_booleano = true; 
+                    break;
+                case T_MAYOR:     
+                    resultado_plegado = (izq_val > der_val); 
+                    resultado_es_booleano = true; 
+                    break;
+                case T_MENOR:     
+                    resultado_plegado = (izq_val < der_val); 
+                    resultado_es_booleano = true; 
+                    break;
+
+                default: pliegue = false; 
+                return;
+            }
+            break;
+        }
+        default: return;
+    }
+
+    // si se puede plegar xq son dos literales, se crea un nuevo info entero o booleano
+    if (pliegue) {
+        info *nuevo_valor;
+        if (resultado_es_booleano) {
+            nuevo_valor = crear_constante_bool2(resultado_plegado == 1);
+        } else {
+            nuevo_valor = crear_constante2((int)resultado_plegado);
+        }
+        
+        raiz->valor = nuevo_valor;
+    }
 }
 
 void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
@@ -167,6 +313,8 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
 
             recorridoSemantico(raiz->izq, ts);
             recorridoSemantico(raiz->der, ts);
+
+            plegar_constantes(raiz);
             break;
         }
         case T_OP_MENOS: {
@@ -180,6 +328,9 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
                 }
 
                 recorridoSemantico(raiz->der, ts);
+
+                plegar_constantes(raiz);
+
             } else {
                 // Menos binario
                 tipo_info tipo_expr1 = calcular_tipo_expresion(raiz->izq, ts);
@@ -191,6 +342,9 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
                 }
                 recorridoSemantico(raiz->izq, ts);
                 recorridoSemantico(raiz->der, ts);
+                
+                plegar_constantes(raiz);
+
             }
             break;
         }
@@ -206,6 +360,8 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
 
             recorridoSemantico(raiz->izq, ts);
             recorridoSemantico(raiz->der, ts);
+
+            plegar_constantes(raiz);
             break;
         }
         case T_OP_NOT: {
@@ -217,6 +373,8 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
             }
 
             recorridoSemantico(raiz->der, ts);
+
+            plegar_constantes(raiz);
             break;
         }
         case T_MENOR:
@@ -231,6 +389,8 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
 
             recorridoSemantico(raiz->izq, ts);
             recorridoSemantico(raiz->der, ts);
+
+            plegar_constantes(raiz);
             break;
         }
         case T_IGUALDAD: {
@@ -248,6 +408,8 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
 
             recorridoSemantico(raiz->izq, ts);
             recorridoSemantico(raiz->der, ts);
+
+            plegar_constantes(raiz);
             break;
         }
         case T_ID: {
