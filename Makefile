@@ -32,8 +32,15 @@ RUNTIME_SRC = $(RUNTIME_DIR)/func-extern.c
 # Main
 MAIN_SRC = main.c
 
-# Variable para testeo
+# Variables configurables para run
 TEST ?= tests/tests-semantico/test01.ctds
+OPT ?=
+
+# Construir flags de optimización
+OPT_FLAGS =
+ifneq ($(OPT),)
+	OPT_FLAGS = -opt $(OPT)
+endif
 
 # Regla principal
 all: $(TARGET)
@@ -48,39 +55,94 @@ $(YACC_C) $(YACC_H): $(YACC_SRC)
 $(LEX_OUT): $(LEX_SRC) $(YACC_H)
 	cd $(LEX_DIR) && flex lexer.l
 
+# Target run genérico (con soporte de optimizaciones via OPT=)
 run: $(TARGET)
-	@if [ -f "$(TEST)" ]; then \
-		echo "▶️ Compilando: $(TEST)"; \
-		./$(TARGET) -target assembly $(TEST); \
-		if [ -f assembler.s ]; then \
-			echo "🔧 Generando ejecutable..."; \
-			gcc -g assembler.s $(RUNTIME_SRC) -o prog; \
-			echo "🚀 Ejecutando programa:"; \
-			./prog; \
-		else \
-			echo "❌ Error: No se generó assembler.s"; \
-		fi \
-	else \
+	@if [ ! -f "$(TEST)" ]; then \
 		echo "❌ ERROR: El archivo $(TEST) no existe"; \
 		exit 1; \
 	fi
+	@echo "▶️  Compilando: $(TEST)"
+	@if [ -n "$(OPT)" ]; then \
+		echo "🔧 Optimización: $(OPT)"; \
+	fi
+	./$(TARGET) -target assembly $(OPT_FLAGS) $(TEST)
+	@if [ -f assembler.s ]; then \
+		echo "🔧 Generando ejecutable..."; \
+		gcc -g assembler.s $(RUNTIME_SRC) -o prog; \
+		echo "🚀 Ejecutando programa:"; \
+		./prog; \
+	fi
 
-# Ejecutar tests de assembler
+# Shortcuts para cada etapa (SIN optimización por defecto)
+run-lex: $(TARGET)
+	@if [ ! -f "$(TEST)" ]; then \
+		echo "❌ ERROR: El archivo $(TEST) no existe"; \
+		exit 1; \
+	fi
+	@echo "▶️  Análisis Léxico: $(TEST)"
+	./$(TARGET) -target lex $(TEST)
+
+run-parse: $(TARGET)
+	@if [ ! -f "$(TEST)" ]; then \
+		echo "❌ ERROR: El archivo $(TEST) no existe"; \
+		exit 1; \
+	fi
+	@echo "▶️  Análisis Sintáctico: $(TEST)"
+	./$(TARGET) -target parse $(TEST)
+
+run-sem: $(TARGET)
+	@if [ ! -f "$(TEST)" ]; then \
+		echo "❌ ERROR: El archivo $(TEST) no existe"; \
+		exit 1; \
+	fi
+	@echo "▶️  Análisis Semántico: $(TEST)"
+	@if [ -n "$(OPT)" ]; then \
+		echo "🔧 Optimización: $(OPT)"; \
+	fi
+	./$(TARGET) -target sem $(OPT_FLAGS) $(TEST)
+
+run-ci: $(TARGET)
+	@if [ ! -f "$(TEST)" ]; then \
+		echo "❌ ERROR: El archivo $(TEST) no existe"; \
+		exit 1; \
+	fi
+	@echo "▶️  Código Intermedio: $(TEST)"
+	@if [ -n "$(OPT)" ]; then \
+		echo "🔧 Optimización: $(OPT)"; \
+	fi
+	./$(TARGET) -target codinter $(OPT_FLAGS) $(TEST)
+
+run-asm: $(TARGET)
+	@if [ ! -f "$(TEST)" ]; then \
+		echo "❌ ERROR: El archivo $(TEST) no existe"; \
+		exit 1; \
+	fi
+	@echo "▶️  Assembler: $(TEST)"
+	@if [ -n "$(OPT)" ]; then \
+		echo "🔧 Optimización: $(OPT)"; \
+	fi
+	./$(TARGET) -target assembly $(OPT_FLAGS) $(TEST)
+	@if [ -f assembler.s ]; then \
+		echo "🔧 Generando ejecutable..."; \
+		gcc -g assembler.s $(RUNTIME_SRC) -o prog; \
+		echo "🚀 Ejecutando programa:"; \
+		./prog; \
+	fi
+
+# Tests
 test-assembler: $(TARGET)
-	@echo "\nEJECUTANDO TESTS DE ASSEMBLER"
-	@echo ""
+	@echo "=== EJECUTANDO TESTS ASSEMBLER ==="
 	@passed=0; failed=0; total=0; \
 	for test in tests/tests-assembler/*.ctds; do \
 		if [ -f "$$test" ]; then \
 			total=$$((total + 1)); \
 			basename_test=$$(basename "$$test"); \
-			printf "📋 Test %2d: %-35s " "$$total" "$$basename_test"; \
 			\
 			./$(TARGET) -target assembly "$$test" > /tmp/compiler_output.txt 2>&1; \
 			compile_exit=$$?; \
 			\
 			if [ $$compile_exit -ne 0 ] || [ ! -f assembler.s ]; then \
-				printf "\033[31m❌ ERROR DE COMPILACIÓN\033[0m\n"; \
+				printf "\033[31m📋 Test %2d: %-35s ❌ ERROR DE COMPILACIÓN\033[0m\n" "$$total" "$$basename_test"; \
 				echo "   └─ Error del compilador:"; \
 				cat /tmp/compiler_output.txt | sed 's/^/      /'; \
 				failed=$$((failed + 1)); \
@@ -91,7 +153,7 @@ test-assembler: $(TARGET)
 			gcc_exit=$$?; \
 			\
 			if [ $$gcc_exit -ne 0 ]; then \
-				printf "\033[31m❌ ERROR EN GCC\033[0m\n"; \
+				printf "\033[31m📋 Test %2d: %-35s ❌ ERROR EN GCC\033[0m\n" "$$total" "$$basename_test"; \
 				echo "   └─ Error de ensamblado:"; \
 				cat /tmp/gcc_output.txt | sed 's/^/      /'; \
 				failed=$$((failed + 1)); \
@@ -103,19 +165,19 @@ test-assembler: $(TARGET)
 			run_exit=$$?; \
 			\
 			if [ $$run_exit -ne 0 ]; then \
-				printf "\033[31m❌ ERROR EN EJECUCIÓN\033[0m\n"; \
+				printf "\033[31m📋 Test %2d: %-35s ❌ ERROR EN EJECUCIÓN\033[0m\n" "$$total" "$$basename_test"; \
 				echo "   └─ Código de salida: $$run_exit"; \
 				echo "   └─ Salida: $$output"; \
 				failed=$$((failed + 1)); \
 			elif echo "$$output" | grep -q "^1$$"; then \
-				printf "\033[32m✅ PASÓ\033[0m\n"; \
+				printf "\033[32m📋 Test %2d: %-35s ✅ PASÓ\033[0m\n" "$$total" "$$basename_test"; \
 				passed=$$((passed + 1)); \
 			elif echo "$$output" | grep -q "^0$$"; then \
-				printf "\033[31m❌ FALLÓ (test retornó false)\033[0m\n"; \
+				printf "\033[31m📋 Test %2d: %-35s ❌ FALLÓ (test retornó false)\033[0m\n" "$$total" "$$basename_test"; \
 				echo "   └─ El programa indicó que el test falló"; \
 				failed=$$((failed + 1)); \
 			else \
-				printf "\033[33m⚠️  SALIDA INESPERADA\033[0m\n"; \
+				printf "\033[33m📋 Test %2d: %-35s ⚠️  SALIDA INESPERADA\033[0m\n" "$$total" "$$basename_test"; \
 				echo "   └─ Esperado: 1 (true)"; \
 				echo "   └─ Obtenido: $$output"; \
 				failed=$$((failed + 1)); \
@@ -209,8 +271,40 @@ test-semantico: $(TARGET)
 	echo "\033[32m✅ Pasaron: $$passed\033[0m"; \
 	echo "\033[31m❌ Fallaron: $$failed\033[0m"
 
+# Ayuda
+help:
+	@echo "Comandos disponibles del Makefile:"
+	@echo ""
+	@echo ">> Compilación:"
+	@echo "  make                    - Compilar el compilador"
+	@echo "  make clean              - Limpiar archivos generados"
+	@echo ""
+	@echo ">> Ejecución por etapa (sin optimización por defecto):"
+	@echo "  make run-lex   TEST=<archivo>           - Análisis léxico"
+	@echo "  make run-parse TEST=<archivo>           - Análisis sintáctico"
+	@echo "  make run-sem   TEST=<archivo> [OPT=<opt>] - Análisis semántico"
+	@echo "  make run-ci    TEST=<archivo> [OPT=<opt>] - Código intermedio"
+	@echo "  make run-asm   TEST=<archivo> [OPT=<opt>] - Assembler + ejecutar"
+	@echo "  make run       TEST=<archivo> [OPT=<opt>] - Igual que run-asm"
+	@echo ""
+	@echo ">> Tests (sin optimización):"
+	@echo "  make test-all           - Ejecutar todos los tests"
+	@echo "  make test-sintactico    - Tests sintácticos"
+	@echo "  make test-semantico     - Tests semánticos"
+	@echo "  make test-assembler     - Tests de assembler"
+	@echo ""
+	@echo ">> Optimizaciones disponibles:"
+	@echo "  OPT=prop-constantes     - Propagación de constantes"
+	@echo ""
+	@echo ">> Ejemplos:"
+	@echo "  make run-asm TEST=tests/tests-assembler/test01asm.ctds"
+	@echo "  make run-asm TEST=tests/tests-assembler/test01asm.ctds OPT=prop-constantes"
+	@echo "  make run-ci TEST=tests/tests-assembler/test02asm.ctds OPT=prop-constantes"
+	@echo "  make run-sem TEST=tests/tests-semantico/test03.ctds"
+
 # Limpiar archivos generados
 clean:
 	rm -f $(TARGET) $(LEX_OUT) $(YACC_C) $(YACC_H) *.dot *.png *.txt *.s prog assembler.s
 
-.PHONY: all run clean test-all test-sintactico test-semantico
+.PHONY: all run run-lex run-parse run-sem run-ci run-asm \
+		clean test-all test-sintactico test-semantico test-assembler help

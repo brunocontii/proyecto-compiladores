@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "arbol-sintactico/arbol.h"
 #include "tabla-simbolos/tabla_simbolos.h"
@@ -13,6 +14,7 @@
 #define COLOR_RED     "\033[31m"
 #define COLOR_GREEN   "\033[32m"
 #define COLOR_YELLOW  "\033[33m"
+#define COLOR_CYAN    "\033[36m"
 #define COLOR_RESET   "\033[0m"
 
 extern FILE* yyin;              // puntero de entrada para el lexer
@@ -26,24 +28,28 @@ extern bool hay_main;           // indica si se encontró la función main
 char* archivo_entrada = NULL;
 char* archivo_salida = NULL;
 char* target = NULL;
-char* optimizacion = NULL;
 int debug = 0;
+bool opt_constant_folding = false;
 
 // Función para mostrar uso
 void opciones() {
     printf("Uso: c-tds [opcion] archivo.ctds\n");
     printf("Opciones:\n");
-    printf("  -o <salida>       Archivo de salida\n");
-    printf("  -target <etapa>   Etapa de compilacion: lex, parse, sem, codinter, assembly\n");
-    printf("  -opt [optimizacion]  Lista de optimizaciones (solo futuro)\n");
-    printf("  -debug            Imprimir info de debug\n");
+    printf("  -o <salida>          Archivo de salida\n");
+    printf("  -target <etapa>      Etapa de compilacion: lex, parse, sem, codinter, assembly\n");
+    printf("  -opt <optimizacion>  Habilitar optimización:\n");
+    printf("                         prop-constantes  - Propagación de constantes\n");
+    printf("  -debug               Imprimir info de debug\n");
+    printf("\nEjemplos:\n");
+    printf("  ./c-tds -target assembly tests/test01.ctds\n");
+    printf("  ./c-tds -target assembly -opt prop-constantes tests/test02.ctds\n");
 }
 
 // Función auxiliar para recorrer solo el lexer
 void lexer_loop() {
     int tok;
     while ((tok = yylex()) != 0) {
-        printf("TOKEN: %d\n", tok);  // podrías mostrar token como string si tienes función de mapeo
+        printf("TOKEN: %d\n", tok);
     }
 }
 
@@ -52,6 +58,8 @@ int main(int argc, char *argv[]) {
         opciones();
         return 1;
     }
+
+    opt_constant_folding = false;
 
     // --- Parseo de opciones ---
     int i = 1;
@@ -62,10 +70,36 @@ int main(int argc, char *argv[]) {
         } else if (strcmp(argv[i], "-target") == 0) {
             target = argv[i+1];
             i += 2;
-        } else if (strcmp(argv[i], "-opt") == 0) {
-            optimizacion = argv[i+1];
-            i += 2;
-        } else if (strcmp(argv[i], "-debug") == 0) {
+        } 
+        else if (strcmp(argv[i], "-opt") == 0) {
+            if (i + 1 >= argc) {
+                fprintf(stderr, COLOR_RED "Error: -opt requiere un argumento\n" COLOR_RESET);
+                opciones();
+                return 1;
+            }
+            i++;
+            
+            bool opt_reconocida = false;
+            
+            if (strcmp(argv[i], "prop-constantes") == 0) {
+                opt_constant_folding = true;
+                opt_reconocida = true;
+                printf(COLOR_CYAN "🔧 Optimización habilitada: Propagación de Constantes\n" COLOR_RESET);
+            }
+            // aca irian mas casos del if con las optimizaciones que hagamos mas adelante, por ej:
+            // else if (strcmp(argv[i], "codigo-muerto") == 0) { ... }
+            
+            if (!opt_reconocida) {
+                fprintf(stderr, COLOR_RED "Error: optimización desconocida '%s'\n" COLOR_RESET, argv[i]);
+                fprintf(stderr, "\nOptimizaciones disponibles:\n");
+                fprintf(stderr, "  prop-constantes  - Propagación de constantes en tiempo de compilación\n");
+                fprintf(stderr, "\nEjemplo: ./c-tds -target assembly -opt prop-constantes test.ctds\n");
+                return 1;
+            }
+            
+            i++;
+        }
+        else if (strcmp(argv[i], "-debug") == 0) {
             debug = 1;
             i += 1;
         } else {
@@ -108,9 +142,10 @@ int main(int argc, char *argv[]) {
         printf("Archivo entrada: %s\n", archivo_entrada);
         if (archivo_salida) printf("Archivo salida: %s\n", archivo_salida);
         printf("Target: %s\n", target);
-        if (optimizacion) printf("Optimizacion: %s\n", optimizacion);
+        printf("Constant Folding: %s\n", opt_constant_folding ? "SI" : "NO");
         printf("Debug activado\n");
     }
+
     // -----------------------------
     // Lógica según target
     // -----------------------------

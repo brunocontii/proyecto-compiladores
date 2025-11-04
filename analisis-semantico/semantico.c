@@ -314,7 +314,9 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
             recorridoSemantico(raiz->izq, ts);
             recorridoSemantico(raiz->der, ts);
 
-            plegar_constantes(raiz);
+            if (opt_constant_folding) {
+                plegar_constantes(raiz);
+            }
             break;
         }
         case T_OP_MENOS: {
@@ -329,7 +331,9 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
 
                 recorridoSemantico(raiz->der, ts);
 
-                plegar_constantes(raiz);
+                if (opt_constant_folding) {
+                    plegar_constantes(raiz);
+                }
 
             } else {
                 // Menos binario
@@ -343,8 +347,9 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
                 recorridoSemantico(raiz->izq, ts);
                 recorridoSemantico(raiz->der, ts);
                 
-                plegar_constantes(raiz);
-
+                if (opt_constant_folding) {
+                    plegar_constantes(raiz);
+                }
             }
             break;
         }
@@ -361,7 +366,9 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
             recorridoSemantico(raiz->izq, ts);
             recorridoSemantico(raiz->der, ts);
 
-            plegar_constantes(raiz);
+            if (opt_constant_folding) {
+                plegar_constantes(raiz);
+            }
             break;
         }
         case T_OP_NOT: {
@@ -374,7 +381,9 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
 
             recorridoSemantico(raiz->der, ts);
 
-            plegar_constantes(raiz);
+            if (opt_constant_folding) {
+                plegar_constantes(raiz);
+            }
             break;
         }
         case T_MENOR:
@@ -390,7 +399,9 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
             recorridoSemantico(raiz->izq, ts);
             recorridoSemantico(raiz->der, ts);
 
-            plegar_constantes(raiz);
+            if (opt_constant_folding) {
+                plegar_constantes(raiz);
+            }
             break;
         }
         case T_IGUALDAD: {
@@ -409,7 +420,9 @@ void recorridoSemantico(nodo *raiz, tabla_simbolos *ts){
             recorridoSemantico(raiz->izq, ts);
             recorridoSemantico(raiz->der, ts);
 
-            plegar_constantes(raiz);
+            if (opt_constant_folding) {
+                plegar_constantes(raiz);
+            }
             break;
         }
         case T_ID: {

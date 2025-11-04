@@ -4,6 +4,8 @@
 #include "../arbol-sintactico/arbol.h"
 #include "../tabla-simbolos/tabla_simbolos.h"
 
+extern bool opt_constant_folding;
+
 void recorridoSemantico(nodo *raiz, tabla_simbolos *ts);
 tipo_info calcular_tipo_expresion(nodo *expr, tabla_simbolos *ts);
 tipo_info retorno_bloque(nodo *bloque, tabla_simbolos *ts);
