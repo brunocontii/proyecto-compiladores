@@ -383,6 +383,11 @@ void codigo_intermedio(nodo *raiz) {
             ultimo_temp = -1;
             break;
         }
+        case T_STATEMENTS:
+            // procesar lista de statements
+            if (raiz->izq) codigo_intermedio(raiz->izq);
+            if (raiz->der) codigo_intermedio(raiz->der);
+            break;
         default:
             // casos como el extern y los parametros ya se manejan en sus nodos padres
             codigo_intermedio(raiz->izq);

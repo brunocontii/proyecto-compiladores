@@ -51,6 +51,7 @@ typedef struct {
     int esTemporal;         // 1 si es temporal, 0 si es variable normal
     int num_parametros;
     bool b;
+    bool se_usa;          // para analisis de codigo muerto
     char *name;
     char *op;
     char *bool_string;
