@@ -13,6 +13,12 @@ void caso_condicional(nodo *hijo) {
     caso_condicional(hijo->der);
 }
 
+int contar_nodos(nodo *raiz) {
+    if (raiz == NULL) return 0;
+
+    return 1 + contar_nodos(raiz->izq) + contar_nodos(raiz->med) + contar_nodos(raiz->der);
+}
+
 void recorrer_y_marcar(nodo *raiz) {
     if (raiz == NULL) return;
 
@@ -70,4 +76,59 @@ void recorrer_y_marcar(nodo *raiz) {
             recorrer_y_marcar(raiz->der);
             break;
     }
+}
+
+void recorrer_y_podar(nodo *raiz) {
+    if (raiz == NULL) return;
+
+    switch (raiz->valor->tipo_token) {
+        case T_VAR_DECLS:
+            nodo* hijoIzq = raiz->izq;
+            nodo* hijoDer = raiz->der;
+
+            if (hijoIzq->izq && hijoIzq->izq->valor->tipo_token == T_ID) {
+                if (hijoIzq->izq->valor->se_usa == false) {
+                    // Podar el nodo de declaración de variable no usada
+                    raiz->izq = NULL;
+                    liberarArbol(hijoIzq);
+                }
+            }
+            if (hijoDer->izq && hijoDer->izq->valor->tipo_token == T_ID) {
+                if (hijoDer->izq->valor->se_usa == false) {
+                    // Podar el nodo de declaración de variable no usada
+                    raiz->der = NULL;
+                    liberarArbol(hijoDer);
+                }
+            }
+            break;
+        case T_STATEMENTS:
+            nodo* hijo = raiz->der;
+            if (hijo->valor->tipo_token == T_ASIGNACION) {
+                if (hijo->izq->valor->se_usa == false) {
+                    // Podar el nodo de asignación a variable no usada
+                    raiz->der = NULL;
+                    liberarArbol(hijo);
+                }
+            }
+            break;
+        default:
+            recorrer_y_marcar(raiz->izq);
+            recorrer_y_marcar(raiz->der);
+            break;
+    }
+}
+
+void codigo_muerto_var(nodo *raiz) {
+    if (raiz == NULL) return;
+
+    int pre_poda = contar_nodos(raiz);
+    int post_poda = pre_poda + 1;
+    while (post_poda < pre_poda) {
+        recorrer_y_marcar(raiz);
+        recorrer_y_podar(raiz);
+        pre_poda = post_poda;
+        post_poda = contar_nodos(raiz);
+    }
+
+    return;
 }
