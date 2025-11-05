@@ -10,6 +10,7 @@
 #include "analisis-semantico/manejo_errores.h"
 #include "codigo-intermedio/generador.h"
 #include "assembler/assembler.h"
+#include "optimizaciones/optimizaciones.h"
 
 #define COLOR_RED     "\033[31m"
 #define COLOR_GREEN   "\033[32m"
@@ -191,6 +192,7 @@ int main(int argc, char *argv[]) {
             if (!hay_main) {
                 reportar_error(yylineno, "Error semántico: Falta definir la función main\n");
             }
+            aplicar_optimizaciones(raiz);
         }
     }
     else if (strcmp(target, "codinter") == 0) {
@@ -211,6 +213,7 @@ int main(int argc, char *argv[]) {
             if (!hay_main) {
                 reportar_error(yylineno, "Error semántico: Falta definir la función main\n");
             }
+            aplicar_optimizaciones(raiz);
             codigo_intermedio(raiz);
             imprimir_programa();
         }
@@ -233,6 +236,7 @@ int main(int argc, char *argv[]) {
             if (!hay_main) {
                 reportar_error(yylineno, "Error semántico: Falta definir la función main\n");
             }
+            aplicar_optimizaciones(raiz);
             codigo_intermedio(raiz);
             imprimir_programa();
 

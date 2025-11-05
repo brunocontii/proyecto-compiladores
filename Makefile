@@ -10,6 +10,7 @@ SIMBOLOS_DIR = tabla-simbolos
 SEMANTICO_DIR = analisis-semantico
 CI_DIR = codigo-intermedio
 ASSEMBLER_DIR = assembler
+OPT_DIR = optimizaciones
 
 # Archivos de entrada para Bison y Flex
 LEX_SRC = $(LEX_DIR)/lexer.l
@@ -28,6 +29,7 @@ CI_SRC = $(CI_DIR)/generador.c $(CI_DIR)/codigo3dir.c $(CI_DIR)/auxiliares.c $(C
 ASSEMBLER_SRC = $(ASSEMBLER_DIR)/assembler.c $(ASSEMBLER_DIR)/metodos.c $(ASSEMBLER_DIR)/parametros.c $(ASSEMBLER_DIR)/secciones.c $(ASSEMBLER_DIR)/variables.c $(ASSEMBLER_DIR)/instrucciones.c
 RUNTIME_DIR = runtime
 RUNTIME_SRC = $(RUNTIME_DIR)/func-extern.c
+OPTIMIZACIONES_SRC = $(OPT_DIR)/optimizaciones.c
 
 # Main
 MAIN_SRC = main.c
@@ -46,7 +48,7 @@ endif
 all: $(TARGET)
 
 # Compilacion
-$(TARGET): $(MAIN_SRC) $(YACC_C) $(LEX_OUT) $(TREE_SRC) $(SIMBOLOS_SRC) $(SEMANTICO_SRC) $(CI_SRC) $(ASSEMBLER_SRC)
+$(TARGET): $(MAIN_SRC) $(YACC_C) $(LEX_OUT) $(TREE_SRC) $(SIMBOLOS_SRC) $(SEMANTICO_SRC) $(CI_SRC) $(ASSEMBLER_SRC) $(OPTIMIZACIONES_SRC)
 	$(CC) $(CFLAGS) -o $@ $^ -lfl
 
 $(YACC_C) $(YACC_H): $(YACC_SRC)
