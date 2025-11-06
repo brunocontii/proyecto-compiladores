@@ -1,0 +1,25 @@
+program {
+
+    void print_int(integer x) extern;
+    
+    void main() {
+        integer a = 0;
+        integer b = 0;
+        integer c = 0;
+        
+        a = 5;
+        b = 1;
+        c = a + 1;
+        
+        /*
+        * "c" no se usa por lo tanto debería ser eliminada
+        * al eliminar la variable "c", "a" ya no es usada, por
+        * lo tanto debería ser eliminada en la segunda pasada.
+        * También en la segunda pasada se debería eliminar la
+        * declaración de la variable "c" y en la tercera pasada
+        * la declaración de la variable "a".
+        */
+        
+        print_int(b);
+    }
+}
