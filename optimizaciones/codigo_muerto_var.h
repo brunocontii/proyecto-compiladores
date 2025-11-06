@@ -8,5 +8,6 @@
 
 void recorrer_y_marcar(nodo *raiz);
 void recorrer_y_podar(nodo *raiz);
+void codigo_muerto_var(nodo * raiz);
 
 #endif

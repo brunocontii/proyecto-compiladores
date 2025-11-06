@@ -27,9 +27,9 @@ SIMBOLOS_SRC = $(SIMBOLOS_DIR)/tabla_simbolos.c
 SEMANTICO_SRC = $(SEMANTICO_DIR)/semantico.c $(SEMANTICO_DIR)/manejo_errores.c
 CI_SRC = $(CI_DIR)/generador.c $(CI_DIR)/codigo3dir.c $(CI_DIR)/auxiliares.c $(CI_DIR)/parametros.c
 ASSEMBLER_SRC = $(ASSEMBLER_DIR)/assembler.c $(ASSEMBLER_DIR)/metodos.c $(ASSEMBLER_DIR)/parametros.c $(ASSEMBLER_DIR)/secciones.c $(ASSEMBLER_DIR)/variables.c $(ASSEMBLER_DIR)/instrucciones.c
+OPTIMIZACIONES_SRC = $(OPT_DIR)/optimizaciones.c $(OPT_DIR)/codigo_muerto_var.c
 RUNTIME_DIR = runtime
 RUNTIME_SRC = $(RUNTIME_DIR)/func-extern.c
-OPTIMIZACIONES_SRC = $(OPT_DIR)/optimizaciones.c
 
 # Main
 MAIN_SRC = main.c
@@ -38,10 +38,15 @@ MAIN_SRC = main.c
 TEST ?= tests/tests-semantico/test01.ctds
 OPT ?=
 
-# Construir flags de optimización
+# Construir flags de optimización (soporta múltiples, separadas por comas)
 OPT_FLAGS =
 ifneq ($(OPT),)
-	OPT_FLAGS = -opt $(OPT)
+	# Convertir comas en espacios y crear -opt para cada una
+	COMMA := ,
+	EMPTY :=
+	SPACE := $(EMPTY) $(EMPTY)
+	OPT_LIST := $(subst $(COMMA),$(SPACE),$(OPT))
+	OPT_FLAGS := $(foreach opt,$(OPT_LIST),-opt $(opt))
 endif
 
 # Regla principal
@@ -57,7 +62,7 @@ $(YACC_C) $(YACC_H): $(YACC_SRC)
 $(LEX_OUT): $(LEX_SRC) $(YACC_H)
 	cd $(LEX_DIR) && flex lexer.l
 
-# Target run genérico (con soporte de optimizaciones via OPT=)
+# Target run genérico
 run: $(TARGET)
 	@if [ ! -f "$(TEST)" ]; then \
 		echo "❌ ERROR: El archivo $(TEST) no existe"; \
@@ -65,7 +70,7 @@ run: $(TARGET)
 	fi
 	@echo "▶️  Compilando: $(TEST)"
 	@if [ -n "$(OPT)" ]; then \
-		echo "🔧 Optimización: $(OPT)"; \
+		echo "🔧 Optimizaciones: $(OPT)"; \
 	fi
 	./$(TARGET) -target assembly $(OPT_FLAGS) $(TEST)
 	@if [ -f assembler.s ]; then \
@@ -99,7 +104,7 @@ run-sem: $(TARGET)
 	fi
 	@echo "▶️  Análisis Semántico: $(TEST)"
 	@if [ -n "$(OPT)" ]; then \
-		echo "🔧 Optimización: $(OPT)"; \
+		echo "🔧 Optimizaciones: $(OPT)"; \
 	fi
 	./$(TARGET) -target sem $(OPT_FLAGS) $(TEST)
 
@@ -110,7 +115,7 @@ run-ci: $(TARGET)
 	fi
 	@echo "▶️  Código Intermedio: $(TEST)"
 	@if [ -n "$(OPT)" ]; then \
-		echo "🔧 Optimización: $(OPT)"; \
+		echo "🔧 Optimizaciones: $(OPT)"; \
 	fi
 	./$(TARGET) -target codinter $(OPT_FLAGS) $(TEST)
 
@@ -121,7 +126,7 @@ run-asm: $(TARGET)
 	fi
 	@echo "▶️  Assembler: $(TEST)"
 	@if [ -n "$(OPT)" ]; then \
-		echo "🔧 Optimización: $(OPT)"; \
+		echo "🔧 Optimizaciones: $(OPT)"; \
 	fi
 	./$(TARGET) -target assembly $(OPT_FLAGS) $(TEST)
 	@if [ -f assembler.s ]; then \
@@ -297,11 +302,13 @@ help:
 	@echo ""
 	@echo ">> Optimizaciones disponibles:"
 	@echo "  OPT=prop-constantes     - Propagación de constantes"
+	@echo "  OPT=var-muertas         - Eliminación de variables no usadas"
 	@echo ""
 	@echo ">> Ejemplos:"
 	@echo "  make run-asm TEST=tests/tests-assembler/test01asm.ctds"
 	@echo "  make run-asm TEST=tests/tests-assembler/test01asm.ctds OPT=prop-constantes"
-	@echo "  make run-ci TEST=tests/tests-assembler/test02asm.ctds OPT=prop-constantes"
+	@echo "  make run-asm TEST=tests/test.ctds OPT=var-muertas"
+	@echo "  make run-ci TEST=tests/tests-assembler/test02asm.ctds OPT=prop-constantes, var-muertas"
 	@echo "  make run-sem TEST=tests/tests-semantico/test03.ctds"
 
 # Limpiar archivos generados

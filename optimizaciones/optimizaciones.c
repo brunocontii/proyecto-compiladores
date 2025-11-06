@@ -3,11 +3,13 @@
 #include <stdbool.h>
 #include <string.h>
 #include "optimizaciones.h"
+#include "codigo_muerto_var.h"
 #include "../analisis-semantico/semantico.h"
 #include "../codigo-intermedio/auxiliares.h"
 
 // variable externa para saber si la optimizacion fue activada
 extern bool opt_constant_folding;
+extern bool opt_codigo_muerto_var;
 
 // crear constante booleana. el crear constante de enteros ya existe en auxiliares.c
 static info* crear_constante_bool(bool b) {
@@ -165,6 +167,10 @@ void aplicar_optimizaciones(nodo *raiz) {
 
     if (opt_constant_folding) {
         propagacion_constantes(raiz);
+    }
+
+    if (opt_codigo_muerto_var) {
+        codigo_muerto_var(raiz);
     }
 
     // aca irian mas optimizaciones en el futuro, ej

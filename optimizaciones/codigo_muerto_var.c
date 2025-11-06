@@ -28,7 +28,7 @@ void recorrer_y_marcar(nodo *raiz) {
                 raiz->izq->valor->se_usa = false; // inicialmente no se usa
             }
             break;
-        case T_STATEMENTS:
+        case T_STATEMENTS:{
             nodo* hijo = raiz->der;
             if (hijo->valor->tipo_token == T_ASIGNACION) {
                 nodo* aux = hijo->der;
@@ -55,7 +55,8 @@ void recorrer_y_marcar(nodo *raiz) {
                 caso_condicional(aux);
             }
             break;
-        case T_METHOD_CALL:
+        }
+        case T_METHOD_CALL:{
             nodo* hijo = raiz->der;
             if (hijo->valor->tipo_token == T_ID) {
                 hijo->valor->se_usa = true; // se usa en la llamada al método
@@ -70,6 +71,7 @@ void recorrer_y_marcar(nodo *raiz) {
                 hijo->valor->se_usa = true; // se usa en la llamada al método
             }
             break;
+        }
         default:
             recorrer_y_marcar(raiz->izq);
             recorrer_y_marcar(raiz->med);

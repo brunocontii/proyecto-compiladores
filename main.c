@@ -31,6 +31,7 @@ char* archivo_salida = NULL;
 char* target = NULL;
 int debug = 0;
 bool opt_constant_folding = false;
+bool opt_codigo_muerto_var = false;
 
 // Función para mostrar uso
 void opciones() {
@@ -40,10 +41,13 @@ void opciones() {
     printf("  -target <etapa>      Etapa de compilacion: lex, parse, sem, codinter, assembly\n");
     printf("  -opt <optimizacion>  Habilitar optimización:\n");
     printf("                         prop-constantes  - Propagación de constantes\n");
+    printf("                         var-muertas      - Eliminación de variables no usadas\n");
     printf("  -debug               Imprimir info de debug\n");
     printf("\nEjemplos:\n");
     printf("  ./c-tds -target assembly tests/test01.ctds\n");
     printf("  ./c-tds -target assembly -opt prop-constantes tests/test02.ctds\n");
+    printf("  ./c-tds -target assembly -opt var-muertas tests/test03.ctds\n");
+    printf("  ./c-tds -target assembly -opt prop-constantes -opt var-muertas tests/test04.ctds\n");
 }
 
 // Función auxiliar para recorrer solo el lexer
@@ -61,6 +65,7 @@ int main(int argc, char *argv[]) {
     }
 
     opt_constant_folding = false;
+    opt_codigo_muerto_var = false;
 
     // --- Parseo de opciones ---
     int i = 1;
@@ -87,13 +92,18 @@ int main(int argc, char *argv[]) {
                 opt_reconocida = true;
                 printf(COLOR_CYAN "🔧 Optimización habilitada: Propagación de Constantes\n" COLOR_RESET);
             }
-            // aca irian mas casos del if con las optimizaciones que hagamos mas adelante, por ej:
-            // else if (strcmp(argv[i], "codigo-muerto") == 0) { ... }
+            
+            else if (strcmp(argv[i], "var-muertas") == 0) {
+                opt_codigo_muerto_var = true;
+                opt_reconocida = true;
+                printf(COLOR_CYAN "🔧 Optimización habilitada: Eliminación de Variables Muertas\n" COLOR_RESET);
+            }
             
             if (!opt_reconocida) {
                 fprintf(stderr, COLOR_RED "Error: optimización desconocida '%s'\n" COLOR_RESET, argv[i]);
                 fprintf(stderr, "\nOptimizaciones disponibles:\n");
                 fprintf(stderr, "  prop-constantes  - Propagación de constantes en tiempo de compilación\n");
+                fprintf(stderr, "  var-muertas      - Eliminación de variables no usadas\n");
                 fprintf(stderr, "\nEjemplo: ./c-tds -target assembly -opt prop-constantes test.ctds\n");
                 return 1;
             }

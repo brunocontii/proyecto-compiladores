@@ -10,4 +10,7 @@ void aplicar_optimizaciones(nodo *raiz);
 // propagacion de constantes
 void propagacion_constantes(nodo *raiz);
 
+// eliminacion de codigo muerto
+void codigo_muerto_var(nodo * raiz);
+
 #endif
