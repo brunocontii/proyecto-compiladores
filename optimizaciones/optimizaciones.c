@@ -4,12 +4,14 @@
 #include <string.h>
 #include "optimizaciones.h"
 #include "codigo_muerto_var.h"
+#include "codigo_muerto.h"
 #include "../analisis-semantico/semantico.h"
 #include "../codigo-intermedio/auxiliares.h"
 
 // variable externa para saber si la optimizacion fue activada
 extern bool opt_constant_folding;
 extern bool opt_codigo_muerto_var;
+extern bool opt_codigo_muerto_codigo_inalcanzable;
 
 // crear constante booleana. el crear constante de enteros ya existe en auxiliares.c
 static info* crear_constante_bool(bool b) {
@@ -173,6 +175,9 @@ void aplicar_optimizaciones(nodo *raiz) {
         codigo_muerto_var(raiz);
     }
 
+    if (opt_codigo_muerto_codigo_inalcanzable) {
+        eliminarCodigoMuerto(raiz);
+    }
     // aca irian mas optimizaciones en el futuro, ej
     // if (opt_dead_code) { ... }
 }
