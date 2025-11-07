@@ -27,7 +27,7 @@ program {
         * La variable global "x" y la variable local "d" no están en uso,
         * por ende en la primer pasada deberían ser eliminadas junto con
         * la instrucción z = func(w,8). En la segunda pasada debería ser
-        * eliminada la variable "c"
+        * eliminada la variable "z"
         */
 
         z = func(w, 8);

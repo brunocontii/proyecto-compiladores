@@ -75,5 +75,6 @@ nodo* buscarNodo(nodo* raiz, const char* nombre);
 void mostrarArbol(nodo *raiz, int nivel);
 void liberarArbol(nodo *raiz);
 void generateASTDotFile(nodo* root, const char* base_filename);
+void generateASTDotFileWithLiveness(nodo* root, const char* base_filename, bool mostrar_se_usa);
 
 #endif

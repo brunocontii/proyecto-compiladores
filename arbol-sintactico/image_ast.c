@@ -109,16 +109,14 @@ void getNodeValueString(nodo* node, char* buffer, size_t bufsize) {
     snprintf(buffer, bufsize, "%s", temp);
 }
 
-void generateDotNodes(nodo* node, nodo* root, FILE* file, int* nodeCount) {
+void generateDotNodes(nodo* node, nodo* root, FILE* file, int* nodeCount, bool mostrar_se_usa) {
     if (node == NULL) return;
 
     int currentId = (*nodeCount)++;
     char valueStr[256];
     getNodeValueString(node, valueStr, sizeof(valueStr));
 
-
     if (node->valor->tipo_token == T_METHOD_CALL) {
-
         if (node->izq && node->izq->valor && node->izq->valor->name) {
             nodo *decl = buscarNodo(root, node->izq->valor->name);
             if (decl && decl->valor) {
@@ -134,35 +132,31 @@ void generateDotNodes(nodo* node, nodo* root, FILE* file, int* nodeCount) {
 
             nodo *param_actual = node->der;
             nodo *param_formal = NULL;
-            if (decl && decl->izq) param_formal = decl->izq; // puede ser T_PARAMETROS (lista) o parametro (hoja)
+            if (decl && decl->izq) param_formal = decl->izq;
 
-            // recorrer ambos: soporta lista (T_EXPRS / T_PARAMETROS) o hoja
             while ((param_actual && param_actual->valor) || (param_formal && param_formal->valor)) {
                 nodo *actual_elem = NULL;
                 nodo *formal_elem = NULL;
 
                 if (param_actual && param_actual->valor && param_actual->valor->tipo_token == T_EXPRS) {
-                    actual_elem = param_actual->der; // elemento actual en lista left-recursive
+                    actual_elem = param_actual->der;
                 } else {
-                    actual_elem = param_actual;      // hoja o expresión simple
+                    actual_elem = param_actual;
                 }
 
                 if (param_formal && param_formal->valor && param_formal->valor->tipo_token == T_PARAMETROS) {
-                    formal_elem = param_formal->der; // elemento formal en lista
+                    formal_elem = param_formal->der;
                 } else {
-                    formal_elem = param_formal;      // hoja (un parametro)
+                    formal_elem = param_formal;
                 }
 
-                // copiar tipo si tenemos ambos elementos y el formal define tipo_info
                 if (formal_elem && formal_elem->valor) {
                     tipo_info tf = formal_elem->valor->tipo_info;
                     if (actual_elem && actual_elem->valor) {
-                        // asignar tipo al nodo actual para que se vea en la visualización
                         actual_elem->valor->tipo_info = tf;
                     }
                 }
 
-                // avanzar en listas: left-recursive lista almacena siguiente en izq
                 if (param_actual && param_actual->valor && param_actual->valor->tipo_token == T_EXPRS) {
                     param_actual = param_actual->izq;
                 } else {
@@ -178,37 +172,53 @@ void generateDotNodes(nodo* node, nodo* root, FILE* file, int* nodeCount) {
         }
     }
 
-
-    if (node->valor->tipo_token == T_ID || node->valor->tipo_token == T_DIGIT || node->valor->tipo_token == T_BOOL || node->valor->tipo_token == T_PARAMETRO) {
-        fprintf(file, "  node%d [label=\"%s\\n(%s)\\n[%s]\", shape=box];\n",
-            currentId, valueStr, getTokenString(node->valor->tipo_token), getTypeString(node->valor->tipo_info));
+    // Etiqueta del nodo con se_usa
+    char label_final[512];
+    if (node->valor->tipo_token == T_ID || node->valor->tipo_token == T_DIGIT || 
+        node->valor->tipo_token == T_BOOL || node->valor->tipo_token == T_PARAMETRO) {
+        
+        if (mostrar_se_usa && node->valor->tipo_token == T_ID) {
+            snprintf(label_final, sizeof(label_final), "%s\\n(%s)\\n[%s]\\nUSADA: %s",
+                    valueStr, 
+                    getTokenString(node->valor->tipo_token),
+                    getTypeString(node->valor->tipo_info),
+                    node->valor->se_usa ? "True" : "False");
+        } else {
+            snprintf(label_final, sizeof(label_final), "%s\\n(%s)\\n[%s]",
+                    valueStr, 
+                    getTokenString(node->valor->tipo_token),
+                    getTypeString(node->valor->tipo_info));
+        }
     } else {
-        fprintf(file, "  node%d [label=\"%s\\n(%s)\", shape=box];\n",
-            currentId, valueStr, getTokenString(node->valor->tipo_token));
+        snprintf(label_final, sizeof(label_final), "%s\\n(%s)",
+                valueStr, 
+                getTokenString(node->valor->tipo_token));
     }
+
+    fprintf(file, "  node%d [label=\"%s\", shape=box];\n", currentId, label_final);
 
     if (node->izq != NULL) {
         int leftId = *nodeCount;
-        generateDotNodes(node->izq, root, file, nodeCount);
+        generateDotNodes(node->izq, root, file, nodeCount, mostrar_se_usa);
         fprintf(file, "  node%d -> node%d [label=\"L\"];\n", currentId, leftId);
     }
     if (node->med != NULL) {
         int medId = *nodeCount;
-        generateDotNodes(node->med, root, file, nodeCount);
+        generateDotNodes(node->med, root, file, nodeCount, mostrar_se_usa);
         fprintf(file, "  node%d -> node%d [label=\"M\"];\n", currentId, medId);
     }
     if (node->der != NULL) {
         int rightId = *nodeCount;
-        generateDotNodes(node->der, root, file, nodeCount);
+        generateDotNodes(node->der, root, file, nodeCount, mostrar_se_usa);
         fprintf(file, "  node%d -> node%d [label=\"R\"];\n", currentId, rightId);
     }
 }
 
-void generateASTDotFile(nodo* root, const char* base_filename) {
+//  Wrapper para generar con flag se_usa
+void generateASTDotFileWithLiveness(nodo* root, const char* base_filename, bool mostrar_se_usa) {
     char dot_filename[256];
     char png_filename[256];
     
-    // Crear nombres de archivos
     snprintf(dot_filename, sizeof(dot_filename), "%s.dot", base_filename);
     snprintf(png_filename, sizeof(png_filename), "%s.png", base_filename);
     
@@ -227,24 +237,19 @@ void generateASTDotFile(nodo* root, const char* base_filename) {
         fprintf(file, "  empty [label=\"Árbol vacío\", shape=plaintext];\n");
     } else {
         int nodeCount = 0;
-        generateDotNodes(root, root, file, &nodeCount);
+        generateDotNodes(root, root, file, &nodeCount, mostrar_se_usa);
     }
 
     fprintf(file, "}\n");
     fclose(file);
 
-    printf("Archivo DOT del AST generado: %s\n", dot_filename);
-
     char command[1024];
     snprintf(command, sizeof(command), "dot -Tpng %s -o %s 2>/dev/null", 
                 dot_filename, png_filename);
-    
-    int result = system(command);
-    if (result == 0) {
-        printf("Imagen AST generada: %s\n", png_filename);
-    } else {
-        printf("Error al generar imagen. Instala: sudo apt install graphviz\n");
-        printf("Ejecuta manualmente: dot -Tpng %s -o %s\n", dot_filename, png_filename);
-    }
+    system(command);
 }
 
+
+void generateASTDotFile(nodo* root, const char* base_filename) {
+    generateASTDotFileWithLiveness(root, base_filename, false);
+}
