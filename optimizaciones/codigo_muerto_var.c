@@ -4,6 +4,14 @@
 
 variables *var_list = NULL;
 
+void agregar_variable(variables **lista, char *nombre, bool se_usa) {
+    variables *nuevo = (variables*)malloc(sizeof(variables));
+    nuevo->nombre = strdup(nombre);
+    nuevo->se_usa = se_usa;
+    nuevo->next = *lista;
+    *lista = nuevo;
+}
+
 static void caso_condicional(nodo *hijo) {
     if (hijo == NULL) return;
 
@@ -20,14 +28,6 @@ static int contar_nodos(nodo *raiz) {
     if (raiz == NULL) return 0;
 
     return 1 + contar_nodos(raiz->izq) + contar_nodos(raiz->med) + contar_nodos(raiz->der);
-}
-
-void agregar_variable(variables **lista, char *nombre, bool se_usa) {
-    variables *nuevo = (variables*)malloc(sizeof(variables));
-    nuevo->nombre = strdup(nombre);
-    nuevo->se_usa = se_usa;
-    nuevo->next = *lista;
-    *lista = nuevo;
 }
 
 bool buscar_variable(variables *lista, char *nombre) {

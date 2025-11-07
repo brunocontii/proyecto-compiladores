@@ -22,12 +22,28 @@ YACC_C = $(LEX_DIR)/parser.tab.c
 YACC_H = $(LEX_DIR)/parser.tab.h
 
 # Archivos adicionales
-TREE_SRC = $(TREE_DIR)/arbol.c  $(TREE_DIR)/image_ast.c
+TREE_SRC = 	$(TREE_DIR)/arbol.c \
+			$(TREE_DIR)/image_ast.c
+
 SIMBOLOS_SRC = $(SIMBOLOS_DIR)/tabla_simbolos.c
-SEMANTICO_SRC = $(SEMANTICO_DIR)/semantico.c $(SEMANTICO_DIR)/manejo_errores.c
-CI_SRC = $(CI_DIR)/generador.c $(CI_DIR)/codigo3dir.c $(CI_DIR)/auxiliares.c $(CI_DIR)/parametros.c
-ASSEMBLER_SRC = $(ASSEMBLER_DIR)/assembler.c $(ASSEMBLER_DIR)/metodos.c $(ASSEMBLER_DIR)/parametros.c $(ASSEMBLER_DIR)/secciones.c $(ASSEMBLER_DIR)/variables.c $(ASSEMBLER_DIR)/instrucciones.c
-OPTIMIZACIONES_SRC = $(OPT_DIR)/optimizaciones.c $(OPT_DIR)/codigo_muerto_var.c $(OPT_DIR)/codigo_muerto.c $(OPT_DIR)/operaciones.c
+
+SEMANTICO_SRC = $(SEMANTICO_DIR)/semantico.c \
+				$(SEMANTICO_DIR)/manejo_errores.c
+CI_SRC = 	$(CI_DIR)/generador.c \
+			$(CI_DIR)/codigo3dir.c \
+			$(CI_DIR)/auxiliares.c \
+			$(CI_DIR)/parametros.c
+ASSEMBLER_SRC = $(ASSEMBLER_DIR)/assembler.c \
+				$(ASSEMBLER_DIR)/metodos.c \
+				$(ASSEMBLER_DIR)/parametros.c \
+				$(ASSEMBLER_DIR)/secciones.c \
+				$(ASSEMBLER_DIR)/variables.c \
+				$(ASSEMBLER_DIR)/instrucciones.c
+OPTIMIZACIONES_SRC = $(OPT_DIR)/optimizaciones.c \
+					 $(OPT_DIR)/plegado_constantes.c \
+					 $(OPT_DIR)/operaciones.c \
+					 $(OPT_DIR)/codigo_muerto.c \
+					 $(OPT_DIR)/codigo_muerto_var.c
 RUNTIME_DIR = runtime
 RUNTIME_SRC = $(RUNTIME_DIR)/func-extern.c
 
@@ -129,6 +145,22 @@ run-asm: $(TARGET)
 		echo "🔧 Optimizaciones: $(OPT)"; \
 	fi
 	./$(TARGET) -target assembly $(OPT_FLAGS) $(TEST)
+	@if [ -f assembler.s ]; then \
+		echo "🔧 Generando ejecutable..."; \
+		gcc -g assembler.s $(RUNTIME_SRC) -o prog; \
+		echo "🚀 Ejecutando programa:"; \
+		./prog; \
+	fi
+
+# Ejecutar con todas las optimizaciones
+run-all-opt: $(TARGET)
+	@if [ ! -f "$(TEST)" ]; then \
+		echo "❌ ERROR: El archivo $(TEST) no existe"; \
+		exit 1; \
+	fi
+	@echo "▶️  Assembler con todas las optimizaciones: $(TEST)"
+	@echo "🔧 Optimizaciones: $(ALL_OPTS)"
+	./$(TARGET) -target assembly -opt prop-constantes -opt operaciones -opt cod-inalcanzable -opt var-muertas $(TEST)
 	@if [ -f assembler.s ]; then \
 		echo "🔧 Generando ejecutable..."; \
 		gcc -g assembler.s $(RUNTIME_SRC) -o prog; \

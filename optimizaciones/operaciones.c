@@ -1,317 +1,286 @@
 #include "operaciones.h"
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "../arbol-sintactico/arbol.h"
 
-nodo* valores_neutros(nodo *n) {
-    if (n == NULL || n->valor == NULL) return NULL;
+// funciones auxiliares
 
-    if (n->izq) n->izq = valores_neutros(n->izq);
-    if (n->med) n->med = valores_neutros(n->med);
-    if (n->der) n->der = valores_neutros(n->der);
-
-    // suma con 0
-    if (n->valor->tipo_token == T_OP_MAS) {
-        if (n->izq && n->izq->valor && n->izq->valor->tipo_token == T_DIGIT && n->izq->valor->nro == 0) {
-            liberarArbol(n->izq);
-            nodo *nuevoNodo = n->der;
-            if (n->valor->op) free(n->valor->op);
-            free(n->valor);
-            free(n);
-            return nuevoNodo;
-        } else if (n->der && n->der->valor && n->der->valor->tipo_token == T_DIGIT && n->der->valor->nro == 0) {
-            liberarArbol(n->der);
-            nodo *nuevoNodo = n->izq;
-            if (n->valor->op) free(n->valor->op);
-            free(n->valor);
-            free(n);
-            return nuevoNodo;
-        }
-    }
-
-    // resta con 0
-    if (n->valor->tipo_token == T_OP_MENOS) { 
-        if (n->izq && n->der) { // si es binario, y caso resta x - 0 = x
-            if (n->der && n->der->valor && n->der->valor->tipo_token == T_DIGIT && n->der->valor->nro == 0) {
-                liberarArbol(n->der);
-                nodo *nuevoNodo = n->izq;
-                if (n->valor->op) free(n->valor->op);
-                free(n->valor);
-                free(n);
-                return nuevoNodo;
-            }
-        }
-    }
-
-    // multiplicacion por 1
-    if (n->valor->tipo_token == T_OP_MULT) {
-        if (n->izq && n->izq->valor && n->izq->valor->tipo_token == T_DIGIT && n->izq->valor->nro == 1) {
-            liberarArbol(n->izq);
-            nodo *nuevoNodo = n->der;
-            if (n->valor->op) free(n->valor->op);
-            free(n->valor);
-            free(n);
-            return nuevoNodo;
-        } else if (n->der && n->der->valor && n->der->valor->tipo_token == T_DIGIT && n->der->valor->nro == 1) {
-            liberarArbol(n->der);
-            nodo *nuevoNodo = n->izq;
-            if (n->valor->op) free(n->valor->op);
-            free(n->valor);
-            free(n);
-            return nuevoNodo;
-        }
-    }
-
-    // division por 1
-    if (n->valor->tipo_token == T_OP_DIV) {
-        // solo tiene sentido si el derecho es valor 1
-        if (n->der && n->der->valor && n->der->valor->tipo_token == T_DIGIT && n->der->valor->nro == 1) {
-            liberarArbol(n->der);
-            nodo *nuevoNodo = n->izq;
-            if (n->valor->op) free(n->valor->op);
-            free(n->valor);
-            free(n);
-            return nuevoNodo;
-        }
-    }
-
-    // AND con true
-    if (n->valor->tipo_token == T_OP_AND) {
-        if (n->izq && n->izq->valor && n->izq->valor->tipo_token == T_VTRUE) {
-            liberarArbol(n->izq);
-            nodo *nuevoNodo = n->der;
-            if (n->valor->op) free(n->valor->op);
-            free(n->valor);
-            free(n);
-            return nuevoNodo;
-        } else if (n->der && n->der->valor && n->der->valor->tipo_token == T_VTRUE) {
-            liberarArbol(n->der);
-            nodo *nuevoNodo = n->izq;
-            if (n->valor->op) free(n->valor->op);
-            free(n->valor);
-            free(n);
-            return nuevoNodo;
-        }
-    }
-
-    // OR con false
-    if (n->valor->tipo_token == T_OP_OR) {
-        if (n->izq && n->izq->valor && n->izq->valor->tipo_token == T_VFALSE) {
-            liberarArbol(n->izq);
-            nodo *nuevoNodo = n->der;
-            if (n->valor->op) free(n->valor->op);
-            free(n->valor);
-            free(n);
-            return nuevoNodo;
-        } else if (n->der && n->der->valor && n->der->valor->tipo_token == T_VFALSE) {
-            liberarArbol(n->der);
-            nodo *nuevoNodo = n->izq;
-            if (n->valor->op) free(n->valor->op);
-            free(n->valor);
-            free(n);
-            return nuevoNodo;
-        }
-    }
+// reemplazar nodo actual por su hijo
+static void reemplazar_por_hijo(nodo *padre, nodo *hijo_a_mantener, nodo *hijo_a_eliminar) {
+    if (!padre || !hijo_a_mantener) return;
     
-    return n;
+    // guardar temporalmente los datos del padre
+    info *temp_valor = padre->valor;
+    
+    // copiar el contenido del hijo al padre
+    padre->valor = hijo_a_mantener->valor;
+    padre->izq = hijo_a_mantener->izq;
+    padre->med = hijo_a_mantener->med;
+    padre->der = hijo_a_mantener->der;
+    
+    // liberar el valor anterior del padre (el operador)
+    if (temp_valor) {
+        if (temp_valor->name) free(temp_valor->name);
+        if (temp_valor->bool_string) free(temp_valor->bool_string);
+        if (temp_valor->op) free(temp_valor->op);
+        free(temp_valor);
+    }
+
+    // liberar el nodo hijo (pero no su contenido, porque ahora es del padre)
+    free(hijo_a_mantener);
+
+    // liberar el hijo a eliminar completamente
+    if (hijo_a_eliminar) {
+        liberarArbol(hijo_a_eliminar);
+    }
 }
 
+// reemplazar nodo por una constante
+static void reemplazar_por_constante(nodo *n, int valor, tipo_info tipo) {
+    // liberar hijos
+    if (n->izq) liberarArbol(n->izq);
+    if (n->der) liberarArbol(n->der);
+    if (n->med) liberarArbol(n->med);
 
-nodo* reducciones_simples(nodo *n) {
-    if (n == NULL || n->valor == NULL) return NULL;
+    // liberar valor anterior
+    if (n->valor) {
+        if (n->valor->name) free(n->valor->name);
+        if (n->valor->bool_string) free(n->valor->bool_string);
+        if (n->valor->op) free(n->valor->op);
+        free(n->valor);
+    }
 
-    if (n->izq) n->izq = reducciones_simples(n->izq);
-    if (n->med) n->med = reducciones_simples(n->med);
-    if (n->der) n->der = reducciones_simples(n->der);
+    // crear nueva constante
+    n->valor = (info*)malloc(sizeof(info));
+    
+    if (tipo == TIPO_INTEGER) {
+        char buf[32];
+        snprintf(buf, sizeof(buf), "%d", valor);
+        n->valor->name = strdup(buf);
+        n->valor->tipo_token = T_DIGIT;
+        n->valor->tipo_info = TIPO_INTEGER;
+        n->valor->nro = valor;
+        n->valor->bool_string = NULL;
+    } else if (tipo == TIPO_BOOL) {
+        n->valor->name = strdup(valor ? "true" : "false");
+        n->valor->bool_string = strdup(valor ? "true" : "false");
+        n->valor->tipo_token = valor ? T_VTRUE : T_VFALSE;
+        n->valor->tipo_info = TIPO_BOOL;
+        n->valor->b = valor;
+        n->valor->nro = valor;
+    }
+    
+    n->valor->esTemporal = 0;
+    n->valor->op = NULL;
+    n->izq = NULL;
+    n->med = NULL;
+    n->der = NULL;
+}
 
-    // resta x - x = 0
-    if (n->valor->tipo_token == T_OP_MENOS) {
-        if (n->izq && n->der && n->izq->valor && n->der->valor && n->izq->valor->tipo_token == T_ID && n->der->valor->tipo_token == T_ID && strcmp(n->izq->valor->name, n->der->valor->name) == 0) {
-            liberarArbol(n);
-            info *cero = (info*)malloc(sizeof(info));
-            cero->name = strdup("digito");
-            cero->tipo_token = T_DIGIT;
-            cero->tipo_info = TIPO_INTEGER;
-            cero->nro = 0;
-            nodo *nuevoNodo = crearNodo(cero);
-            return nuevoNodo;
+// optimizaciones individuales
+
+// optimizacion de valores neutros
+static void valores_neutros_recursivo(nodo *n) {
+    if (!n || !n->valor) return;
+
+    // recorrer hijos primero (bottom-up)
+    if (n->izq) valores_neutros_recursivo(n->izq);
+    if (n->med) valores_neutros_recursivo(n->med);
+    if (n->der) valores_neutros_recursivo(n->der);
+
+    // x + 0 = x  o  0 + x = x
+    if (n->valor->tipo_token == T_OP_MAS) {
+        if (n->izq && n->izq->valor && n->izq->valor->tipo_token == T_DIGIT && n->izq->valor->nro == 0) {
+            reemplazar_por_hijo(n, n->der, n->izq);
+        } else if (n->der && n->der->valor && n->der->valor->tipo_token == T_DIGIT && n->der->valor->nro == 0) {
+            reemplazar_por_hijo(n, n->izq, n->der);
         }
     }
 
-    // multiplicacion 0 * x = 0 o x * 0 = 0
+    // x - 0 = x
+    if (n->valor->tipo_token == T_OP_MENOS && n->izq && n->der) {
+        if (n->der && n->der->valor && n->der->valor->tipo_token == T_DIGIT && n->der->valor->nro == 0) {
+            reemplazar_por_hijo(n, n->izq, n->der);
+        }
+    }
+
+    // x * 1 = x  o  1 * x = x
+    if (n->valor->tipo_token == T_OP_MULT) {
+        if (n->izq && n->izq->valor && n->izq->valor->tipo_token == T_DIGIT && n->izq->valor->nro == 1) {
+            reemplazar_por_hijo(n, n->der, n->izq);
+        } else if (n->der && n->der->valor && n->der->valor->tipo_token == T_DIGIT && n->der->valor->nro == 1) {
+            reemplazar_por_hijo(n, n->izq, n->der);
+        }
+    }
+
+    // x / 1 = x
+    if (n->valor->tipo_token == T_OP_DIV) {
+        if (n->der && n->der->valor && n->der->valor->tipo_token == T_DIGIT && n->der->valor->nro == 1) {
+            reemplazar_por_hijo(n, n->izq, n->der);
+        }
+    }
+
+    // x && true = x  o  true && x = x
+    if (n->valor->tipo_token == T_OP_AND) {
+        if (n->izq && n->izq->valor && n->izq->valor->tipo_token == T_VTRUE) {
+            reemplazar_por_hijo(n, n->der, n->izq);
+        } else if (n->der && n->der->valor && n->der->valor->tipo_token == T_VTRUE) {
+            reemplazar_por_hijo(n, n->izq, n->der);
+        }
+    }
+
+    // x || false = x  o  false || x = x
+    if (n->valor->tipo_token == T_OP_OR) {
+        if (n->izq && n->izq->valor && n->izq->valor->tipo_token == T_VFALSE) {
+            reemplazar_por_hijo(n, n->der, n->izq);
+        } else if (n->der && n->der->valor && n->der->valor->tipo_token == T_VFALSE) {
+            reemplazar_por_hijo(n, n->izq, n->der);
+        }
+    }
+}
+
+// optimizacion de reducciones simples
+static void reducciones_simples_recursivo(nodo *n) {
+    if (!n || !n->valor) return;
+
+    if (n->izq) reducciones_simples_recursivo(n->izq);
+    if (n->med) reducciones_simples_recursivo(n->med);
+    if (n->der) reducciones_simples_recursivo(n->der);
+
+    // x - x = 0
+    if (n->valor->tipo_token == T_OP_MENOS && n->izq && n->der) {
+        if (n->izq->valor && n->der->valor && 
+            n->izq->valor->tipo_token == T_ID && n->der->valor->tipo_token == T_ID &&
+            strcmp(n->izq->valor->name, n->der->valor->name) == 0) {
+            reemplazar_por_constante(n, 0, TIPO_INTEGER);
+        }
+    }
+
+    // x * 0 = 0  o  0 * x = 0
     if (n->valor->tipo_token == T_OP_MULT) {
         if ((n->izq && n->izq->valor && n->izq->valor->tipo_token == T_DIGIT && n->izq->valor->nro == 0) ||
             (n->der && n->der->valor && n->der->valor->tipo_token == T_DIGIT && n->der->valor->nro == 0)) {
-            liberarArbol(n);
-            info *cero = (info*)malloc(sizeof(info));
-            cero->name = strdup("digito");
-            cero->tipo_token = T_DIGIT;
-            cero->tipo_info = TIPO_INTEGER;
-            cero->nro = 0;
-            nodo *nuevoNodo = crearNodo(cero);
-            return nuevoNodo;
+            reemplazar_por_constante(n, 0, TIPO_INTEGER);
         }
     }
 
-    // division x / x = 1
-    if (n->valor->tipo_token == T_OP_DIV) {
-        if (n->izq && n->der && n->izq->valor && n->der->valor && n->izq->valor->tipo_token == T_ID && n->der->valor->tipo_token == T_ID &&
+    // x / x = 1
+    if (n->valor->tipo_token == T_OP_DIV && n->izq && n->der) {
+        if (n->izq->valor && n->der->valor &&
+            n->izq->valor->tipo_token == T_ID && n->der->valor->tipo_token == T_ID &&
             strcmp(n->izq->valor->name, n->der->valor->name) == 0) {
-            liberarArbol(n);
-            info *uno = (info*)malloc(sizeof(info));
-            uno->name = strdup("digito");
-            uno->tipo_token = T_DIGIT;
-            uno->tipo_info = TIPO_INTEGER;
-            uno->nro = 1;
-            nodo *nuevoNodo = crearNodo(uno);
-            return nuevoNodo;
+            reemplazar_por_constante(n, 1, TIPO_INTEGER);
         }
     }
 
-    // division 0 / x = 0
+    // 0 / x = 0
     if (n->valor->tipo_token == T_OP_DIV) {
         if (n->izq && n->izq->valor && n->izq->valor->tipo_token == T_DIGIT && n->izq->valor->nro == 0) {
-            liberarArbol(n);
-            info *cero = (info*)malloc(sizeof(info));
-            cero->name = strdup("digito");
-            cero->tipo_token = T_DIGIT;
-            cero->tipo_info = TIPO_INTEGER;
-            cero->nro = 0;
-            nodo *nuevoNodo = crearNodo(cero);
-            return nuevoNodo;
+            reemplazar_por_constante(n, 0, TIPO_INTEGER);
         }
     }
 
-    // x % 1 = 0
+    // x % 1 = 0, 0 % x = 0, x % x = 0
     if (n->valor->tipo_token == T_OP_RESTO) {
-        if (n->der && n->der->valor && n->der->valor->tipo_token == T_DIGIT && n->der->valor->nro == 1) {   
-            liberarArbol(n);
-            info *cero = (info*)malloc(sizeof(info));
-            cero->name = strdup("digito");
-            cero->tipo_token = T_DIGIT;
-            cero->tipo_info = TIPO_INTEGER;
-            cero->nro = 0;
-            nodo *nuevoNodo = crearNodo(cero);
-            return nuevoNodo;
-        } else if (n->izq && n->izq->valor && n->izq->valor->tipo_token == T_DIGIT && n->izq->valor->nro == 0) { // 0 % x = 0
-            liberarArbol(n);
-            info *cero = (info*)malloc(sizeof(info));
-            cero->name = strdup("digito");
-            cero->tipo_token = T_DIGIT;
-            cero->tipo_info = TIPO_INTEGER;
-            cero->nro = 0;
-            nodo *nuevoNodo = crearNodo(cero);
-            return nuevoNodo;
-        } else {
-            // x % x = 0
-            if (n->izq && n->der && n->izq->valor && n->der->valor && n->izq->valor->tipo_token == T_ID && n->der->valor->tipo_token == T_ID &&
-                strcmp(n->izq->valor->name, n->der->valor->name) == 0) {
-                liberarArbol(n);
-                info *cero = (info*)malloc(sizeof(info));
-                cero->name = strdup("digito");
-                cero->tipo_token = T_DIGIT;
-                cero->tipo_info = TIPO_INTEGER;
-                cero->nro = 0;
-                nodo *nuevoNodo = crearNodo(cero);
-                return nuevoNodo;
-            }
+        if (n->der && n->der->valor && n->der->valor->tipo_token == T_DIGIT && n->der->valor->nro == 1) {
+            reemplazar_por_constante(n, 0, TIPO_INTEGER);
+        } else if (n->izq && n->izq->valor && n->izq->valor->tipo_token == T_DIGIT && n->izq->valor->nro == 0) {
+            reemplazar_por_constante(n, 0, TIPO_INTEGER);
+        } else if (n->izq && n->der && n->izq->valor && n->der->valor &&
+                    n->izq->valor->tipo_token == T_ID && n->der->valor->tipo_token == T_ID &&
+                    strcmp(n->izq->valor->name, n->der->valor->name) == 0) {
+            reemplazar_por_constante(n, 0, TIPO_INTEGER);
         }
     }
-
-    return n;
 }
 
-nodo* reducciones_dominantes(nodo *n) {
-    if (n == NULL || n->valor == NULL) return NULL;
+// optimizacion de reducciones dominantes
+static void reducciones_dominantes_recursivo(nodo *n) {
+    if (!n || !n->valor) return;
 
-    if (n->izq) n->izq = reducciones_dominantes(n->izq);
-    if (n->med) n->med = reducciones_dominantes(n->med);
-    if (n->der) n->der = reducciones_dominantes(n->der);
+    if (n->izq) reducciones_dominantes_recursivo(n->izq);
+    if (n->med) reducciones_dominantes_recursivo(n->med);
+    if (n->der) reducciones_dominantes_recursivo(n->der);
 
-    // x && false = false o false && x = false
+    // x && false = false  o  false && x = false
     if (n->valor->tipo_token == T_OP_AND) {
         if ((n->izq && n->izq->valor && n->izq->valor->tipo_token == T_VFALSE) ||
             (n->der && n->der->valor && n->der->valor->tipo_token == T_VFALSE)) {
-            liberarArbol(n);
-            info *falso = (info*)malloc(sizeof(info));
-            falso->bool_string = strdup("false");
-            falso->b = false;
-            falso->tipo_token = T_VFALSE;
-            falso->tipo_info = TIPO_BOOL;
-            nodo *nuevoNodo = crearNodo(falso);
-            return nuevoNodo;
+            reemplazar_por_constante(n, 0, TIPO_BOOL);
         }
     }
 
-    // x || true = true o true || x = true
+    // x || true = true  o  true || x = true
     if (n->valor->tipo_token == T_OP_OR) {
         if ((n->izq && n->izq->valor && n->izq->valor->tipo_token == T_VTRUE) ||
             (n->der && n->der->valor && n->der->valor->tipo_token == T_VTRUE)) {
-            liberarArbol(n);
-            info *verdadero = (info*)malloc(sizeof(info));
-            verdadero->bool_string = strdup("true");
-            verdadero->b = true;
-            verdadero->tipo_token = T_VTRUE;
-            verdadero->tipo_info = TIPO_BOOL;
-            nodo *nuevoNodo = crearNodo(verdadero);
-            return nuevoNodo;
+            reemplazar_por_constante(n, 1, TIPO_BOOL);
         }
     }
-
-    return n;
 }
 
-nodo* comparaciones_redundantes(nodo *n) {
-    if (n == NULL || n->valor == NULL) return NULL;
+static void comparaciones_redundantes_recursivo(nodo *n) {
+    if (!n || !n->valor) return;
 
-    if (n->izq) n->izq = comparaciones_redundantes(n->izq);
-    if (n->med) n->med = comparaciones_redundantes(n->med);
-    if (n->der) n->der = comparaciones_redundantes(n->der);
+    if (n->izq) comparaciones_redundantes_recursivo(n->izq);
+    if (n->med) comparaciones_redundantes_recursivo(n->med);
+    if (n->der) comparaciones_redundantes_recursivo(n->der);
 
     // x < x = false
-    if (n->valor->tipo_token == T_MENOR) {
-        if (n->izq && n->der && n->izq->valor && n->der->valor && n->izq->valor->tipo_token == T_ID && n->der->valor->tipo_token == T_ID &&
+    if (n->valor->tipo_token == T_MENOR && n->izq && n->der) {
+        if (n->izq->valor && n->der->valor &&
+            n->izq->valor->tipo_token == T_ID && n->der->valor->tipo_token == T_ID &&
             strcmp(n->izq->valor->name, n->der->valor->name) == 0) {
-            liberarArbol(n);
-            info *falso = (info*)malloc(sizeof(info));
-            falso->bool_string = strdup("false");
-            falso->b = false;
-            falso->tipo_token = T_VFALSE;
-            falso->tipo_info = TIPO_BOOL;
-            nodo *nuevoNodo = crearNodo(falso);
-            return nuevoNodo;
+            reemplazar_por_constante(n, 0, TIPO_BOOL);
         }
     }
 
     // x > x = false
-    if (n->valor->tipo_token == T_MAYOR) {
-        if (n->izq && n->der && n->izq->valor && n->der->valor && n->izq->valor->tipo_token == T_ID && n->der->valor->tipo_token == T_ID &&
+    if (n->valor->tipo_token == T_MAYOR && n->izq && n->der) {
+        if (n->izq->valor && n->der->valor &&
+            n->izq->valor->tipo_token == T_ID && n->der->valor->tipo_token == T_ID &&
             strcmp(n->izq->valor->name, n->der->valor->name) == 0) {
-            liberarArbol(n);
-            info *falso = (info*)malloc(sizeof(info));
-            falso->bool_string = strdup("false");
-            falso->b = false;
-            falso->tipo_token = T_VFALSE;
-            falso->tipo_info = TIPO_BOOL;
-            nodo *nuevoNodo = crearNodo(falso);
-            return nuevoNodo;
+            reemplazar_por_constante(n, 0, TIPO_BOOL);
         }
     }
 
     // x == x = true
-    if (n->valor->tipo_token == T_IGUALDAD) {
-        if (n->izq && n->der && n->izq->valor && n->der->valor && n->izq->valor->tipo_token == T_ID && n->der->valor->tipo_token == T_ID &&
+    if (n->valor->tipo_token == T_IGUALDAD && n->izq && n->der) {
+        if (n->izq->valor && n->der->valor &&
+            n->izq->valor->tipo_token == T_ID && n->der->valor->tipo_token == T_ID &&
             strcmp(n->izq->valor->name, n->der->valor->name) == 0) {
-            liberarArbol(n);
-            info *verdadero = (info*)malloc(sizeof(info));
-            verdadero->bool_string = strdup("true");
-            verdadero->b = true;
-            verdadero->tipo_token = T_VTRUE;
-            verdadero->tipo_info = TIPO_BOOL;
-            nodo *nuevoNodo = crearNodo(verdadero);
-            return nuevoNodo;
+            reemplazar_por_constante(n, 1, TIPO_BOOL);
         }
     }
+}
 
-    return n;
+// funciones encargadas de aplicar su respectiva optimizacion
+void valores_neutros(nodo *raiz) {
+    if (!raiz) return;
+    valores_neutros_recursivo(raiz);
+}
+
+void reducciones_simples(nodo *raiz) {
+    if (!raiz) return;
+    reducciones_simples_recursivo(raiz);
+}
+
+void reducciones_dominantes(nodo *raiz) {
+    if (!raiz) return;
+    reducciones_dominantes_recursivo(raiz);
+}
+
+void comparaciones_redundantes(nodo *raiz) {
+    if (!raiz) return;
+    comparaciones_redundantes_recursivo(raiz);
+}
+
+void optimizaciones_operaciones(nodo *raiz) {
+    if (!raiz) return;
+    
+    valores_neutros(raiz);
+    reducciones_simples(raiz);
+    reducciones_dominantes(raiz);
+    comparaciones_redundantes(raiz);
 }
