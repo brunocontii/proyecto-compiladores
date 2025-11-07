@@ -255,12 +255,12 @@ int main(int argc, char *argv[]) {
             if (!archivo_salida) {
                 archivo_salida = "ctds_arbol";
             }
-            generateASTDotFile(raiz, archivo_salida);     
             recorridoSemantico(raiz, ts);
             if (!hay_main) {
                 reportar_error(yylineno, "Error semántico: Falta definir la función main\n");
             }
             aplicar_optimizaciones(raiz);
+            generateASTDotFile(raiz, archivo_salida);     
             codigo_intermedio(raiz);
             imprimir_programa();
 

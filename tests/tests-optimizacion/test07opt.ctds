@@ -1,0 +1,43 @@
+program {
+    void print_int(integer n) extern;
+    
+    void main() {
+        // PROPAGACIÓN DE CONSTANTES EN ENTEROS
+        integer a = 5 + 10;           // → 15
+        integer b = 20 - 8;           // → 12
+        integer c = 3 * 4;            // → 12
+        integer d = 36 / 6;           // → 6
+        integer e = 17 % 5;           // → 2
+        
+        // PROPAGACIÓN DE CONSTANTES EN BOOLEANOS
+        bool f = true && true;        // → true
+        bool g = true && false;       // → false
+        bool h = false || true;       // → true
+        bool i = false || false;      // → false
+        
+        // PROPAGACIÓN EN COMPARACIONES
+        bool j = 10 > 5;              // → true
+        bool k = 3 < 2;               // → false
+        bool l = 7 == 7;              // → true
+        
+        // PROPAGACIÓN EN OPERADOR UNARIO
+        integer n = -10;              // → -10
+        bool o = !false;              // → true
+        bool p = !true;               // → false
+        
+        // EXPRESIONES ANIDADAS
+        integer q = (2 + 3) * (4 + 1);     // → 5 * 5 → 25
+        integer r = ((10 - 2) / 2) + 1;    // → (8 / 2) + 1 → 4 + 1 → 5
+        
+        // CÁLCULO FINAL
+        integer resultado = a + b + c + d + e + q + r;
+        // = 15 + 12 + 12 + 6 + 2 + 25 + 5 = 77
+        
+        print_int(resultado);
+        
+        // VERIFICACIÓN BOOLEANA
+        if (j && o) then {            // true && true → true
+            print_int(1);
+        }
+    }
+}

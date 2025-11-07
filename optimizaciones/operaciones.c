@@ -1,5 +1,6 @@
 #include "operaciones.h"
 #include <string.h>
+#include <stdlib.h>
 #include "../arbol-sintactico/arbol.h"
 
 nodo* valores_neutros(nodo *n) {

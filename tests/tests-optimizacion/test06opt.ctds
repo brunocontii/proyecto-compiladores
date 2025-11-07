@@ -1,0 +1,28 @@
+program {
+
+    void main() {
+        integer i = 0;
+
+        while (i < 5) {
+            if (i == 3) then {
+                break;
+                // inalcanzable
+                i = 99;
+            }
+
+            if (i == 2) then {
+                return;
+                // inalcanzable
+                i = 100;
+            }
+
+            i = i + 1;
+        }
+
+        print_int(i);
+        return;
+        // inalcanzable
+        print_int(999);
+    }
+
+}

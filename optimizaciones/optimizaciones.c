@@ -5,6 +5,7 @@
 #include "optimizaciones.h"
 #include "codigo_muerto_var.h"
 #include "codigo_muerto.h"
+#include "operaciones.h"
 #include "../analisis-semantico/semantico.h"
 #include "../codigo-intermedio/auxiliares.h"
 
@@ -16,23 +17,24 @@ extern bool opt_operaciones;
 
 // crear constante booleana. el crear constante de enteros ya existe en auxiliares.c
 static info* crear_constante_bool(bool b) {
-    info *c = (info*)malloc(sizeof(info));
+    info *booleano = (info*)malloc(sizeof(info));
     
     if (b) {
-        c->name = strdup("true");
-        c->b = true;
-        c->tipo_token = T_VTRUE;
+        booleano->bool_string = strdup("true");
+        booleano->name = strdup("true");
+        booleano->b = true;
+        booleano->tipo_token = T_VTRUE;
     } else {
-        c->name = strdup("false");
-        c->b = false;
-        c->tipo_token = T_VFALSE;
+        booleano->bool_string = strdup("false"); 
+        booleano->name = strdup("false");
+        booleano->b = false;
+        booleano->tipo_token = T_VFALSE;
     }
     
-    c->nro = b ? 1 : 0;
-    c->esTemporal = 0;
-    c->tipo_info = TIPO_BOOL;
+    booleano->tipo_info = TIPO_BOOL;
+    booleano->esTemporal = 0;
     
-    return c;
+    return booleano;
 }
 
 // verificar si un nodo es literal
