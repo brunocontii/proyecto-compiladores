@@ -33,6 +33,7 @@ int debug = 0;
 bool opt_constant_folding = false;
 bool opt_codigo_muerto_var = false;
 bool opt_codigo_muerto_codigo_inalcanzable = false;
+bool opt_operaciones = false;
 
 // Función para mostrar uso
 void opciones() {
@@ -104,6 +105,11 @@ int main(int argc, char *argv[]) {
                 opt_reconocida = true;
                 printf(COLOR_CYAN "🔧 Optimización habilitada: Eliminación de Código Inalcanzable\n" COLOR_RESET);
             }
+            else if (strcmp(argv[i], "operaciones") == 0) {
+                opt_operaciones = true;
+                opt_reconocida = true;
+                printf(COLOR_CYAN "🔧 Optimización habilitada: Optimización de Operaciones\n" COLOR_RESET);
+            }
             
             if (!opt_reconocida) {
                 fprintf(stderr, COLOR_RED "Error: optimización desconocida '%s'\n" COLOR_RESET, argv[i]);
@@ -111,6 +117,7 @@ int main(int argc, char *argv[]) {
                 fprintf(stderr, "  prop-constantes  - Propagación de constantes en tiempo de compilación\n");
                 fprintf(stderr, "  var-muertas      - Eliminación de variables no usadas\n");
                 fprintf(stderr, "  cod-inalcanzable - Eliminación de código inalcanzable\n");
+                fprintf(stderr, "  operaciones      - Optimización de operaciones aritméticas y lógicas\n");
                 fprintf(stderr, "\nEjemplo: ./c-tds -target assembly -opt prop-constantes test.ctds\n");
                 return 1;
             }

@@ -12,6 +12,7 @@
 extern bool opt_constant_folding;
 extern bool opt_codigo_muerto_var;
 extern bool opt_codigo_muerto_codigo_inalcanzable;
+extern bool opt_operaciones;
 
 // crear constante booleana. el crear constante de enteros ya existe en auxiliares.c
 static info* crear_constante_bool(bool b) {
@@ -177,6 +178,12 @@ void aplicar_optimizaciones(nodo *raiz) {
 
     if (opt_codigo_muerto_codigo_inalcanzable) {
         eliminarCodigoMuerto(raiz);
+    }
+    if (opt_operaciones) {
+        valores_neutros(raiz);
+        reducciones_simples(raiz);
+        reducciones_dominantes(raiz);
+        comparaciones_redundantes(raiz);
     }
     // aca irian mas optimizaciones en el futuro, ej
     // if (opt_dead_code) { ... }

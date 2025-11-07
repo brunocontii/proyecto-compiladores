@@ -27,7 +27,7 @@ SIMBOLOS_SRC = $(SIMBOLOS_DIR)/tabla_simbolos.c
 SEMANTICO_SRC = $(SEMANTICO_DIR)/semantico.c $(SEMANTICO_DIR)/manejo_errores.c
 CI_SRC = $(CI_DIR)/generador.c $(CI_DIR)/codigo3dir.c $(CI_DIR)/auxiliares.c $(CI_DIR)/parametros.c
 ASSEMBLER_SRC = $(ASSEMBLER_DIR)/assembler.c $(ASSEMBLER_DIR)/metodos.c $(ASSEMBLER_DIR)/parametros.c $(ASSEMBLER_DIR)/secciones.c $(ASSEMBLER_DIR)/variables.c $(ASSEMBLER_DIR)/instrucciones.c
-OPTIMIZACIONES_SRC = $(OPT_DIR)/optimizaciones.c $(OPT_DIR)/codigo_muerto_var.c $(OPT_DIR)/codigo_muerto.c
+OPTIMIZACIONES_SRC = $(OPT_DIR)/optimizaciones.c $(OPT_DIR)/codigo_muerto_var.c $(OPT_DIR)/codigo_muerto.c $(OPT_DIR)/operaciones.c
 RUNTIME_DIR = runtime
 RUNTIME_SRC = $(RUNTIME_DIR)/func-extern.c
 

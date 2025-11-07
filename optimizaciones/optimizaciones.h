@@ -15,4 +15,11 @@ void codigo_muerto_var(nodo * raiz);
 
 // eliminacion de codigo inalcanzable
 void eliminarCodigoMuerto(nodo * raiz);
+
+// optimizaciones de operaciones
+void valores_neutros(nodo *raiz);
+void reducciones_simples(nodo *raiz);
+void reducciones_dominantes(nodo *raiz);
+void comparaciones_redundantes(nodo *raiz);
+
 #endif
