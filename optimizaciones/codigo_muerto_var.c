@@ -85,6 +85,10 @@ void recorrer_y_marcar(nodo *raiz) {
                     hijo->valor->se_usa = true; // se usa en asignación
                     agregar_variable(&var_list, hijo->valor->name, true);
                 }
+                if (hijo->der && hijo->der->valor->tipo_token == T_ID) {
+                    hijo->der->valor->se_usa = true; // se usa en return
+                    agregar_variable(&var_list, hijo->der->valor->name, true);
+                }
             }
             // recorrer_y_marcar(raiz->der);
             // recorrer_y_marcar(raiz->med);
@@ -111,6 +115,10 @@ void recorrer_y_marcar(nodo *raiz) {
                     aux->valor->se_usa = true; // se usa en asignación
                     agregar_variable(&var_list, aux->valor->name, true);
                 }
+                if (aux->der && aux->der->valor->tipo_token == T_ID) {
+                    aux->der->valor->se_usa = true; // se usa en return
+                    agregar_variable(&var_list, aux->der->valor->name, true);
+                }
                 if (auxIzq->valor->tipo_token == T_ID) {
                     if (buscar_variable(var_list, auxIzq->valor->name) == true) {
                         auxIzq->valor->se_usa = true; // se usa en asignación
@@ -121,10 +129,28 @@ void recorrer_y_marcar(nodo *raiz) {
                 
             }
             if (hijo->valor->tipo_token == T_RETURN) {
-                if (hijo->izq && hijo->izq->valor->tipo_token == T_ID) {
-                    hijo->izq->valor->se_usa = true; // se usa en return
-                    agregar_variable(&var_list, hijo->izq->valor->name, true);
+                nodo* hijoIzq = hijo->izq;
+                if (hijoIzq == NULL) break;
+                if (hijoIzq && hijoIzq->valor->tipo_token == T_ID) {
+                    hijoIzq->valor->se_usa = true; // se usa en return
+                    agregar_variable(&var_list, hijoIzq->valor->name, true);
                 }
+                while (hijoIzq->izq != NULL) {
+                    if (hijoIzq->der->valor->tipo_token == T_ID) {
+                        hijoIzq->der->valor->se_usa = true; // se usa en return
+                        agregar_variable(&var_list, hijoIzq->der->valor->name, true);
+                    }
+                    hijoIzq = hijoIzq->izq;
+                }
+                if (hijoIzq->valor->tipo_token == T_ID) {
+                    hijoIzq->valor->se_usa = true; // se usa en return
+                    agregar_variable(&var_list, hijoIzq->valor->name, true);
+                }
+                if (hijoIzq->der && hijoIzq->der->valor->tipo_token == T_ID) {
+                    hijoIzq->der->valor->se_usa = true; // se usa en return
+                    agregar_variable(&var_list, hijoIzq->der->valor->name, true);
+                }
+                
             }
             if (hijo->valor->tipo_token == T_IF || hijo->valor->tipo_token == T_WHILE || hijo->valor->tipo_token == T_IF_ELSE) {
                 nodo* aux = hijo->izq;
