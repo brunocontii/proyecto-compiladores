@@ -63,11 +63,28 @@ void recorrer_y_marcar(nodo *raiz) {
     switch (raiz->valor->tipo_token) {
         case T_VAR_DECL:
             if (raiz->izq && raiz->izq->valor->tipo_token == T_ID) {
+                nodo* hijo = raiz->der;
                 if (buscar_variable(var_list,raiz->izq->valor->name) == true) {
                     raiz->izq->valor->se_usa = true; // inicialmente no se usa
                 } else {
                     raiz->izq->valor->se_usa = false; // inicialmente no se usa
-                }             
+                }
+                if (hijo == NULL) break;
+                if (hijo->valor->tipo_token == T_ID) {
+                    hijo->valor->se_usa = true; // se usa en la inicialización
+                    agregar_variable(&var_list, hijo->valor->name, true);
+                }
+                while (hijo->izq != NULL) {
+                    if (hijo->der->valor->tipo_token == T_ID) {
+                        hijo->der->valor->se_usa = true; // se usa en asignación
+                        agregar_variable(&var_list, hijo->der->valor->name, true);
+                    }
+                    hijo = hijo->izq;
+                }
+                if (hijo->valor->tipo_token == T_ID) {
+                    hijo->valor->se_usa = true; // se usa en asignación
+                    agregar_variable(&var_list, hijo->valor->name, true);
+                }
             }
             // recorrer_y_marcar(raiz->der);
             // recorrer_y_marcar(raiz->med);
