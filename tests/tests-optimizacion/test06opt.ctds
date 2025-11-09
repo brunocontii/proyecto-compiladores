@@ -5,7 +5,7 @@ program {
 
         while (i < 5) {
             if (i == 3) then {
-                break;
+                return;
                 // inalcanzable
                 i = 99;
             }

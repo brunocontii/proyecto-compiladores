@@ -12,11 +12,11 @@ void agregar_variable(variables **lista, char *nombre, bool se_usa) {
     *lista = nuevo;
 }
 
-static void caso_condicional(nodo *hijo) {
+static void recursion_ramas(nodo *hijo) {
     if (hijo == NULL) return;
 
-    caso_condicional(hijo->der);
-    caso_condicional(hijo->izq);
+    recursion_ramas(hijo->der);
+    recursion_ramas(hijo->izq);
 
     if (hijo->valor->tipo_token == T_ID) {
         agregar_variable(&var_list, hijo->valor->name, true);
@@ -70,29 +70,8 @@ void recorrer_y_marcar(nodo *raiz) {
                     raiz->izq->valor->se_usa = false; // inicialmente no se usa
                 }
                 if (hijo == NULL) break;
-                if (hijo->valor->tipo_token == T_ID) {
-                    hijo->valor->se_usa = true; // se usa en la inicialización
-                    agregar_variable(&var_list, hijo->valor->name, true);
-                }
-                while (hijo->izq != NULL) {
-                    if (hijo->der->valor->tipo_token == T_ID) {
-                        hijo->der->valor->se_usa = true; // se usa en asignación
-                        agregar_variable(&var_list, hijo->der->valor->name, true);
-                    }
-                    hijo = hijo->izq;
-                }
-                if (hijo->valor->tipo_token == T_ID) {
-                    hijo->valor->se_usa = true; // se usa en asignación
-                    agregar_variable(&var_list, hijo->valor->name, true);
-                }
-                if (hijo->der && hijo->der->valor->tipo_token == T_ID) {
-                    hijo->der->valor->se_usa = true; // se usa en return
-                    agregar_variable(&var_list, hijo->der->valor->name, true);
-                }
+                recursion_ramas(hijo);
             }
-            // recorrer_y_marcar(raiz->der);
-            // recorrer_y_marcar(raiz->med);
-            // recorrer_y_marcar(raiz->izq);
             break;
         case T_STATEMENTS:{
             nodo* hijo = raiz->der;
@@ -100,25 +79,7 @@ void recorrer_y_marcar(nodo *raiz) {
             if (hijo->valor->tipo_token == T_ASIGNACION) {
                 nodo* aux = hijo->der;
                 nodo* auxIzq = hijo->izq;
-                if (aux->valor->tipo_token == T_ID) {
-                    aux->valor->se_usa = true; // se usa en asignación
-                    agregar_variable(&var_list, aux->valor->name, true);
-                }
-                while (aux->izq != NULL) {
-                    if (aux->der->valor->tipo_token == T_ID) {
-                        aux->der->valor->se_usa = true; // se usa en asignación
-                        agregar_variable(&var_list, aux->der->valor->name, true);
-                    }
-                    aux = aux->izq;
-                }
-                if (aux->valor->tipo_token == T_ID) {
-                    aux->valor->se_usa = true; // se usa en asignación
-                    agregar_variable(&var_list, aux->valor->name, true);
-                }
-                if (aux->der && aux->der->valor->tipo_token == T_ID) {
-                    aux->der->valor->se_usa = true; // se usa en return
-                    agregar_variable(&var_list, aux->der->valor->name, true);
-                }
+                recursion_ramas(aux);
                 if (auxIzq->valor->tipo_token == T_ID) {
                     if (buscar_variable(var_list, auxIzq->valor->name) == true) {
                         auxIzq->valor->se_usa = true; // se usa en asignación
@@ -131,63 +92,21 @@ void recorrer_y_marcar(nodo *raiz) {
             if (hijo->valor->tipo_token == T_RETURN) {
                 nodo* hijoIzq = hijo->izq;
                 if (hijoIzq == NULL) break;
-                if (hijoIzq && hijoIzq->valor->tipo_token == T_ID) {
-                    hijoIzq->valor->se_usa = true; // se usa en return
-                    agregar_variable(&var_list, hijoIzq->valor->name, true);
-                }
-                while (hijoIzq->izq != NULL) {
-                    if (hijoIzq->der->valor->tipo_token == T_ID) {
-                        hijoIzq->der->valor->se_usa = true; // se usa en return
-                        agregar_variable(&var_list, hijoIzq->der->valor->name, true);
-                    }
-                    hijoIzq = hijoIzq->izq;
-                }
-                if (hijoIzq->valor->tipo_token == T_ID) {
-                    hijoIzq->valor->se_usa = true; // se usa en return
-                    agregar_variable(&var_list, hijoIzq->valor->name, true);
-                }
-                if (hijoIzq->der && hijoIzq->der->valor->tipo_token == T_ID) {
-                    hijoIzq->der->valor->se_usa = true; // se usa en return
-                    agregar_variable(&var_list, hijoIzq->der->valor->name, true);
-                }
-                
+                recursion_ramas(hijoIzq);
             }
             if (hijo->valor->tipo_token == T_IF || hijo->valor->tipo_token == T_WHILE || hijo->valor->tipo_token == T_IF_ELSE) {
                 nodo* aux = hijo->izq;
-                caso_condicional(aux);
+                recursion_ramas(aux);
             }
-            // recorrer_y_marcar(raiz->der);
-            // recorrer_y_marcar(raiz->med);
-            // recorrer_y_marcar(raiz->izq);
             break;
         }
         case T_METHOD_CALL:{
             nodo* hijo = raiz->der;
             if (hijo == NULL) break;
-            if (hijo->valor->tipo_token == T_ID) {
-                hijo->valor->se_usa = true; // se usa en la llamada al método
-                agregar_variable(&var_list, hijo->valor->name, true);
-            }
-            while (hijo && hijo->izq != NULL) {
-                if (hijo->der->valor->tipo_token == T_ID) {
-                    hijo->der->valor->se_usa = true; // se usa en la llamada al método
-                    agregar_variable(&var_list, hijo->der->valor->name, true);
-                }
-                hijo = hijo->izq;
-            }
-            if (hijo->valor->tipo_token == T_ID) {
-                hijo->valor->se_usa = true; // se usa en la llamada al método
-                agregar_variable(&var_list, hijo->valor->name, true);
-            }
-            // recorrer_y_marcar(raiz->der);
-            // recorrer_y_marcar(raiz->med);
-            // recorrer_y_marcar(raiz->izq);
+            recursion_ramas(hijo);
             break;
         }
         default:
-            // recorrer_y_marcar(raiz->der);
-            // recorrer_y_marcar(raiz->med);
-            // recorrer_y_marcar(raiz->izq);
             break;
     }
 }
@@ -239,9 +158,6 @@ void recorrer_y_podar(nodo *raiz) {
         default:
             break;
     }
-    // recorrer_y_podar(raiz->izq);
-    // recorrer_y_podar(raiz->med);
-    // recorrer_y_podar(raiz->der);
 }
 
 void codigo_muerto_var(nodo *raiz) {
