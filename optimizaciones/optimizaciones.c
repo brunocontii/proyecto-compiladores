@@ -5,12 +5,14 @@
 #include "operaciones.h"
 #include "codigo_muerto.h"
 #include "codigo_muerto_var.h"
+#include "codigo_muerto_bloque.h"
 
 // variable externa para saber si la optimizacion fue activada
 extern bool opt_constant_folding;
 extern bool opt_codigo_muerto_var;
 extern bool opt_codigo_muerto_codigo_inalcanzable;
 extern bool opt_operaciones;
+extern bool opt_codigo_muerto_bloque;
 
 // aplicar todas las optimizaciones habilitadas
 void aplicar_optimizaciones(nodo *raiz) {
@@ -26,6 +28,11 @@ void aplicar_optimizaciones(nodo *raiz) {
     // propagar constantes, podemos simplificar operaciones
     if (opt_operaciones) {
         optimizaciones_operaciones(raiz);
+    }
+
+    // eliminar codigo muerto en bloques
+    if (opt_codigo_muerto_bloque) {
+        eliminarBloquesMuertos(raiz);
     }
 
     // las optimizaciones anteriores pueden crear codigo muerto. por ej

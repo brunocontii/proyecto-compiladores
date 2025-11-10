@@ -43,7 +43,9 @@ OPTIMIZACIONES_SRC = $(OPT_DIR)/optimizaciones.c \
 					 $(OPT_DIR)/plegado_constantes.c \
 					 $(OPT_DIR)/operaciones.c \
 					 $(OPT_DIR)/codigo_muerto.c \
-					 $(OPT_DIR)/codigo_muerto_var.c
+					 $(OPT_DIR)/codigo_muerto_var.c \
+					 $(OPT_DIR)/codigo_muerto_bloque.c
+
 RUNTIME_DIR = runtime
 RUNTIME_SRC = $(RUNTIME_DIR)/func-extern.c
 
@@ -54,7 +56,7 @@ MAIN_SRC = main.c
 TEST ?= tests/tests-semantico/test01.ctds
 OPT ?=
 TEST_OPT ?=
-ALL_OPTS = prop-constantes operaciones cod-inalcanzable var-muertas
+ALL_OPTS = prop-constantes operaciones cod-inalcanzable var-muertas cod-bloque
 
 # Construir flags de optimización (soporta múltiples, separadas por comas)
 OPT_FLAGS =

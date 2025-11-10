@@ -34,6 +34,7 @@ bool opt_constant_folding = false;
 bool opt_codigo_muerto_var = false;
 bool opt_codigo_muerto_codigo_inalcanzable = false;
 bool opt_operaciones = false;
+bool opt_codigo_muerto_bloque = false;
 
 // Función para mostrar uso
 void opciones() {
@@ -50,6 +51,9 @@ void opciones() {
     printf("  ./c-tds -target assembly -opt prop-constantes tests/test02.ctds\n");
     printf("  ./c-tds -target assembly -opt var-muertas tests/test03.ctds\n");
     printf("  ./c-tds -target assembly -opt prop-constantes -opt var-muertas tests/test04.ctds\n");
+    printf("  ./c-tds -target assembly -opt cod-inalcanzable tests/test05.ctds\n");
+    printf("  ./c-tds -target assembly -opt operaciones tests/test06.ctds\n");
+    printf("  ./c-tds -target assembly -opt cod-bloque tests/test07.ctds\n");
 }
 
 // Función auxiliar para recorrer solo el lexer
@@ -68,6 +72,9 @@ int main(int argc, char *argv[]) {
 
     opt_constant_folding = false;
     opt_codigo_muerto_var = false;
+    opt_codigo_muerto_codigo_inalcanzable = false;
+    opt_operaciones = false;
+    opt_codigo_muerto_bloque = false;
 
     // --- Parseo de opciones ---
     int i = 1;
@@ -109,6 +116,11 @@ int main(int argc, char *argv[]) {
                 opt_operaciones = true;
                 opt_reconocida = true;
                 printf(COLOR_CYAN "🔧 Optimización habilitada: Optimización de Operaciones\n" COLOR_RESET);
+            }
+            else if (strcmp(argv[i], "cod-bloque") == 0) {
+                opt_codigo_muerto_bloque = true;
+                opt_reconocida = true;
+                printf(COLOR_CYAN "🔧 Optimización habilitada: Eliminación de Código Muerto en Bloques\n" COLOR_RESET);
             }
             
             if (!opt_reconocida) {
