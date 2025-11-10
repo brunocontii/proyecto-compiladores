@@ -542,8 +542,10 @@ help:
 	@echo ">> Optimizaciones disponibles:"
 	@echo "  OPT=prop-constantes     - Propagación de constantes"
 	@echo "  OPT=var-muertas         - Eliminación de variables no usadas"
-	@echo "  cod-inalcanzable    	 - Eliminación de código inalcanzable"
-	@echo "  var-muertas         	 - Eliminación de variables no usadas"
+	@echo "  OPT=cod-inalcanzable    - Eliminación de código inalcanzable"
+	@echo "  OPT=var-muertas         - Eliminación de variables no usadas"
+	@echo "  OPT=operaciones         - Simplificación de operaciones"
+	@echo "  OPT=all                 - Todas las optimizaciones"
 	@echo ""
 	@echo ">> Ejemplos:"
 	@echo "  make run-asm TEST=tests/tests-assembler/test01asm.ctds"
@@ -552,7 +554,7 @@ help:
 	@echo "  make test-assembler-opt TEST_OPT=all"
 	@echo "  make test-optimizacion-compare"
 	@echo "  make test-optimizacion-detalle"
-	@echo "  make run-ci TEST=tests/tests-assembler/test02asm.ctds OPT=prop-constantes, var-muertas"
+	@echo "  make run-ci TEST=tests/tests-assembler/test02asm.ctds OPT=prop-constantes,var-muertas"
 	@echo "  make run-sem TEST=tests/tests-semantico/test03.ctds"
 
 # Limpiar archivos generados
