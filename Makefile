@@ -29,16 +29,19 @@ SIMBOLOS_SRC = $(SIMBOLOS_DIR)/tabla_simbolos.c
 
 SEMANTICO_SRC = $(SEMANTICO_DIR)/semantico.c \
 				$(SEMANTICO_DIR)/manejo_errores.c
+
 CI_SRC = 	$(CI_DIR)/generador.c \
 			$(CI_DIR)/codigo3dir.c \
 			$(CI_DIR)/auxiliares.c \
 			$(CI_DIR)/parametros.c
+
 ASSEMBLER_SRC = $(ASSEMBLER_DIR)/assembler.c \
 				$(ASSEMBLER_DIR)/metodos.c \
 				$(ASSEMBLER_DIR)/parametros.c \
 				$(ASSEMBLER_DIR)/secciones.c \
 				$(ASSEMBLER_DIR)/variables.c \
 				$(ASSEMBLER_DIR)/instrucciones.c
+
 OPTIMIZACIONES_SRC = $(OPT_DIR)/optimizaciones.c \
 					 $(OPT_DIR)/plegado_constantes.c \
 					 $(OPT_DIR)/operaciones.c \
@@ -164,7 +167,7 @@ run-all-opt: $(TARGET)
 	fi
 	@echo "▶️  Assembler con todas las optimizaciones: $(TEST)"
 	@echo "🔧 Optimizaciones: $(ALL_OPTS)"
-	./$(TARGET) -target assembly -opt prop-constantes -opt operaciones -opt cod-inalcanzable -opt var-muertas $(TEST)
+	./$(TARGET) -target assembly -opt prop-constantes -opt operaciones -opt cod-inalcanzable -opt var-muertas -opt cod-bloque $(TEST)
 	@if [ -f assembler.s ]; then \
 		echo "🔧 Generando ejecutable..."; \
 		gcc -g assembler.s $(RUNTIME_SRC) -o prog; \
@@ -212,16 +215,16 @@ test-assembler: $(TARGET)
 				echo "   └─ Código de salida: $$run_exit"; \
 				echo "   └─ Salida: $$output"; \
 				failed=$$((failed + 1)); \
-			elif echo "$$output" | grep -q "^1$$"; then \
+			elif echo "$$output" | grep -q "^true$$"; then \
 				printf "\033[32m📋 Test %2d: %-35s ✅ PASÓ\033[0m\n" "$$total" "$$basename_test"; \
 				passed=$$((passed + 1)); \
-			elif echo "$$output" | grep -q "^0$$"; then \
+			elif echo "$$output" | grep -q "^false$$"; then \
 				printf "\033[31m📋 Test %2d: %-35s ❌ FALLÓ (test retornó false)\033[0m\n" "$$total" "$$basename_test"; \
 				echo "   └─ El programa indicó que el test falló"; \
 				failed=$$((failed + 1)); \
 			else \
 				printf "\033[33m📋 Test %2d: %-35s ⚠️  SALIDA INESPERADA\033[0m\n" "$$total" "$$basename_test"; \
-				echo "   └─ Esperado: 1 (true)"; \
+				echo "   └─ Esperado: true"; \
 				echo "   └─ Obtenido: $$output"; \
 				failed=$$((failed + 1)); \
 			fi; \

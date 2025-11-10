@@ -8,10 +8,11 @@ void print_int(long long i) {
 }
 
 void print_bool(bool a) {
-    // Imprime 1 para true y 0 para false (una línea)
-    printf("%d\n", a ? 1 : 0);
+    // Imprime "true" o "false"
+    printf("%s\n", a ? "true" : "false");
     fflush(stdout);
 }
+
 
 long long get_int() {
     char buffer[256];
