@@ -21,5 +21,7 @@ void generar_comparacion(FILE *out, codigo3dir *inst);
 void generar_return(FILE *out, codigo3dir *inst);
 void generar_goto(FILE *out, codigo3dir *inst);
 void generar_if_false(FILE *out, codigo3dir *inst);
+void generar_multiplicacion_opt(FILE *out, codigo3dir *inst);
+void generar_division_opt(FILE *out, codigo3dir *inst);
 
 #endif

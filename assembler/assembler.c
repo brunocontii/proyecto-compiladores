@@ -3,6 +3,8 @@
 #include "assembler.h"
 #include "estructuras_metodos.h"
 
+extern bool opt_operaciones;
+
 // obtiene la ubicacion del operando en assembler, ya sea inmediato, variable local o global
 char* obtener_ubicacion_operando(info *operando) {
     if (!operando) return NULL;
@@ -55,8 +57,8 @@ static entrada_instruccion tabla_instrucciones[] = {
     {"SUB", generar_operacion_binaria},
     {"AND", generar_operacion_binaria},
     {"OR", generar_operacion_binaria},
-    {"MUL", generar_multiplicacion},
-    {"DIV", generar_division_modulo},
+    {"MUL", generar_multiplicacion_opt},
+    {"DIV", generar_division_opt},
     {"MOD", generar_division_modulo},
     {"NEG", generar_negacion},
     {"NOT", generar_not},

@@ -1,9 +1,31 @@
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include "instrucciones.h"
+
+// flag para la optimizacion de las operaciones mult y div
+extern bool opt_operaciones;
 
 // registros de parametros convencion
 static const char *PARAM_REGS[6] = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
+
+// ver si un numero es potencia de 2
+static bool es_potencia_de_2(int n) {
+    if (n <= 0) return false;
+    return (n & (n - 1)) == 0;
+}
+
+// calcular log2 de una potencia de 2
+static int log2_de_potencia(int n) {
+    if (!es_potencia_de_2(n)) return -1;
+    
+    int log = 0;
+    while (n > 1) {
+        n >>= 1;
+        log++;
+    }
+    return log;
+}
 
 // genera un label para un metodo o para control de flujo
 void generar_label(FILE *out, codigo3dir *inst) {
@@ -170,6 +192,68 @@ void generar_division_modulo(FILE *out, codigo3dir *inst) {
     free(src1);
     free(src2);
     free(dest);
+}
+
+// genera multiplicacion con optimizacion
+void generar_multiplicacion_opt(FILE *out, codigo3dir *inst) {
+    bool optimizado = false;
+    
+    // intentar optimizar si el flag este activado y arg2 es una constante
+    if (opt_operaciones && inst->arg2 && inst->arg2->tipo_token == T_DIGIT) {
+        int valor_constante = inst->arg2->nro;
+        
+        // solo optimizar si es potencia de 2
+        if (es_potencia_de_2(valor_constante)) {
+            int shift = log2_de_potencia(valor_constante);
+            
+            char *src1 = obtener_ubicacion_operando(inst->arg1);
+            char *dest = obtener_ubicacion_operando(inst->resultado);
+            
+            fprintf(out, "    movq %s, %%rax\n", src1);
+            fprintf(out, "    shlq $%d, %%rax\n", shift);
+            fprintf(out, "    movq %%rax, %s\n", dest);
+            
+            free(src1);
+            free(dest);
+            optimizado = true;
+        }
+    }
+    
+    // si no se optimizo, usar la función normal
+    if (!optimizado) {
+        generar_multiplicacion(out, inst);
+    }
+}
+
+// genera division con optimizacion
+void generar_division_opt(FILE *out, codigo3dir *inst) {
+    bool optimizado = false;
+    
+    // intentar optimizar si el flag esta activado y arg2 es una constante
+    if (opt_operaciones && inst->arg2 && inst->arg2->tipo_token == T_DIGIT) {
+        int valor_constante = inst->arg2->nro;
+        
+        // solo optimizar si es potencia de 2 y no es 0
+        if (valor_constante > 0 && es_potencia_de_2(valor_constante)) {
+            int shift = log2_de_potencia(valor_constante);
+            
+            char *src1 = obtener_ubicacion_operando(inst->arg1);
+            char *dest = obtener_ubicacion_operando(inst->resultado);
+            
+            fprintf(out, "    movq %s, %%rax\n", src1);
+            fprintf(out, "    sarq $%d, %%rax\n", shift);
+            fprintf(out, "    movq %%rax, %s\n", dest);
+            
+            free(src1);
+            free(dest);
+            optimizado = true;
+        }
+    }
+    
+    // si no se optimizo, usar la función normal
+    if (!optimizado) {
+        generar_division_modulo(out, inst);
+    }
 }
 
 // genera negacion aritmetica
