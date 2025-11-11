@@ -43,8 +43,6 @@ void opciones() {
     printf("  -o <salida>          Archivo de salida\n");
     printf("  -target <etapa>      Etapa de compilacion: lex, parse, sem, codinter, assembly\n");
     printf("  -opt <optimizacion>  Habilitar optimización:\n");
-    printf("                         prop-constantes  - Propagación de constantes\n");
-    printf("                         var-muertas      - Eliminación de variables no usadas\n");
     printf("  -debug               Imprimir info de debug\n");
     printf("\nEjemplos:\n");
     printf("  ./c-tds -target assembly tests/test01.ctds\n");
@@ -54,14 +52,6 @@ void opciones() {
     printf("  ./c-tds -target assembly -opt cod-inalcanzable tests/test05.ctds\n");
     printf("  ./c-tds -target assembly -opt operaciones tests/test06.ctds\n");
     printf("  ./c-tds -target assembly -opt cod-bloque tests/test07.ctds\n");
-}
-
-// Función auxiliar para recorrer solo el lexer
-void lexer_loop() {
-    int tok;
-    while ((tok = yylex()) != 0) {
-        printf("TOKEN: %d\n", tok);
-    }
 }
 
 int main(int argc, char *argv[]) {
@@ -130,6 +120,7 @@ int main(int argc, char *argv[]) {
                 fprintf(stderr, "  var-muertas      - Eliminación de variables no usadas\n");
                 fprintf(stderr, "  cod-inalcanzable - Eliminación de código inalcanzable\n");
                 fprintf(stderr, "  operaciones      - Optimización de operaciones aritméticas y lógicas\n");
+                fprintf(stderr, "  cod-bloque       - Eliminación de código muerto en bloques\n");
                 fprintf(stderr, "\nEjemplo: ./c-tds -target assembly -opt prop-constantes test.ctds\n");
                 return 1;
             }
@@ -223,12 +214,12 @@ int main(int argc, char *argv[]) {
             if (!archivo_salida) {
                 archivo_salida = "ctds_arbol";
             }
-            generateASTDotFile(raiz, archivo_salida);     
             recorridoSemantico(raiz, ts);
             if (!hay_main) {
                 reportar_error(yylineno, "Error semántico: Falta definir la función main\n");
             }
             aplicar_optimizaciones(raiz);
+            generateASTDotFile(raiz, archivo_salida);
         }
     }
     else if (strcmp(target, "codinter") == 0) {
@@ -244,12 +235,12 @@ int main(int argc, char *argv[]) {
             if (!archivo_salida) {
                 archivo_salida = "ctds_arbol";
             }
-            generateASTDotFile(raiz, archivo_salida);     
             recorridoSemantico(raiz, ts);
             if (!hay_main) {
                 reportar_error(yylineno, "Error semántico: Falta definir la función main\n");
             }
             aplicar_optimizaciones(raiz);
+            generateASTDotFile(raiz, archivo_salida);
             codigo_intermedio(raiz);
             imprimir_programa();
         }

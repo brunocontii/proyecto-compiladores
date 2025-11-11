@@ -299,16 +299,16 @@ test-assembler-opt: $(TARGET)
 				echo "   └─ Código de salida: $$run_exit"; \
 				echo "   └─ Salida: $$output"; \
 				failed=$$((failed + 1)); \
-			elif echo "$$output" | grep -q "^1$$"; then \
+			elif echo "$$output" | grep -q "^true$$"; then \
 				printf "\033[32m📋 Test %2d: %-35s ✅ PASÓ\033[0m\n" "$$total" "$$basename_test"; \
 				passed=$$((passed + 1)); \
-			elif echo "$$output" | grep -q "^0$$"; then \
+			elif echo "$$output" | grep -q "^false$$"; then \
 				printf "\033[31m📋 Test %2d: %-35s ❌ FALLÓ (test retornó false)\033[0m\n" "$$total" "$$basename_test"; \
 				echo "   └─ El programa indicó que el test falló"; \
 				failed=$$((failed + 1)); \
 			else \
 				printf "\033[33m📋 Test %2d: %-35s ⚠️  SALIDA INESPERADA\033[0m\n" "$$total" "$$basename_test"; \
-				echo "   └─ Esperado: 1 (true)"; \
+				echo "   └─ Esperado: true"; \
 				echo "   └─ Obtenido: $$output"; \
 				failed=$$((failed + 1)); \
 			fi; \
@@ -523,24 +523,28 @@ help:
 	@echo "  make clean              - Limpiar archivos generados"
 	@echo ""
 	@echo ">> Ejecución por etapa (sin optimización por defecto):"
-	@echo "  make run-lex   TEST=<archivo>           - Análisis léxico"
-	@echo "  make run-parse TEST=<archivo>           - Análisis sintáctico"
+	@echo "  make run-lex   TEST=<archivo>             - Análisis léxico"
+	@echo "  make run-parse TEST=<archivo>             - Análisis sintáctico"
 	@echo "  make run-sem   TEST=<archivo> [OPT=<opt>] - Análisis semántico"
 	@echo "  make run-ci    TEST=<archivo> [OPT=<opt>] - Código intermedio"
 	@echo "  make run-asm   TEST=<archivo> [OPT=<opt>] - Assembler + ejecutar"
 	@echo "  make run       TEST=<archivo> [OPT=<opt>] - Igual que run-asm"
 	@echo ""
 	@echo ">> Tests (sin optimizaciones):"
-	@echo "  make test-all           - Ejecutar todos los tests"
+	@echo "  make test-all           - Ejecutar todos los tests, sintacticos + semanticos"
 	@echo "  make test-sintactico    - Tests sintácticos"
 	@echo "  make test-semantico     - Tests semánticos"
-	@echo "  make test-assembler     - Tests de assembler"
+	@echo "  make test-assembler     - Tests de assembler, con print_bool de chequeo"
 	@echo ""
 	@echo ">> Tests (con optimizaciones):"
-	@echo "  make test-assembler-opt TEST_OPT=<opt>  - Tests con optimización específica"
-	@echo "  make test-assembler-opt TEST_OPT=all    - Tests con TODAS las optimizaciones"
-	@echo "  make test-optimizacion-compare   		 - Comparar líneas de código 3D (sin vs con opt)"
-	@echo "  make test-optimizacion-detalle   		 - Análisis detallado por cada optimización"
+	@echo "  make test-assembler-opt TEST_OPT=<opt>               - Tests con optimización específica"
+	@echo "  make test-assembler-opt TEST_OPT=all                 - Tests con TODAS las optimizaciones"
+	@echo "  make test-optimizacion-compare                       - Comparar líneas de código 3D (sin vs con opt)"
+	@echo "  make test-optimizacion-detalle                       - Análisis detallado por cada optimización"
+	@echo "  make run-all-opt TEST=<archivo>                      - Test especifico con TODAS las optimizaciones"
+	@echo "  make run-asm TEST=<archivo> [OPT=<opt>]              - Test especifico con optimizacion especifica"
+	@echo "  make run-asm TEST=<archivo> [OPT=<opt>]              - Test especifico con optimizacion especifica"
+	@echo "  make run-asm TEST=<archivo> [OPT=<opt>],[OPT=<opt>]  - Test especifico con varias optimizaciones no todas"
 	@echo ""
 	@echo ">> Optimizaciones disponibles:"
 	@echo "  OPT=prop-constantes     - Propagación de constantes"
@@ -548,7 +552,6 @@ help:
 	@echo "  OPT=cod-inalcanzable    - Eliminación de código inalcanzable"
 	@echo "  OPT=var-muertas         - Eliminación de variables no usadas"
 	@echo "  OPT=operaciones         - Simplificación de operaciones"
-	@echo "  OPT=all                 - Todas las optimizaciones"
 	@echo ""
 	@echo ">> Ejemplos:"
 	@echo "  make run-asm TEST=tests/tests-assembler/test01asm.ctds"
