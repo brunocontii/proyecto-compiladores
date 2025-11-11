@@ -252,12 +252,13 @@ test-assembler-opt: $(TARGET)
 		echo "  TEST_OPT=operaciones"; \
 		echo "  TEST_OPT=cod-inalcanzable"; \
 		echo "  TEST_OPT=var-muertas"; \
+		echo "  TEST_OPT=cod-bloque"; \
 		echo "  TEST_OPT=all  (todas las optimizaciones)"; \
 		exit 1; \
 	fi
 	@if [ "$(TEST_OPT)" = "all" ]; then \
 		echo "=== TESTS ASSEMBLER CON TODAS LAS OPTIMIZACIONES ==="; \
-		OPT_FLAGS="-opt prop-constantes -opt operaciones -opt cod-inalcanzable -opt var-muertas"; \
+		OPT_FLAGS="-opt prop-constantes -opt operaciones -opt cod-inalcanzable -opt var-muertas -opt cod-bloque"; \
 	else \
 		echo "=== TESTS ASSEMBLER CON OPTIMIZACIÓN: $(TEST_OPT) ==="; \
 		OPT_FLAGS="-opt $(TEST_OPT)"; \
@@ -353,7 +354,7 @@ test-optimizacion-compare: $(TARGET)
 			\
 			lineas_sin_opt=$$(grep -c "^[0-9]" /tmp/sin_opt.txt 2>/dev/null || echo "0"); \
 			\
-			./$(TARGET) -target codinter -opt prop-constantes -opt operaciones -opt cod-inalcanzable -opt var-muertas "$$test" > /tmp/con_opt.txt 2>&1; \
+			./$(TARGET) -target codinter -opt prop-constantes -opt operaciones -opt cod-inalcanzable -opt var-muertas -opt cod-bloque "$$test" > /tmp/con_opt.txt 2>&1; \
 			if [ $$? -ne 0 ]; then \
 				printf "%-30s %15s %15s %15s\n" "$$basename_test" "$$lineas_sin_opt" "ERROR" "-"; \
 				continue; \
@@ -428,7 +429,12 @@ test-optimizacion-detalle: $(TARGET)
 			diff4=$$((lineas_opt3 - lineas_opt4)); \
 			printf "  + var-muertas:              %3d líneas (%+d)\n" "$$lineas_opt4" "$$diff4"; \
 			\
-			total_reduccion=$$((lineas_sin_opt - lineas_opt4)); \
+			./$(TARGET) -target codinter -opt prop-constantes -opt operaciones -opt cod-inalcanzable -opt var-muertas -opt cod-bloque "$$test" > /tmp/opt5.txt 2>&1; \
+			lineas_opt5=$$(grep -c "^[0-9]" /tmp/opt5.txt 2>/dev/null || echo "0"); \
+			diff5=$$((lineas_opt4 - lineas_opt5)); \
+			printf "  + cod-bloque:               %3d líneas (%+d)\n" "$$lineas_opt5" "$$diff5"; \
+			\
+			total_reduccion=$$((lineas_sin_opt - lineas_opt5)); \
 			if [ $$lineas_sin_opt -gt 0 ]; then \
 				porcentaje=$$(LC_NUMERIC=C awk "BEGIN {printf \"%.1f\", ($$total_reduccion / $$lineas_sin_opt) * 100}"); \
 				printf "  \033[1;32mReducción total:            %3d líneas (%.1f%%)\033[0m\n" "$$total_reduccion" "$$porcentaje"; \
@@ -436,8 +442,7 @@ test-optimizacion-detalle: $(TARGET)
 			echo ""; \
 		fi; \
 	done; \
-	rm -f /tmp/sin_opt.txt /tmp/opt1.txt /tmp/opt2.txt /tmp/opt3.txt /tmp/opt4.txt
-
+	rm -f /tmp/sin_opt.txt /tmp/opt1.txt /tmp/opt2.txt /tmp/opt3.txt /tmp/opt4.txt /tmp/opt5.txt
 
 # Ejecutar todos los tests (sintácticos y semánticos)
 test-all: $(TARGET)
