@@ -7,6 +7,8 @@ info* obtener_temp(int n, tipo_info ti) {
     if (n < 0) return NULL;
 
     info *t = (info*)malloc(sizeof(info));
+    if (!t) return NULL;
+    memset(t, 0, sizeof(info));
     char buf[16];
     snprintf(buf, sizeof(buf), "T%d", n);
     t->name = strdup(buf);
@@ -19,6 +21,8 @@ info* obtener_temp(int n, tipo_info ti) {
 // crea una nueva constante entera (literal) cono info
 info* crear_constante(int nro) { 
     info *c = (info*)malloc(sizeof(info));
+    if (!c) return NULL;
+    memset(c, 0, sizeof(info)); 
     char buf[16];
     snprintf(buf, sizeof(buf), "%d", nro);
     c->name = strdup(buf);
@@ -32,6 +36,8 @@ info* crear_constante(int nro) {
 // crea un nuevo label como info
 info* obtener_label(const char *label) { 
     info *lbl = (info*)malloc(sizeof(info));
+    if (!lbl) return NULL;
+    memset(lbl, 0, sizeof(info));  
     lbl->name = strdup(label);
     lbl->esTemporal = 0;
     return lbl;
