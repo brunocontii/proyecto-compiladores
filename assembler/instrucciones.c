@@ -198,22 +198,80 @@ void generar_division_modulo(FILE *out, codigo3dir *inst) {
 void generar_multiplicacion_opt(FILE *out, codigo3dir *inst) {
     bool optimizado = false;
     
-    // intentar optimizar si el flag este activado y arg2 es una constante
-    if (opt_operaciones && inst->arg2 && inst->arg2->tipo_token == T_DIGIT) {
-        int valor_constante = inst->arg2->nro;
+    if (opt_operaciones) {
+        bool arg1_es_constante = (inst->arg1 && inst->arg1->tipo_token == T_DIGIT);
+        bool arg2_es_constante = (inst->arg2 && inst->arg2->tipo_token == T_DIGIT);
         
-        // solo optimizar si es potencia de 2
-        if (es_potencia_de_2(valor_constante)) {
-            int shift = log2_de_potencia(valor_constante);
+        int val1 = arg1_es_constante ? inst->arg1->nro : 0;
+        int val2 = arg2_es_constante ? inst->arg2->nro : 0;
+        
+        // manejar negativos
+        bool es_negativo = false;
+        if (val1 < 0) {
+            es_negativo = !es_negativo;
+            val1 = -val1;
+        }
+        if (val2 < 0) {
+            es_negativo = !es_negativo;
+            val2 = -val2;
+        }
+        
+        bool arg1_es_pot2 = arg1_es_constante && es_potencia_de_2(val1);
+        bool arg2_es_pot2 = arg2_es_constante && es_potencia_de_2(val2);
+        
+        // Caso 1: arg1 y arg2 son ambos potencias de 2
+        // ej: 4 * 8 → shift por (log2(4) + log2(8))
+        if (arg1_es_pot2 && arg2_es_pot2) {
+            int shift_total = log2_de_potencia(val1) + log2_de_potencia(val2);
+            char *dest = obtener_ubicacion_operando(inst->resultado);
             
+            // resultado = 1 << shift_total
+            fprintf(out, "    movq $1, %%rax\n");
+            fprintf(out, "    shlq $%d, %%rax\n", shift_total);
+            
+            if (es_negativo) {
+                fprintf(out, "    negq %%rax\n");
+            }
+            
+            fprintf(out, "    movq %%rax, %s\n", dest);
+            free(dest);
+            optimizado = true;
+        }
+        // Caso 2: solo arg2 es potencia de 2
+        // ej: x * 8 → x << 3
+        else if (arg2_es_pot2) {
+            int shift = log2_de_potencia(val2);
             char *src1 = obtener_ubicacion_operando(inst->arg1);
             char *dest = obtener_ubicacion_operando(inst->resultado);
             
             fprintf(out, "    movq %s, %%rax\n", src1);
             fprintf(out, "    shlq $%d, %%rax\n", shift);
-            fprintf(out, "    movq %%rax, %s\n", dest);
             
+            if (es_negativo) {
+                fprintf(out, "    negq %%rax\n");
+            }
+            
+            fprintf(out, "    movq %%rax, %s\n", dest);
             free(src1);
+            free(dest);
+            optimizado = true;
+        }
+        // Caso 3: solo arg1 es potencia de 2
+        // ej: 8 * x → x << 3
+        else if (arg1_es_pot2) {
+            int shift = log2_de_potencia(val1);
+            char *src2 = obtener_ubicacion_operando(inst->arg2);
+            char *dest = obtener_ubicacion_operando(inst->resultado);
+            
+            fprintf(out, "    movq %s, %%rax\n", src2);
+            fprintf(out, "    shlq $%d, %%rax\n", shift);
+            
+            if (es_negativo) {
+                fprintf(out, "    negq %%rax\n");
+            }
+            
+            fprintf(out, "    movq %%rax, %s\n", dest);
+            free(src2);
             free(dest);
             optimizado = true;
         }
@@ -229,24 +287,52 @@ void generar_multiplicacion_opt(FILE *out, codigo3dir *inst) {
 void generar_division_opt(FILE *out, codigo3dir *inst) {
     bool optimizado = false;
     
-    // intentar optimizar si el flag esta activado y arg2 es una constante
-    if (opt_operaciones && inst->arg2 && inst->arg2->tipo_token == T_DIGIT) {
-        int valor_constante = inst->arg2->nro;
+    if (opt_operaciones) {
+        bool arg1_es_constante = (inst->arg1 && inst->arg1->tipo_token == T_DIGIT);
+        bool arg2_es_constante = (inst->arg2 && inst->arg2->tipo_token == T_DIGIT);
         
-        // solo optimizar si es potencia de 2 y no es 0
-        if (valor_constante > 0 && es_potencia_de_2(valor_constante)) {
-            int shift = log2_de_potencia(valor_constante);
+        // solo optimizar si arg2 (divisor) es constante potencia de 2
+        if (arg2_es_constante) {
+            int divisor = inst->arg2->nro;
+            bool es_negativo = false;
             
-            char *src1 = obtener_ubicacion_operando(inst->arg1);
-            char *dest = obtener_ubicacion_operando(inst->resultado);
+            // manejar divisor negativo
+            if (divisor < 0) {
+                es_negativo = true;
+                divisor = -divisor;
+            }
             
-            fprintf(out, "    movq %s, %%rax\n", src1);
-            fprintf(out, "    sarq $%d, %%rax\n", shift);
-            fprintf(out, "    movq %%rax, %s\n", dest);
-            
-            free(src1);
-            free(dest);
-            optimizado = true;
+            // verificar si es potencia de 2 y no es 0
+            if (divisor > 0 && es_potencia_de_2(divisor)) {
+                int shift = log2_de_potencia(divisor);
+                
+                char *src1 = obtener_ubicacion_operando(inst->arg1);
+                char *dest = obtener_ubicacion_operando(inst->resultado);
+                
+                // cargar dividendo
+                fprintf(out, "    movq %s, %%rax\n", src1);
+                
+                // ajuste para redondear hacia 0 (no hacia -infinito)
+                // si rax < 0, sumar (divisor - 1) antes de hacer shift
+                fprintf(out, "    movq %%rax, %%rdx\n");
+                fprintf(out, "    sarq $63, %%rdx\n");              // rdx = (rax < 0) ? -1 : 0
+                fprintf(out, "    andq $%d, %%rdx\n", divisor - 1);  // rdx = (rax < 0) ? (divisor-1) : 0
+                fprintf(out, "    addq %%rdx, %%rax\n");             // rax += rdx (ajuste)
+                
+                // shift aritmetico a la derecha
+                fprintf(out, "    sarq $%d, %%rax\n", shift);
+                
+                // si el divisor era negativo, negar el resultado
+                if (es_negativo) {
+                    fprintf(out, "    negq %%rax\n");
+                }
+                
+                fprintf(out, "    movq %%rax, %s\n", dest);
+                
+                free(src1);
+                free(dest);
+                optimizado = true;
+            }
         }
     }
     
