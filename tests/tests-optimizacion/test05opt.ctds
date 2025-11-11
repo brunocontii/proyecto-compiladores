@@ -1,29 +1,174 @@
 program {
 
-    integer f(integer a) {
+    void print_int(integer x) extern;
+    void print_bool(bool x) extern;
+
+    // caso 1: codigo inalcanzable despues de return en if-else
+    integer funcion1(integer a) {
         if (a > 0) then {
             if (a == 1) then {
                 return 10;
                 // inalcanzable
                 a = a + 1;
+                print_int(a);
+                a = a * 2;
             }
             return 5;
             // inalcanzable
             a = a - 1;
+            print_int(a);
+            a = a / 2;
         } else {
             return 0;
             // inalcanzable
             a = 99;
+            print_int(999);
+            a = a + a;
         }
     }
 
-    void print_int(integer x) extern;
+    // caso 2: codigo inalcanzable despues de multiples returns anidados
+    integer funcion2(integer x, integer y) {
+        if (x > y) then {
+            if (x > 100) then {
+                return x;
+                // inalcanzable
+                x = x + y;
+                y = y * 2;
+                print_int(x + y);
+            } else {
+                return y;
+                // inalcanzable
+                x = x - y;
+                y = y / 2;
+                print_int(x - y);
+            }
+            return 0;
+            // inalcanzable
+            print_int(0);
+            x = 0;
+            y = 0;
+        }
+        return x + y;
+        // inalcanzable
+        print_int(x);
+        print_int(y);
+        x = 0-1;
+        y = 0-1;
+    }
+
+    // caso 3: codigo inalcanzable en bloques anidados
+    bool funcion3(integer n) {
+        if (n == 0) then {
+            return true;
+            // inalcanzable
+            print_bool(false);
+            n = 1;
+        } else {
+            if (n < 0) then {
+                return false;
+                // inalcanzable
+                print_bool(true);
+                n = 0-1;
+            } else {
+                return n > 10;
+                // inalcanzable
+                print_int(n);
+                n = n + 1;
+                print_bool(true);
+            }
+        }
+    }
+
+    // caso 4: codigo inalcanzable con multiples statements
+    integer funcion4() {
+        integer local1 = 5;
+        integer local2 = 10;
+        bool flag = true;
+        
+        return local1 + local2;
+        // inalcanzable
+        local1 = local1 * 2;
+        local2 = local2 + 5;
+        flag = false;
+        print_int(local1);
+        print_int(local2);
+        print_bool(flag);
+        
+        if (flag) then {
+            print_int(100);
+            local1 = 100;
+        } else {
+            print_int(200);
+            local2 = 200;
+        }
+        
+        return local1 - local2;
+    }
+
+    // caso 5: funcion con return temprano
+    integer funcion5(integer val) {
+        integer temp1 = 0;
+        integer temp2 = 0;
+        
+        if (val == 0) then {
+            return 0;
+            // inalcanzable
+            print_int(1);
+            val = 1;
+        }
+        
+        temp1 = val * 2;
+        temp2 = val + 5;
+        
+        if (temp1 > 20) then {
+            return temp1;
+            // inalcanzable
+            print_int(temp1);
+            temp1 = 0;
+        }
+        
+        return temp2;
+        // inalcanzable
+        print_int(temp2);
+        temp2 = 0;
+        print_int(val);
+        val = 0;
+    }
 
     void main() {
-        integer x = f(1);
+        integer x = 0;
+        integer y = 0;
+        bool b = false;
+        integer z = 0;
+        integer w = 0;
+        
+        x = funcion1(1);
         print_int(x);
+        
+        y = funcion2(50, 30);
+        print_int(y);
+        
+        b = funcion3(5);
+        print_bool(b);
+        
+        z = funcion4();
+        print_int(z);
+        
+        w = funcion5(10);
+        print_int(w);
+        
         return;
         // inalcanzable
         print_int(999);
+        x = 999;
+        y = 999;
+        z = 999;
+        w = 999;
+        print_int(x + y + z + w);
+        
+        if (x > 0) then {
+            print_int(1000);
+        }
     }
 }

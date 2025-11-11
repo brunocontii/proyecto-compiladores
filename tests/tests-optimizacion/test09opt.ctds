@@ -1,0 +1,153 @@
+program {
+
+    void print_int(integer x) extern;
+    void print_bool(bool x) extern;
+
+    void main() {
+        integer a = 10;
+        integer b = 5;
+        integer c = 0;
+        bool flag1 = true;
+        bool flag2 = false;
+        integer resultado = 0;
+        
+        // CASO 1: VALORES NEUTROS (ARITMÉTICOS)        
+        // x + 0 = x
+        resultado = a + 0;
+        print_int(resultado);
+        
+        // 0 + x = x
+        resultado = 0 + b;
+        print_int(resultado);
+        
+        // x - 0 = x
+        resultado = a - 0;
+        print_int(resultado);
+        
+        // x * 1 = x
+        resultado = a * 1;
+        print_int(resultado);
+        
+        // 1 * x = x
+        resultado = 1 * b;
+        print_int(resultado);
+        
+        // x / 1 = x
+        resultado = a / 1;
+        print_int(resultado);
+        
+        // CASO 2: VALORES NEUTROS (LÓGICOS)
+        // x && true = x
+        flag1 = flag2 && true;
+        print_bool(flag1);
+        
+        // true && x = x
+        flag1 = true && flag2;
+        print_bool(flag1);
+        
+        // x || false = x
+        flag1 = flag2 || false;
+        print_bool(flag1);
+        
+        // false || x = x
+        flag1 = false || flag2;
+        print_bool(flag1);
+        
+        // CASO 3: REDUCCIONES SIMPLES
+        // x - x = 0
+        resultado = a - a;
+        print_int(resultado);
+        
+        // x * 0 = 0
+        resultado = a * 0;
+        print_int(resultado);
+        
+        // 0 * x = 0
+        resultado = 0 * b;
+        print_int(resultado);
+        
+        // x / x = 1
+        resultado = a / a;
+        print_int(resultado);
+        
+        // 0 / x = 0
+        resultado = 0 / b;
+        print_int(resultado);
+        
+        // x % 1 = 0
+        resultado = a % 1;
+        print_int(resultado);
+        
+        // 0 % x = 0
+        resultado = 0 % b;
+        print_int(resultado);
+        
+        // x % x = 0
+        resultado = a % a;
+        print_int(resultado);
+        
+        // CASO 4: REDUCCIONES DOMINANTES (LÓGICAS)
+        // x && false = false
+        flag1 = flag2 && false;
+        print_bool(flag1);
+        
+        // false && x = false
+        flag1 = false && flag2;
+        print_bool(flag1);
+        
+        // x || true = true
+        flag1 = flag2 || true;
+        print_bool(flag1);
+        
+        // true || x = true
+        flag1 = true || flag2;
+        print_bool(flag1);
+        
+        // CASO 5: COMPARACIONES REDUNDANTES
+        // x < x = false
+        flag1 = a < a;
+        print_bool(flag1);
+        
+        // x > x = false
+        flag1 = b > b;
+        print_bool(flag1);
+        
+        // x == x = true
+        flag1 = a == a;
+        print_bool(flag1);
+        
+        // CASO 6: EXPRESIONES COMPLEJAS (COMBINADAS)
+        // ((a + 0) * 1) - (b - b) = a
+        resultado = ((a + 0) * 1) - (b - b);
+        print_int(resultado);
+        
+        // (a - a) + (b * 0) + (c + 0) = c
+        resultado = (a - a) + (b * 0) + (c + 0);
+        print_int(resultado);
+        
+        // (a / 1) + (0 * b) = a
+        resultado = (a / 1) + (0 * b);
+        print_int(resultado);
+        
+        // (a / a) + (b - b) + (c % 1) = 1
+        resultado = (a / a) + (b - b) + (c % 1);
+        print_int(resultado);
+        
+        // CASO 7: EXPRESIONES LÓGICAS COMPLEJAS
+        // (x && true) || (y && false) = x
+        flag1 = (flag2 && true) || (flag1 && false);
+        print_bool(flag1);
+        
+        // (x || false) && (y || true) = x && true = x
+        flag1 = (flag2 || false) && (flag1 || true);
+        print_bool(flag1);
+        
+        // (x == x) && (y < y) = true && false = false
+        flag1 = (a == a) && (b < b);
+        print_bool(flag1);
+        
+        // (x > x) || (y == y) = false || true = true
+        flag1 = (a > a) || (b == b);
+        print_bool(flag1);
+    }
+}
