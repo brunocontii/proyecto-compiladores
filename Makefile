@@ -354,7 +354,7 @@ test-optimizacion-compare: $(TARGET)
 			\
 			lineas_sin_opt=$$(grep -c "^[0-9]" /tmp/sin_opt.txt 2>/dev/null || echo "0"); \
 			\
-			./$(TARGET) -target codinter -opt prop-constantes -opt operaciones -opt cod-inalcanzable -opt var-muertas -opt cod-bloque "$$test" > /tmp/con_opt.txt 2>&1; \
+			./$(TARGET) -target codinter -opt prop-constantes -opt operaciones -opt cod-inalcanzable -opt cod-bloque -opt var-muertas "$$test" > /tmp/con_opt.txt 2>&1; \
 			if [ $$? -ne 0 ]; then \
 				printf "%-30s %15s %15s %15s\n" "$$basename_test" "$$lineas_sin_opt" "ERROR" "-"; \
 				continue; \
@@ -424,15 +424,15 @@ test-optimizacion-detalle: $(TARGET)
 			diff3=$$((lineas_opt2 - lineas_opt3)); \
 			printf "  + cod-inalcanzable:         %3d líneas (%+d)\n" "$$lineas_opt3" "$$diff3"; \
 			\
-			./$(TARGET) -target codinter -opt prop-constantes -opt operaciones -opt cod-inalcanzable -opt var-muertas "$$test" > /tmp/opt4.txt 2>&1; \
+			./$(TARGET) -target codinter -opt prop-constantes -opt operaciones -opt cod-inalcanzable -opt cod-bloque "$$test" > /tmp/opt4.txt 2>&1; \
 			lineas_opt4=$$(grep -c "^[0-9]" /tmp/opt4.txt 2>/dev/null || echo "0"); \
 			diff4=$$((lineas_opt3 - lineas_opt4)); \
-			printf "  + var-muertas:              %3d líneas (%+d)\n" "$$lineas_opt4" "$$diff4"; \
+			printf "  + cod-bloque:               %3d líneas (%+d)\n" "$$lineas_opt4" "$$diff4"; \
 			\
-			./$(TARGET) -target codinter -opt prop-constantes -opt operaciones -opt cod-inalcanzable -opt var-muertas -opt cod-bloque "$$test" > /tmp/opt5.txt 2>&1; \
+			./$(TARGET) -target codinter -opt prop-constantes -opt operaciones -opt cod-inalcanzable -opt cod-bloque -opt var-muertas "$$test" > /tmp/opt5.txt 2>&1; \
 			lineas_opt5=$$(grep -c "^[0-9]" /tmp/opt5.txt 2>/dev/null || echo "0"); \
 			diff5=$$((lineas_opt4 - lineas_opt5)); \
-			printf "  + cod-bloque:               %3d líneas (%+d)\n" "$$lineas_opt5" "$$diff5"; \
+			printf "  + var-muertas:              %3d líneas (%+d)\n" "$$lineas_opt5" "$$diff5"; \
 			\
 			total_reduccion=$$((lineas_sin_opt - lineas_opt5)); \
 			if [ $$lineas_sin_opt -gt 0 ]; then \

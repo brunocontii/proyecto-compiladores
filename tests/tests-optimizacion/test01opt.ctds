@@ -6,6 +6,11 @@ program {
         integer a = 0;
         integer b = 0;
         integer c = 0;
+        integer d = 0;
+        integer e = 0;
+        bool flag1 = false;
+        bool flag2 = true;
+        bool flag3 = false;
         
         a = 5;
         b = 1;
@@ -19,7 +24,11 @@ program {
         * declaración de la variable "c" y en la tercera pasada
         * la declaración de la variable "a".
         */
-        
+
+        flag1 = true;           // flag1 no se usa
+        flag2 = flag1 && false; // flag2 no se usa
+        flag3 = !flag2;         // flag3 no se usa
+
         print_int(b);
     }
 }
