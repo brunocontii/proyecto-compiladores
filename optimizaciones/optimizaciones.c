@@ -30,15 +30,15 @@ void aplicar_optimizaciones(nodo *raiz) {
         optimizaciones_operaciones(raiz);
     }
 
-    // eliminar codigo muerto en bloques
-    if (opt_codigo_muerto_bloque) {
-        eliminarBloquesMuertos(raiz);
-    }
-
     // las optimizaciones anteriores pueden crear codigo muerto. por ej
     // if (true), while(false), etc
     if (opt_codigo_muerto_codigo_inalcanzable) {
         eliminarCodigoMuerto(raiz);
+    }
+
+    // eliminar codigo muerto en bloques
+    if (opt_codigo_muerto_bloque) {
+        eliminarBloquesMuertos(raiz);
     }
     
     // por ultimo, eliminar variables muertas. optimizaciones previas
