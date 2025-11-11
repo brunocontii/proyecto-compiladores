@@ -1,0 +1,99 @@
+program {
+    void print_int(integer x) extern;
+    void print_bool(bool b) extern;
+
+    void main() {
+        integer x = 10;
+        integer y = 20;
+        integer z = 30;
+        integer w = 40;
+
+        // IF_FALSE: toda rama se elimina (3 > 4 es falso)
+        if (3 > 4) then {
+            x = 100;
+            y = 200;
+            print_int(1);
+            print_int(2);
+            print_int(3);
+        }
+
+        // IF_ELSE con TRUE: elimina rama else, mantiene then
+        if (true) then {
+            print_int(10);
+            print_int(20);
+            z = 300;
+            print_int(30);
+        } else {
+            w = 4000;
+            print_int(999);
+            print_int(1000);
+            print_int(1001);
+        }
+
+        // IF_ELSE con FALSE: elimina rama then, mantiene else
+        if (false) then {
+            x = 555;
+            y = 556;
+            print_int(555);
+            print_int(556);
+        } else {
+            print_int(40);
+            z = 600;
+            print_int(50);
+            w = 700;
+            print_int(60);
+        }
+
+        // WHILE_FALSE: bucle se elimina completamente
+        while (false) {
+            x = 777;
+            y = 778;
+            print_int(777);
+            print_int(778);
+            z = 779;
+            w = 780;
+            print_int(779);
+            print_int(780);
+        }
+
+        // IF anidado con FALSE externo: todo desaparece
+        if (5 > 10) then {
+            x = 1000;
+            if (x < y) then {
+                y = 1100;
+                print_int(111);
+                print_int(112);
+            } else {
+                z = 1300;
+                print_int(113);
+                w = 1400;
+                print_int(114);
+            }
+        }
+
+        // IF_ELSE con TRUE externo, FALSE interno
+        if (true) then {
+            if (false) then {
+                x = 2000;
+                print_int(200);
+                y = 2001;
+                print_int(201);
+            } else {
+                z = 2020;
+                print_int(202);
+                w = 2030;
+                print_int(203);
+            }
+        } else {
+            x = 999;
+            y = 1000;
+            print_int(999);
+        }
+
+        // Variable normal para terminar
+        print_int(x);
+        print_int(y);
+        print_int(z);
+        print_int(w);
+    }
+}
