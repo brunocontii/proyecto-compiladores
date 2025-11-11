@@ -1,6 +1,6 @@
 # Compilador y flags
 CC = gcc
-CFLAGS = -Wall -Wextra -g
+CFLAGS = -g
 TARGET = c-tds
 
 # Directorios
@@ -548,13 +548,12 @@ help:
 	@echo "  make test-optimizacion-detalle                       - Análisis detallado por cada optimización"
 	@echo "  make run-all-opt TEST=<archivo>                      - Test especifico con TODAS las optimizaciones"
 	@echo "  make run-asm TEST=<archivo> [OPT=<opt>]              - Test especifico con optimizacion especifica"
-	@echo "  make run-asm TEST=<archivo> [OPT=<opt>,<opt>]  - Test especifico con varias optimizaciones (muy importante no poner espacio después de la coma)"
+	@echo "  make run-asm TEST=<archivo> [OPT=<opt>,<opt>]        - Test especifico con varias optimizaciones (muy importante no poner espacio después de la coma)"
 	@echo ""
 	@echo ">> Optimizaciones disponibles:"
 	@echo "  OPT=prop-constantes     - Propagación de constantes"
 	@echo "  OPT=var-muertas         - Eliminación de variables no usadas"
 	@echo "  OPT=cod-inalcanzable    - Eliminación de código inalcanzable"
-	@echo "  OPT=var-muertas         - Eliminación de variables no usadas"
 	@echo "  OPT=operaciones         - Simplificación de operaciones"
 	@echo "  OPT=cod-bloque          - Eliminación de bloques muertos"
 	@echo ""

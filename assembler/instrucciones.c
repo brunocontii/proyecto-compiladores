@@ -288,7 +288,6 @@ void generar_division_opt(FILE *out, codigo3dir *inst) {
     bool optimizado = false;
     
     if (opt_operaciones) {
-        bool arg1_es_constante = (inst->arg1 && inst->arg1->tipo_token == T_DIGIT);
         bool arg2_es_constante = (inst->arg2 && inst->arg2->tipo_token == T_DIGIT);
         
         // solo optimizar si arg2 (divisor) es constante potencia de 2

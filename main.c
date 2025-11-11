@@ -43,7 +43,6 @@ void opciones() {
     printf("  -o <salida>          Archivo de salida\n");
     printf("  -target <etapa>      Etapa de compilacion: lex, parse, sem, codinter, assembly\n");
     printf("  -opt <optimizacion>  Habilitar optimización:\n");
-    printf("  -debug               Imprimir info de debug\n");
     printf("\nEjemplos:\n");
     printf("  ./c-tds -target assembly tests/test01.ctds\n");
     printf("  ./c-tds -target assembly -opt prop-constantes tests/test02.ctds\n");
@@ -126,10 +125,6 @@ int main(int argc, char *argv[]) {
             }
             
             i++;
-        }
-        else if (strcmp(argv[i], "-debug") == 0) {
-            debug = 1;
-            i += 1;
         } else {
             printf("Opcion desconocida: %s\n", argv[i]);
             opciones();
@@ -165,14 +160,6 @@ int main(int argc, char *argv[]) {
 
     // Target por defecto
     if (!target) target = "assembly";
-
-    if (debug) {
-        printf("Archivo entrada: %s\n", archivo_entrada);
-        if (archivo_salida) printf("Archivo salida: %s\n", archivo_salida);
-        printf("Target: %s\n", target);
-        printf("Constant Folding: %s\n", opt_constant_folding ? "SI" : "NO");
-        printf("Debug activado\n");
-    }
 
     // -----------------------------
     // Lógica según target
