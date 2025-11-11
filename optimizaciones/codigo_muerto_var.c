@@ -168,7 +168,7 @@ void codigo_muerto_var(nodo *raiz) {
     int post_poda = 0;
     
     // Crear imagen del árbol original
-    generateASTDotFileWithLiveness(raiz, "ast_original", false);
+    //generateASTDotFileWithLiveness(raiz, "ast_original", false);
     
     // Iterar mientras se puedan eliminar nodos
     while (post_poda < pre_poda) {
@@ -179,17 +179,17 @@ void codigo_muerto_var(nodo *raiz) {
         recorrer_y_marcar(raiz);
 
         // Crear imagen del árbol marcado
-        char nombre_marcado[256];
-        snprintf(nombre_marcado, sizeof(nombre_marcado), "ast_marcado_%d", iteracion);
-        generateASTDotFileWithLiveness(raiz, nombre_marcado, true);
+        //char nombre_marcado[256];
+        //snprintf(nombre_marcado, sizeof(nombre_marcado), "ast_marcado_%d", iteracion);
+        //generateASTDotFileWithLiveness(raiz, nombre_marcado, true);
         
         // Podar variables no usadas
         recorrer_y_podar(raiz);
         
         // Crear imagen del árbol después de podar
-        char nombre_podado[256];
-        snprintf(nombre_podado, sizeof(nombre_podado), "ast_podado_%d", iteracion);
-        generateASTDotFileWithLiveness(raiz, nombre_podado, false);
+        //char nombre_podado[256];
+        //snprintf(nombre_podado, sizeof(nombre_podado), "ast_podado_%d", iteracion);
+        //generateASTDotFileWithLiveness(raiz, nombre_podado, false);
 
         // Liberar lista de variables y reiniciar
         liberar_lista_variables(&var_list);
