@@ -3,18 +3,15 @@ program {
     void print_int(integer n) extern;
     
     void main() {
-        // ========================================
-        // DECLARACIONES (todas al principio)
-        // ========================================
         
-        // PROPAGACIÓN DE CONSTANTES
+        // PROPAGACIÓN DE CONSTANTES (optimizacion plegado y propagacion)
         integer const1 = 2 + 3;           // → 5
         integer const2 = 10 * 2;          // → 20
         integer const3 = 15 / 3;          // → 5
         bool const4 = true && false;      // → false
         bool const5 = true || false;      // → true
         
-        // VALORES NEUTROS
+        // VALORES NEUTROS (optimizacion operaciones)
         integer neutro1 = const1 + 0;     // 5 + 0 → 5
         integer neutro2 = 0 + const2;     // 0 + 20 → 20
         integer neutro3 = const3 - 0;     // 5 - 0 → 5
@@ -24,7 +21,7 @@ program {
         bool neutro7 = const5 && true;    // true && true → true
         bool neutro8 = false || const5;   // false || true → true
         
-        // REDUCCIONES SIMPLES
+        // REDUCCIONES SIMPLES (optimizacion operaciones)
         integer x = 10;
         integer red1 = x - x;             // → 0
         integer red2 = x * 0;             // → 0
@@ -35,36 +32,32 @@ program {
         integer red7 = x % x;             // → 0
         integer red8 = 0 % 5;             // → 0
         
-        // REDUCCIONES DOMINANTES
+        // REDUCCIONES DOMINANTES (optimizacion operaciones)
         bool y = true;
         bool dom1 = y && false;           // → false
         bool dom2 = false && y;           // → false
         bool dom3 = y || true;            // → true
         bool dom4 = true || y;            // → true
         
-        // COMPARACIONES REDUNDANTES
+        // COMPARACIONES REDUNDANTES (optimizacion operaciones)
         bool comp1 = x < x;               // → false
         bool comp2 = x > x;               // → false
         bool comp3 = x == x;              // → true
         
-        // COMBINACIÓN COMPLEJA
+        // ASIGNACION (optimizacion plegado)
         integer combo = (const1 + neutro1) * 1 - 0;  // (5 + 5) * 1 - 0 → 10
         
-        // VARIABLES NO USADAS (muertas)
-        integer unused1 = 100;            // Variable muerta, nunca se usa
-        integer unused2 = 200;            // Variable muerta, nunca se usa
+        // VARIABLES NO USADAS (optimizacion var-muertas)
+        integer unused1 = 100; // Variable muerta, nunca se usa
+        integer unused2 = 200; // Variable muerta, nunca se usa
         
-        // CÓDIGO MUERTO
+        // CODIGO MUERTO IF FALSE (optimizacion var-muertas)
         integer dead1 = 0;
         
         // CÁLCULO FINAL (inicializado después de dead1)
         integer resultado = 0;
         
-        // ========================================
-        // STATEMENTS (después de todas las declaraciones)
-        // ========================================
-        
-        // CÓDIGO MUERTO (if constante)
+        // CÓDIGO MUERTO (if)
         if (false) then {
             dead1 = 999;                  // Código muerto, nunca se ejecuta
         }
@@ -73,19 +66,10 @@ program {
             dead1 = 42;                   // Siempre se ejecuta
         }
         
-        // Calcular resultado
-        resultado = const1 + neutro1 + red4 + dead1 + combo;
-        // = 5 + 5 + 1 + 42 + 10 = 63
-        
-        print_int(resultado);
         
         // VERIFICACIONES BOOLEANAS
-        if (comp3 && dom3 && neutro7) then {   // true && true && true → true
-            print_int(1);                      // Se ejecuta
-        }
-        
-        if (comp1 || dom1) then {              // false || false → false
-            print_int(999);                    // NO se ejecuta (código muerto)
+        if (comp3 && dom3 && neutro7) then {
+            print_int(dead1);                      // Se ejecuta
         }
     }
 }
