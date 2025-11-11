@@ -363,11 +363,11 @@ test-optimizacion-compare: $(TARGET)
 			\
 			if [ $$lineas_sin_opt -gt 0 ]; then \
 				reduccion=$$((lineas_sin_opt - lineas_con_opt)); \
-				porcentaje=$$(awk "BEGIN {printf \"%.1f\", ($$reduccion / $$lineas_sin_opt) * 100}"); \
+				porcentaje=$$(LC_NUMERIC=C awk "BEGIN {printf \"%.1f\", ($$reduccion / $$lineas_sin_opt) * 100}"); \
 				if [ $$reduccion -gt 0 ]; then \
-					printf "%-30s %15s %15s \033[32m%10s (-%.0f%%)\033[0m\n" "$$basename_test" "$$lineas_sin_opt líneas" "$$lineas_con_opt líneas" "$$reduccion líneas" "$$porcentaje"; \
+					printf "%-30s %15s %15s \033[32m%10s (-%.1f%%)\033[0m\n" "$$basename_test" "$$lineas_sin_opt líneas" "$$lineas_con_opt líneas" "$$reduccion líneas" "$$porcentaje"; \
 				elif [ $$reduccion -lt 0 ]; then \
-					printf "%-30s %15s %15s \033[31m%10s (+%.0f%%)\033[0m\n" "$$basename_test" "$$lineas_sin_opt líneas" "$$lineas_con_opt líneas" "$$reduccion líneas" "$$porcentaje"; \
+					printf "%-30s %15s %15s \033[31m%10s (+%.1f%%)\033[0m\n" "$$basename_test" "$$lineas_sin_opt líneas" "$$lineas_con_opt líneas" "$$reduccion líneas" "$$porcentaje"; \
 				else \
 					printf "%-30s %15s %15s %15s\n" "$$basename_test" "$$lineas_sin_opt líneas" "$$lineas_con_opt líneas" "Sin cambios"; \
 				fi; \
@@ -382,7 +382,7 @@ test-optimizacion-compare: $(TARGET)
 	echo "--------------------------------------------------------------------------------"; \
 	reduccion_total=$$((total_sin_opt - total_con_opt)); \
 	if [ $$total_sin_opt -gt 0 ]; then \
-		porcentaje_total=$$(awk "BEGIN {printf \"%.1f\", ($$reduccion_total / $$total_sin_opt) * 100}"); \
+		porcentaje_total=$$(LC_NUMERIC=C awk "BEGIN {printf \"%.1f\", ($$reduccion_total / $$total_sin_opt) * 100}"); \
 		printf "%-30s %15s %15s \033[1;32m%10s (-%.1f%%)\033[0m\n" "TOTAL ($$total_tests tests)" "$$total_sin_opt líneas" "$$total_con_opt líneas" "$$reduccion_total líneas" "$$porcentaje_total"; \
 	else \
 		printf "%-30s %15s %15s %15s\n" "TOTAL ($$total_tests tests)" "0 líneas" "0 líneas" "Sin cambios"; \
@@ -430,7 +430,7 @@ test-optimizacion-detalle: $(TARGET)
 			\
 			total_reduccion=$$((lineas_sin_opt - lineas_opt4)); \
 			if [ $$lineas_sin_opt -gt 0 ]; then \
-				porcentaje=$$(awk "BEGIN {printf \"%.1f\", ($$total_reduccion / $$lineas_sin_opt) * 100}"); \
+				porcentaje=$$(LC_NUMERIC=C awk "BEGIN {printf \"%.1f\", ($$total_reduccion / $$lineas_sin_opt) * 100}"); \
 				printf "  \033[1;32mReducción total:            %3d líneas (%.1f%%)\033[0m\n" "$$total_reduccion" "$$porcentaje"; \
 			fi; \
 			echo ""; \
@@ -543,8 +543,7 @@ help:
 	@echo "  make test-optimizacion-detalle                       - Análisis detallado por cada optimización"
 	@echo "  make run-all-opt TEST=<archivo>                      - Test especifico con TODAS las optimizaciones"
 	@echo "  make run-asm TEST=<archivo> [OPT=<opt>]              - Test especifico con optimizacion especifica"
-	@echo "  make run-asm TEST=<archivo> [OPT=<opt>]              - Test especifico con optimizacion especifica"
-	@echo "  make run-asm TEST=<archivo> [OPT=<opt>],[OPT=<opt>]  - Test especifico con varias optimizaciones no todas"
+	@echo "  make run-asm TEST=<archivo> [OPT=<opt>,<opt>]  - Test especifico con varias optimizaciones (muy importante no poner espacio después de la coma)"
 	@echo ""
 	@echo ">> Optimizaciones disponibles:"
 	@echo "  OPT=prop-constantes     - Propagación de constantes"
@@ -552,16 +551,16 @@ help:
 	@echo "  OPT=cod-inalcanzable    - Eliminación de código inalcanzable"
 	@echo "  OPT=var-muertas         - Eliminación de variables no usadas"
 	@echo "  OPT=operaciones         - Simplificación de operaciones"
+	@echo "  OPT=cod-bloque          - Eliminación de bloques muertos"
 	@echo ""
 	@echo ">> Ejemplos:"
 	@echo "  make run-asm TEST=tests/tests-assembler/test01asm.ctds"
 	@echo "  make run-asm TEST=tests/tests-assembler/test01asm.ctds OPT=prop-constantes"
-	@echo "  make run-asm TEST=tests/test.ctds OPT=var-muertas"
+	@echo "  make run-asm TEST=tests/test.ctds OPT=prop-constantes,var-muertas"
 	@echo "  make test-assembler-opt TEST_OPT=all"
 	@echo "  make test-optimizacion-compare"
 	@echo "  make test-optimizacion-detalle"
-	@echo "  make run-ci TEST=tests/tests-assembler/test02asm.ctds OPT=prop-constantes,var-muertas"
-	@echo "  make run-sem TEST=tests/tests-semantico/test03.ctds"
+	@echo "  make run-all-opt TEST=tests/tests-optimizacion/test04opt.ctds"
 
 # Limpiar archivos generados
 clean:
